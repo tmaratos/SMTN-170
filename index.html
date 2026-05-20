@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oak Ridge Senior Member Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="login-body">
+  <main class="login-shell">
+    <section class="login-card glass-card">
+      <img class="login-logo" src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron Logo" />
+
+      <p class="eyebrow">Private Internal Portal</p>
+      <h1>Oak Ridge Composite Squadron</h1>
+      <h2>Senior Member Operations Portal</h2>
+
+      <p class="login-copy">
+        Secure coordination space for senior members to organize schedules,
+        documents, event photos, resources, and monthly planning.
+      </p>
+
+      <form class="login-form" onsubmit="portalLogin(event)">
+        <label>Email</label>
+        <input type="email" placeholder="senior.member@example.com" required />
+
+        <label>Access Code</label>
+        <input type="password" placeholder="Enter portal access code" required />
+
+        <button type="submit">Enter Portal</button>
+      </form>
+
+      <p class="fine-print">
+        Authorized senior members only. This is not a public CAP squadron website.
+      </p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
