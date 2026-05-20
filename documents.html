@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documents | Oak Ridge Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="sidebar-logo" alt="Logo" />
+      <h3>SMTN-170</h3>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="calendar.html">Calendar</a>
+        <a class="active" href="documents.html">Documents</a>
+        <a href="photos.html">Photos</a>
+        <a href="resources.html">Resources</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </aside>
+
+    <main class="page">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Document Vault</p>
+          <h1>Squadron Files & Records</h1>
+          <p>Store forms, schedules, briefings, local procedures, and internal planning documents.</p>
+        </div>
+      </header>
+
+      <section class="split">
+        <form class="card form-card">
+          <h2>Upload Document</h2>
+
+          <label>Document Name</label>
+          <input type="text" placeholder="Monthly Meeting Agenda" />
+
+          <label>Category</label>
+          <select>
+            <option>Forms</option>
+            <option>Safety</option>
+            <option>Training</option>
+            <option>Aerospace Education</option>
+            <option>Local Procedures</option>
+            <option>Meeting Templates</option>
+            <option>Other</option>
+          </select>
+
+          <label>File</label>
+          <input type="file" />
+
+          <label>Description</label>
+          <textarea placeholder="What this document is for..."></textarea>
+
+          <button type="button">Add Document</button>
+        </form>
+
+        <section class="card">
+          <h2>Recent Documents</h2>
+          <div class="file-list">
+            <div><strong>Monthly Schedule Draft</strong><span>Calendar / PDF</span></div>
+            <div><strong>Safety Brief Template</strong><span>Safety</span></div>
+            <div><strong>AEX Planning Notes</strong><span>Aerospace Education</span></div>
+            <div><strong>Local Resource Checklist</strong><span>Local Procedures</span></div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
