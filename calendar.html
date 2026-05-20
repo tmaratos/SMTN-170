@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calendar | Oak Ridge Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="sidebar-logo" alt="Logo" />
+      <h3>SMTN-170</h3>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a class="active" href="calendar.html">Calendar</a>
+        <a href="documents.html">Documents</a>
+        <a href="photos.html">Photos</a>
+        <a href="resources.html">Resources</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </aside>
+
+    <main class="page">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Planning</p>
+          <h1>Monthly Schedule Builder</h1>
+          <p>Create squadron events, meeting nights, assignments, and exportable schedules.</p>
+        </div>
+      </header>
+
+      <section class="split">
+        <form class="card form-card">
+          <h2>Add Event</h2>
+
+          <label>Event Title</label>
+          <input type="text" placeholder="Senior member meeting" />
+
+          <label>Date</label>
+          <input type="date" />
+
+          <label>Start Time</label>
+          <input type="time" />
+
+          <label>End Time</label>
+          <input type="time" />
+
+          <label>Location</label>
+          <input type="text" placeholder="Meeting room, airport, classroom, etc." />
+
+          <label>Uniform</label>
+          <select>
+            <option>Corporate Polo</option>
+            <option>Blues</option>
+            <option>ABUs/OCPs as authorized</option>
+            <option>Civilian attire</option>
+          </select>
+
+          <label>Lead / Presenter</label>
+          <input type="text" placeholder="Assigned senior member" />
+
+          <label>Notes</label>
+          <textarea placeholder="Training topic, safety brief, AE activity, materials needed..."></textarea>
+
+          <button type="button">Save Event Draft</button>
+        </form>
+
+        <section class="card">
+          <h2>This Month</h2>
+          <div class="calendar-list">
+            <div>
+              <strong>Mon · 18:30</strong>
+              <span>Safety Briefing + Planning Meeting</span>
+            </div>
+            <div>
+              <strong>Sat · 09:00</strong>
+              <span>Aerospace Education Activity</span>
+            </div>
+            <div>
+              <strong>Mon · 18:30</strong>
+              <span>Training Night</span>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button>Export PDF</button>
+            <button>Export CSV</button>
+            <button>Export ICS</button>
+          </div>
+
+          <p class="fine-print">
+            Google Calendar integration can be added later through Google Calendar API or ICS export.
+          </p>
+        </section>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
