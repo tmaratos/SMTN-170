@@ -3,83 +3,157 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard | Oak Ridge Portal</title>
+  <title>Dashboard | SMTN-170</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-layout">
+  <div class="shell">
     <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Logo" class="sidebar-logo" />
-      <h3>SMTN-170</h3>
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Logo" class="side-logo" />
       <nav>
         <a class="active" href="dashboard.html">Dashboard</a>
-        <a href="calendar.html">Calendar</a>
+        <a href="schedule.html">Schedule Builder</a>
+        <a href="calendar.html">Calendar / Events</a>
         <a href="documents.html">Documents</a>
-        <a href="photos.html">Photos</a>
         <a href="resources.html">Resources</a>
-        <a href="admin.html">Admin</a>
+        <a href="exports.html">Exports</a>
       </nav>
     </aside>
 
-    <main class="page">
-      <header class="page-header">
+    <main class="main">
+      <header class="topbar">
         <div>
-          <p class="eyebrow">Senior Member Operations</p>
-          <h1>Squadron Command Center</h1>
-          <p>Monthly planning, resources, documents, photos, and event coordination in one private workspace.</p>
+          <h1>Oak Ridge Composite Squadron</h1>
+          <p>Senior Member Operations Portal</p>
         </div>
-        <button onclick="logout()">Log Out</button>
+        <button onclick="logout()" class="ghost-btn">Log Out</button>
       </header>
 
-      <section class="hero-panel">
+      <section class="hero">
         <div>
-          <h2>Next Meeting</h2>
-          <p class="big-text">Monday · 18:30</p>
-          <p>Safety briefing, monthly planning, and AE activity prep.</p>
+          <p class="kicker">Welcome Back</p>
+          <h2>Senior Member Command Center</h2>
+          <p>Plan. Organize. Export. Keep the squadron moving with clarity.</p>
         </div>
-        <div class="status-pill">Internal Use Only</div>
       </section>
 
-      <section class="grid-3">
-        <article class="card">
-          <h3>Upcoming Events</h3>
-          <p class="metric">4</p>
-          <span>Events currently planned this month</span>
+      <section class="stat-row">
+        <article class="stat-card">
+          <span>May 2026</span>
+          <strong>Schedule</strong>
+          <p>In progress</p>
         </article>
-
-        <article class="card">
-          <h3>Documents</h3>
-          <p class="metric">28</p>
-          <span>Stored forms, schedules, and local resources</span>
+        <article class="stat-card">
+          <span>16</span>
+          <strong>Events</strong>
+          <p>Planned</p>
         </article>
-
-        <article class="card">
-          <h3>Photo Albums</h3>
-          <p class="metric">7</p>
-          <span>Event photo collections archived</span>
+        <article class="stat-card">
+          <span>24</span>
+          <strong>Documents</strong>
+          <p>Available</p>
+        </article>
+        <article class="stat-card">
+          <span>4</span>
+          <strong>Exports</strong>
+          <p>This month</p>
         </article>
       </section>
 
-      <section class="split">
-        <article class="card">
-          <h2>Quick Actions</h2>
-          <div class="action-list">
-            <a href="calendar.html">Build Monthly Schedule</a>
-            <a href="documents.html">Upload Squadron Document</a>
-            <a href="photos.html">Create Event Photo Album</a>
-            <a href="resources.html">Add Resource Link</a>
+      <section class="dashboard-grid">
+        <article class="panel schedule-preview">
+          <div class="panel-head">
+            <h2>May 2026 Schedule Preview</h2>
+            <div class="btn-row">
+              <a class="ghost-btn" href="schedule.html">View Full Schedule</a>
+              <a class="gold-btn" href="schedule.html">Edit Schedule</a>
+            </div>
+          </div>
+
+          <div class="schedule-table-wrap">
+            <table class="schedule-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Week 1 - 5/5</th>
+                  <th>Week 2 - 5/12</th>
+                  <th>Week 3 - 5/19</th>
+                  <th>Week 4 - 5/26</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Uniform</td>
+                  <td>PT</td>
+                  <td>ABU</td>
+                  <td>ABU</td>
+                  <td>Blues</td>
+                </tr>
+                <tr>
+                  <td>Opening</td>
+                  <td><span class="red">1900 - 1905</span><br/>Anthem</td>
+                  <td><span class="red">1900 - 1905</span><br/>Anthem</td>
+                  <td><span class="red">1900 - 1905</span><br/>Anthem</td>
+                  <td><span class="red">1900 - 1905</span><br/>Anthem</td>
+                </tr>
+                <tr>
+                  <td>Emphasis</td>
+                  <td><span class="red">1905 - 1920</span><br/><mark>Calisthenics</mark><br/>Flt. Sergeants</td>
+                  <td><span class="red">1905 - 1920</span><br/><mark class="cyan">Safety Briefing: TBD</mark></td>
+                  <td><span class="red">1905 - 1920</span><br/><mark class="cyan">Red Ribbon Leadership</mark></td>
+                  <td><span class="red">1905 - 1920</span><br/><mark class="cyan">Cadet Advisory Council</mark></td>
+                </tr>
+                <tr>
+                  <td>Block #1</td>
+                  <td><span class="red">1920 - 2005</span><br/><mark>CPFT</mark></td>
+                  <td><span class="red">1920 - 2005</span><br/><mark>CAP Radio Communications</mark></td>
+                  <td><span class="red">1920 - 2005</span><br/><mark>AE Lecture: Foundations of AI</mark></td>
+                  <td><span class="red">1920 - 2005</span><br/><mark>Drill & Ceremonies</mark></td>
+                </tr>
+                <tr>
+                  <td>Block #2</td>
+                  <td><span class="red">2005 - 2050</span><br/><mark>AE Lecture: TBD</mark></td>
+                  <td><span class="red">2005 - 2050</span><br/><mark>Drill & Ceremonies</mark></td>
+                  <td><span class="red">2005 - 2050</span><br/><mark>Operation Pulse Lift</mark></td>
+                  <td><span class="red">2005 - 2050</span><br/><mark>Character Development</mark></td>
+                </tr>
+                <tr>
+                  <td>Closing</td>
+                  <td><span class="red">2050 - 2100</span><br/>Announcements</td>
+                  <td><span class="red">2050 - 2100</span><br/>Announcements</td>
+                  <td><span class="red">2050 - 2100</span><br/>Announcements</td>
+                  <td><span class="red">2050 - 2100</span><br/>Announcements</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </article>
 
-        <article class="card">
-          <h2>Recent Activity</h2>
-          <ul class="clean-list">
-            <li>Monthly schedule draft started</li>
-            <li>Safety resources updated</li>
-            <li>Photos added from aerospace activity</li>
-            <li>Admin reviewed member access list</li>
-          </ul>
-        </article>
+        <aside class="right-stack">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Upcoming Events</h2>
+              <a href="calendar.html" class="ghost-btn">View Calendar</a>
+            </div>
+
+            <div class="event-list">
+              <div class="event-item"><b>May 05</b><span>Weekly Squadron Meeting<br><small>1900 - 2100</small></span></div>
+              <div class="event-item"><b>May 11</b><span>Firearm Training<br><small>0900 - 1200</small></span></div>
+              <div class="event-item"><b>May 12</b><span>Safety Briefing Night<br><small>1900 - 2100</small></span></div>
+              <div class="event-item"><b>May 16</b><span>Rummage Sale<br><small>0800 - 1500</small></span></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <h2>Quick Actions</h2>
+            <div class="quick-grid">
+              <a href="schedule.html">Create Schedule</a>
+              <a href="exports.html">Export Schedule</a>
+              <a href="calendar.html">Add Event</a>
+              <a href="documents.html">Upload Document</a>
+            </div>
+          </article>
+        </aside>
       </section>
     </main>
   </div>
