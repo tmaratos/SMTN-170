@@ -3,96 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calendar | Oak Ridge Portal</title>
+  <title>Calendar | SMTN-170</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-layout">
+  <div class="shell">
     <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="sidebar-logo" alt="Logo" />
-      <h3>SMTN-170</h3>
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
       <nav>
         <a href="dashboard.html">Dashboard</a>
-        <a class="active" href="calendar.html">Calendar</a>
+        <a href="schedule.html">Schedule Builder</a>
+        <a class="active" href="calendar.html">Calendar / Events</a>
         <a href="documents.html">Documents</a>
-        <a href="photos.html">Photos</a>
         <a href="resources.html">Resources</a>
-        <a href="admin.html">Admin</a>
+        <a href="exports.html">Exports</a>
       </nav>
     </aside>
 
-    <main class="page">
-      <header class="page-header">
+    <main class="main">
+      <header class="topbar">
         <div>
-          <p class="eyebrow">Planning</p>
-          <h1>Monthly Schedule Builder</h1>
-          <p>Create squadron events, meeting nights, assignments, and exportable schedules.</p>
+          <h1>Calendar / Events</h1>
+          <p>Events generated from the monthly schedule appear here.</p>
         </div>
       </header>
 
-      <section class="split">
-        <form class="card form-card">
+      <section class="calendar-grid">
+        <article class="panel">
           <h2>Add Event</h2>
+          <form class="form-panel">
+            <label>Event Title</label>
+            <input placeholder="Weekly Squadron Meeting" />
+            <label>Date</label>
+            <input type="date" />
+            <label>Start Time</label>
+            <input type="time" />
+            <label>End Time</label>
+            <input type="time" />
+            <label>Location</label>
+            <input placeholder="Squadron Classroom" />
+            <button type="button">Add Event</button>
+          </form>
+        </article>
 
-          <label>Event Title</label>
-          <input type="text" placeholder="Senior member meeting" />
-
-          <label>Date</label>
-          <input type="date" />
-
-          <label>Start Time</label>
-          <input type="time" />
-
-          <label>End Time</label>
-          <input type="time" />
-
-          <label>Location</label>
-          <input type="text" placeholder="Meeting room, airport, classroom, etc." />
-
-          <label>Uniform</label>
-          <select>
-            <option>Corporate Polo</option>
-            <option>Blues</option>
-            <option>ABUs/OCPs as authorized</option>
-            <option>Civilian attire</option>
-          </select>
-
-          <label>Lead / Presenter</label>
-          <input type="text" placeholder="Assigned senior member" />
-
-          <label>Notes</label>
-          <textarea placeholder="Training topic, safety brief, AE activity, materials needed..."></textarea>
-
-          <button type="button">Save Event Draft</button>
-        </form>
-
-        <section class="card">
-          <h2>This Month</h2>
-          <div class="calendar-list">
-            <div>
-              <strong>Mon · 18:30</strong>
-              <span>Safety Briefing + Planning Meeting</span>
-            </div>
-            <div>
-              <strong>Sat · 09:00</strong>
-              <span>Aerospace Education Activity</span>
-            </div>
-            <div>
-              <strong>Mon · 18:30</strong>
-              <span>Training Night</span>
-            </div>
+        <article class="panel">
+          <h2>May 2026 Events</h2>
+          <div class="event-list large">
+            <div class="event-item"><b>May 05</b><span>Weekly Squadron Meeting<br><small>1900 - 2100 · Squadron Classroom</small></span></div>
+            <div class="event-item"><b>May 11</b><span>Firearm Training<br><small>0900 - 1200 · Range</small></span></div>
+            <div class="event-item"><b>May 12</b><span>Safety Briefing Night<br><small>1900 - 2100 · Squadron Classroom</small></span></div>
+            <div class="event-item"><b>May 16</b><span>Rummage Sale<br><small>0800 - 1500 · Squadron Hangar</small></span></div>
+            <div class="event-item"><b>May 19</b><span>Red Ribbon Leadership Academy<br><small>1900 - 2100 · Squadron Classroom</small></span></div>
           </div>
-
-          <div class="button-row">
-            <button>Export PDF</button>
-            <button>Export CSV</button>
-            <button>Export ICS</button>
-          </div>
-
-          <p class="fine-print">
-            Google Calendar integration can be added later through Google Calendar API or ICS export.
-          </p>
-        </section>
+        </article>
       </section>
     </main>
   </div>
