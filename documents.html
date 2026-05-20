@@ -3,69 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Documents | Oak Ridge Portal</title>
+  <title>Documents | SMTN-170</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-layout">
+  <div class="shell">
     <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="sidebar-logo" alt="Logo" />
-      <h3>SMTN-170</h3>
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
       <nav>
         <a href="dashboard.html">Dashboard</a>
-        <a href="calendar.html">Calendar</a>
+        <a href="schedule.html">Schedule Builder</a>
+        <a href="calendar.html">Calendar / Events</a>
         <a class="active" href="documents.html">Documents</a>
-        <a href="photos.html">Photos</a>
         <a href="resources.html">Resources</a>
-        <a href="admin.html">Admin</a>
+        <a href="exports.html">Exports</a>
       </nav>
     </aside>
 
-    <main class="page">
-      <header class="page-header">
+    <main class="main">
+      <header class="topbar">
         <div>
-          <p class="eyebrow">Document Vault</p>
-          <h1>Squadron Files & Records</h1>
-          <p>Store forms, schedules, briefings, local procedures, and internal planning documents.</p>
+          <h1>Documents</h1>
+          <p>Store schedules, forms, templates, SOPs, training files, and planning documents.</p>
         </div>
       </header>
 
-      <section class="split">
-        <form class="card form-card">
+      <section class="calendar-grid">
+        <article class="panel">
           <h2>Upload Document</h2>
+          <form class="form-panel">
+            <label>Document Name</label>
+            <input placeholder="May 2026 Schedule" />
+            <label>Category</label>
+            <select>
+              <option>Schedules</option>
+              <option>Forms</option>
+              <option>Safety</option>
+              <option>Training</option>
+              <option>Aerospace Education</option>
+              <option>Local Procedures</option>
+            </select>
+            <label>File</label>
+            <input type="file" />
+            <button type="button">Upload Document</button>
+          </form>
+        </article>
 
-          <label>Document Name</label>
-          <input type="text" placeholder="Monthly Meeting Agenda" />
-
-          <label>Category</label>
-          <select>
-            <option>Forms</option>
-            <option>Safety</option>
-            <option>Training</option>
-            <option>Aerospace Education</option>
-            <option>Local Procedures</option>
-            <option>Meeting Templates</option>
-            <option>Other</option>
-          </select>
-
-          <label>File</label>
-          <input type="file" />
-
-          <label>Description</label>
-          <textarea placeholder="What this document is for..."></textarea>
-
-          <button type="button">Add Document</button>
-        </form>
-
-        <section class="card">
-          <h2>Recent Documents</h2>
-          <div class="file-list">
-            <div><strong>Monthly Schedule Draft</strong><span>Calendar / PDF</span></div>
+        <article class="panel">
+          <h2>Document Library</h2>
+          <div class="doc-list">
+            <div><strong>May 2026 Schedule</strong><span>Schedule PDF</span></div>
             <div><strong>Safety Brief Template</strong><span>Safety</span></div>
-            <div><strong>AEX Planning Notes</strong><span>Aerospace Education</span></div>
-            <div><strong>Local Resource Checklist</strong><span>Local Procedures</span></div>
+            <div><strong>AEX Planning Sheet</strong><span>Aerospace Education</span></div>
+            <div><strong>Meeting Agenda Template</strong><span>Templates</span></div>
           </div>
-        </section>
+        </article>
       </section>
     </main>
   </div>
