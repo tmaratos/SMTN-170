@@ -1,602 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Oak Ridge Composite Squadron | Dashboard</title>
-
-<style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter,Arial,Helvetica,sans-serif;
-  background:#030914;
-  color:#f7fbff;
-}
-a{text-decoration:none;color:inherit}
-button{font:inherit}
-
-:root{
-  --bg:#030914;
-  --panel:#071525;
-  --panel2:#0b1c31;
-  --line:rgba(255,255,255,.16);
-  --gold:#ffd21f;
-  --blue:#123f91;
-  --cyan:#00e5ff;
-  --green:#39ff65;
-  --red:#ff4e5f;
-  --muted:#aab8cf;
-}
-
-/* LAYOUT */
-.app{
-  min-height:100vh;
-  display:grid;
-  grid-template-columns:260px 1fr;
-  background:
-    radial-gradient(circle at top right,rgba(24,88,180,.22),transparent 32%),
-    linear-gradient(135deg,#020814,#061322 50%,#020814);
-}
-
-/* SIDEBAR */
-.sidebar{
-  border-right:1px solid var(--line);
-  background:linear-gradient(180deg,#061426,#020814);
-  padding:22px 12px;
-}
-.logo{
-  width:150px;
-  margin:0 auto 28px;
-  display:block;
-}
-.nav{
-  display:grid;
-  gap:8px;
-}
-.nav a{
-  padding:15px 18px;
-  border-radius:10px;
-  display:flex;
-  gap:12px;
-  align-items:center;
-  font-weight:800;
-  color:#dce8ff;
-  border:1px solid transparent;
-}
-.nav a.active,
-.nav a:hover{
-  background:linear-gradient(90deg,#123f91,#082346);
-  border-color:rgba(255,210,31,.45);
-}
-.nav span{
-  font-size:1.15rem;
-}
-
-/* MAIN */
-.main{
-  padding:22px;
-}
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:18px;
-  padding-bottom:18px;
-  border-bottom:1px solid rgba(255,210,31,.5);
-}
-.topbar h1{
-  margin:0;
-  text-transform:uppercase;
-  font-size:clamp(1.55rem,3.3vw,2.35rem);
-  letter-spacing:.04em;
-}
-.topbar p{
-  margin:7px 0 0;
-  color:var(--gold);
-  text-transform:uppercase;
-  letter-spacing:.14em;
-  font-weight:900;
-}
-.user{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  white-space:nowrap;
-}
-.badge{
-  color:var(--gold);
-  font-weight:900;
-}
-.avatar{
-  width:48px;
-  height:48px;
-  border:2px solid white;
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  font-weight:900;
-}
-
-/* GRID */
-.content{
-  display:grid;
-  grid-template-columns:minmax(0,1.8fr) minmax(330px,.85fr);
-  gap:18px;
-  margin-top:20px;
-}
-.left-stack,
-.right-stack{
-  display:grid;
-  gap:18px;
-  align-content:start;
-}
-
-/* CARDS */
-.card{
-  background:linear-gradient(180deg,rgba(13,31,53,.94),rgba(5,15,29,.96));
-  border:1px solid var(--line);
-  border-radius:12px;
-  box-shadow:0 20px 60px rgba(0,0,0,.38);
-}
-.hero{
-  padding:26px 32px;
-  background:
-    linear-gradient(90deg,rgba(5,15,29,.96),rgba(5,15,29,.65)),
-    radial-gradient(circle at right,rgba(255,210,31,.13),transparent 35%);
-}
-.kicker{
-  margin:0 0 10px;
-  color:var(--gold);
-  text-transform:uppercase;
-  font-weight:900;
-  letter-spacing:.12em;
-  font-size:.8rem;
-}
-.hero h2{
-  margin:0;
-  font-size:clamp(2.3rem,5vw,4rem);
-}
-.hero-desc{
-  color:#d9e4f5;
-  font-size:1.1rem;
-  margin:8px 0 22px;
-}
-.stats{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  border:1px solid var(--line);
-  border-radius:12px;
-  overflow:hidden;
-  background:rgba(3,11,23,.66);
-}
-.stat{
-  padding:18px;
-  border-right:1px solid var(--line);
-}
-.stat:last-child{border-right:0}
-.stat strong{
-  display:block;
-  font-size:1.55rem;
-}
-.stat span{
-  color:var(--muted);
-  font-size:.92rem;
-}
-
-/* SCHEDULE */
-.panel-head{
-  padding:16px 20px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-}
-.panel-head h2{
-  margin:0;
-  text-transform:uppercase;
-  font-size:1.1rem;
-}
-.actions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-.btn{
-  border:1px solid var(--line);
-  background:rgba(255,255,255,.05);
-  color:white;
-  border-radius:7px;
-  padding:9px 14px;
-  font-weight:900;
-  font-size:.82rem;
-}
-.btn.gold{
-  background:linear-gradient(135deg,var(--gold),#ffe983);
-  color:#07111f;
-  border:0;
-}
-.table-wrap{
-  padding:0 20px 20px;
-  overflow-x:auto;
-}
-.schedule{
-  width:100%;
-  min-width:900px;
-  border-collapse:collapse;
-  font-size:.82rem;
-}
-.schedule th,
-.schedule td{
-  border:1px solid rgba(255,255,255,.22);
-  padding:10px 9px;
-  text-align:center;
-  vertical-align:top;
-}
-.schedule th{
-  background:rgba(255,255,255,.05);
-}
-.schedule td:first-child{
-  text-align:left;
-  width:85px;
-  color:#fff;
-}
-.red{color:var(--red);font-weight:900}
-.green{color:var(--green);font-weight:900}
-.cyan{color:var(--cyan);font-weight:900}
-.yellow{color:var(--gold);font-weight:900}
-.footer-note{
-  margin-top:8px;
-  padding:8px;
-  text-align:center;
-  color:var(--gold);
-  border:1px solid rgba(255,210,31,.6);
-  font-weight:900;
-  text-transform:uppercase;
-}
-
-/* RIGHT SIDE */
-.side-card{
-  padding:18px;
-}
-.side-card h2{
-  margin:0 0 14px;
-  text-transform:uppercase;
-  font-size:1.1rem;
-}
-.event-list{
-  display:grid;
-}
-.event{
-  display:grid;
-  grid-template-columns:68px 1fr;
-  gap:14px;
-  padding:12px 0;
-  border-bottom:1px solid var(--line);
-}
-.event:last-child{border-bottom:0}
-.date{
-  border:1px solid var(--line);
-  border-radius:8px;
-  text-align:center;
-  padding:8px 4px;
-}
-.date small{
-  color:var(--gold);
-  display:block;
-  text-transform:uppercase;
-  font-size:.68rem;
-}
-.date strong{
-  font-size:1.6rem;
-}
-.event h3{
-  margin:0 0 5px;
-  font-size:.98rem;
-}
-.event p{
-  margin:0;
-  color:var(--muted);
-  font-size:.86rem;
-  line-height:1.45;
-}
-.quick{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-}
-.quick a{
-  min-height:122px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035));
-  display:grid;
-  place-items:center;
-  text-align:center;
-  padding:16px;
-  font-weight:900;
-}
-.quick small{
-  display:block;
-  margin-top:6px;
-  color:var(--muted);
-  font-weight:500;
-}
-
-/* MOBILE */
-@media(max-width:1100px){
-  .app{grid-template-columns:1fr}
-
-  .sidebar{
-    position:sticky;
-    top:0;
-    z-index:50;
-    display:block;
-    padding:12px;
-    border-right:0;
-    border-bottom:1px solid rgba(255,255,255,.15);
-  }
-
-  .logo{
-    width:82px;
-    margin:0 auto 10px;
-  }
-
-  .nav{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:10px;
-  }
-
-  .nav a{
-    min-height:56px;
-    justify-content:center;
-    text-align:center;
-    font-size:.95rem;
-    padding:14px 12px;
-    border:1px solid rgba(255,255,255,.14);
-    background:rgba(255,255,255,.04);
-  }
-
-  .nav span{
-    display:none;
-  }
-
-  .content{grid-template-columns:1fr}
-}
-
-@media(max-width:720px){
-  .main{padding:14px}
-
-  .topbar{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-
-  .user{
-    width:100%;
-    justify-content:space-between;
-  }
-
-  .hero{padding:22px}
-
-  .stats{grid-template-columns:repeat(2,1fr)}
-
-  .stat:nth-child(2){border-right:0}
-
-  .stat{
-    border-bottom:1px solid var(--line);
-  }
-
-  .stat:nth-child(3),
-  .stat:nth-child(4){border-bottom:0}
-
-  .panel-head{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-
-  .quick{grid-template-columns:1fr}
-}
-
-@media(max-width:460px){
-  .nav{
-    grid-template-columns:1fr;
-  }
-
-  .nav a{
-    min-height:58px;
-    font-size:1rem;
-  }
-}
-  .user{
-    width:100%;
-    justify-content:space-between;
-  }
-  .hero{padding:22px}
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .stat:nth-child(2){border-right:0}
-  .stat{
-    border-bottom:1px solid var(--line);
-  }
-  .stat:nth-child(3),
-  .stat:nth-child(4){border-bottom:0}
-  .panel-head{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-  .quick{grid-template-columns:1fr}
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Oak Ridge Composite Squadron | Dashboard</title>
+  <link rel="stylesheet" href="./styles.css?v=6" />
 </head>
-
 <body>
-<div class="app">
+  <div class="app">
+    <aside class="sidebar">
+      <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" />
+      <nav class="nav">
+        <a class="active" href="dashboard.html"><span>⌂</span> Dashboard</a>
+        <a href="schedule.html"><span>▣</span> Schedule Builder</a>
+        <a href="calendar.html"><span>◷</span> Calendar / Events</a>
+        <a href="documents.html"><span>□</span> Documents</a>
+        <a href="resources.html"><span>▤</span> Resources</a>
+        <a href="exports.html"><span>⇩</span> Exports</a>
+      </nav>
+    </aside>
 
-  <aside class="sidebar">
-    <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo">
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>Oak Ridge Composite Squadron</h1>
+          <p>Senior Member Operations Portal</p>
+        </div>
+        <div class="user">
+          <span class="badge">Authorized Senior Member</span>
+          <div class="avatar">SM</div>
+        </div>
+      </header>
 
-    <nav class="nav">
-      <a class="active" href="dashboard.html"><span>⌂</span> Dashboard</a>
-      <a href="schedule.html"><span>▣</span> Schedule Builder</a>
-      <a href="calendar.html"><span>◷</span> Calendar / Events</a>
-      <a href="documents.html"><span>□</span> Documents</a>
-      <a href="resources.html"><span>▤</span> Resources</a>
-      <a href="exports.html"><span>⇩</span> Exports</a>
-    </nav>
-  </aside>
-
-  <main class="main">
-
-    <header class="topbar">
-      <div>
-        <h1>Oak Ridge Composite Squadron</h1>
-        <p>Senior Member Operations Portal</p>
-      </div>
-
-      <div class="user">
-        <span class="badge">Authorized Senior Member</span>
-        <div class="avatar">SM</div>
-      </div>
-    </header>
-
-    <section class="content">
-
-      <div class="left-stack">
-
-        <section class="card hero">
-          <p class="kicker">Welcome Back</p>
-          <h2>Senior Member</h2>
-          <p class="hero-desc">Plan. Organize. Lead. Excellence in all we do.</p>
-
-          <div class="stats">
-            <div class="stat"><strong>May 2026</strong><span>Schedule In Progress</span></div>
-            <div class="stat"><strong>16</strong><span>Events Planned</span></div>
-            <div class="stat"><strong>24</strong><span>Documents Available</span></div>
-            <div class="stat"><strong>4</strong><span>Exports This Month</span></div>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="panel-head">
-            <h2>May 2026 Schedule Preview</h2>
-            <div class="actions">
-              <a class="btn" href="schedule.html">View Full Schedule</a>
-              <a class="btn gold" href="schedule.html">Edit Schedule</a>
+      <section class="content">
+        <div class="left-stack">
+          <section class="card hero">
+            <p class="kicker">Welcome Back</p>
+            <h2>Senior Member</h2>
+            <p class="hero-desc">Plan. Organize. Lead. Excellence in all we do.</p>
+            <div class="stats">
+              <div class="stat"><strong>May 2026</strong><span>Schedule In Progress</span></div>
+              <div class="stat"><strong>16</strong><span>Events Planned</span></div>
+              <div class="stat"><strong>24</strong><span>Documents Available</span></div>
+              <div class="stat"><strong>4</strong><span>Exports This Month</span></div>
             </div>
-          </div>
+          </section>
 
-          <div class="table-wrap">
-            <table class="schedule">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Week 1 - 5/5</th>
-                  <th>Week 2 - 5/12</th>
-                  <th>Week 3 - 5/19</th>
-                  <th>Week 4 - 5/26</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Uniform</td>
-                  <td>PT</td>
-                  <td>ABU</td>
-                  <td>ABU</td>
-                  <td>Blues</td>
-                </tr>
-                <tr>
-                  <td>Opening</td>
-                  <td><span class="red">1900 - 1905</span><br>Anthem</td>
-                  <td><span class="red">1900 - 1905</span><br>Anthem</td>
-                  <td><span class="red">1900 - 1905</span><br>Anthem</td>
-                  <td><span class="red">1900 - 1905</span><br>Anthem</td>
-                </tr>
-                <tr>
-                  <td>Emphasis</td>
-                  <td><span class="red">1905 - 1920</span><br><span class="green">Calisthenics</span><br>Flt. Sergeants</td>
-                  <td><span class="red">1905 - 1920</span><br><span class="cyan">Safety Briefing: TBD</span></td>
-                  <td><span class="red">1905 - 1920</span><br><span class="cyan">Red Ribbon Leadership Academy</span></td>
-                  <td><span class="red">1905 - 1920</span><br><span class="cyan">Cadet Advisory Council</span></td>
-                </tr>
-                <tr>
-                  <td>Block #1</td>
-                  <td><span class="red">1920 - 2005</span><br><span class="green">CPFT</span></td>
-                  <td><span class="red">1920 - 2005</span><br><span class="green">CAP Radio Communications</span><br><span class="yellow">Cadet Welcome Course</span></td>
-                  <td><span class="red">1920 - 2005</span><br><span class="green">AE Lecture: Foundations of AI</span><br><span class="yellow">The Cadet Uniform 3.6</span></td>
-                  <td><span class="red">1920 - 2005</span><br><span class="green">Drill & Ceremonies</span><br><span class="yellow">Cadet Wingman Course</span></td>
-                </tr>
-                <tr>
-                  <td>Block #2</td>
-                  <td><span class="red">2005 - 2050</span><br><span class="green">AE Lecture: TBD</span></td>
-                  <td><span class="red">2005 - 2050</span><br><span class="green">Drill & Ceremonies</span><br><span class="yellow">Great Start Overview</span></td>
-                  <td><span class="red">2005 - 2050</span><br><span class="green">Operation Pulse Lift</span><br><span class="yellow">Goal Setting</span></td>
-                  <td><span class="red">2005 - 2050</span><br><span class="green">Character Development</span><br><span class="yellow">Membership Application</span></td>
-                </tr>
-                <tr>
-                  <td>Closing</td>
-                  <td><span class="red">2050 - 2100</span><br>Announcements</td>
-                  <td><span class="red">2050 - 2100</span><br>Announcements</td>
-                  <td><span class="red">2050 - 2100</span><br>Announcements</td>
-                  <td><span class="red">2050 - 2100</span><br>Announcements</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="footer-note">
-              Extracurricular Activities: Rummage Sale May 16th, Firearm Training May 11th & 18th
+          <section class="card">
+            <div class="panel-head">
+              <h2>May 2026 Schedule Preview</h2>
+              <div class="actions">
+                <a class="btn" href="schedule.html">View Full Schedule</a>
+                <a class="btn gold" href="schedule.html">Edit Schedule</a>
+              </div>
             </div>
-          </div>
-        </section>
-
-      </div>
-
-      <aside class="right-stack">
-
-        <section class="card side-card">
-          <div class="panel-head" style="padding:0;margin-bottom:10px;">
-            <h2>Upcoming Events</h2>
-            <a class="btn" href="calendar.html">View Calendar</a>
-          </div>
-
-          <div class="event-list">
-            <div class="event">
-              <div class="date"><small>May</small><strong>05</strong></div>
-              <div><h3>Weekly Squadron Meeting</h3><p>1900 - 2100<br>Squadron Classroom</p></div>
+            <div class="table-wrap">
+              <table class="schedule">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Week 1 - 5/5</th>
+                    <th>Week 2 - 5/12</th>
+                    <th>Week 3 - 5/19</th>
+                    <th>Week 4 - 5/26</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Uniform</td>
+                    <td>PT</td>
+                    <td>ABU</td>
+                    <td>ABU</td>
+                    <td>Blues</td>
+                  </tr>
+                  <tr>
+                    <td>Opening</td>
+                    <td><span class="red">1900 - 1905</span><br>Anthem</td>
+                    <td><span class="red">1900 - 1905</span><br>Anthem</td>
+                    <td><span class="red">1900 - 1905</span><br>Anthem</td>
+                    <td><span class="red">1900 - 1905</span><br>Anthem</td>
+                  </tr>
+                  <tr>
+                    <td>Emphasis</td>
+                    <td><span class="red">1905 - 1920</span><br><span class="green">Calisthenics</span><br>Flt. Sergeants</td>
+                    <td><span class="red">1905 - 1920</span><br><span class="cyan">Safety Briefing: TBD</span></td>
+                    <td><span class="red">1905 - 1920</span><br><span class="cyan">Red Ribbon Leadership Academy</span></td>
+                    <td><span class="red">1905 - 1920</span><br><span class="cyan">Cadet Advisory Council</span></td>
+                  </tr>
+                  <tr>
+                    <td>Block #1</td>
+                    <td><span class="red">1920 - 2005</span><br><span class="green">CPFT</span></td>
+                    <td><span class="red">1920 - 2005</span><br><span class="green">CAP Radio Communications</span><br><span class="yellow">Cadet Welcome Course</span></td>
+                    <td><span class="red">1920 - 2005</span><br><span class="green">AE Lecture: Foundations of AI</span><br><span class="yellow">The Cadet Uniform 3.6</span></td>
+                    <td><span class="red">1920 - 2005</span><br><span class="green">Drill &amp; Ceremonies</span><br><span class="yellow">Cadet Wingman Course</span></td>
+                  </tr>
+                  <tr>
+                    <td>Block #2</td>
+                    <td><span class="red">2005 - 2050</span><br><span class="green">AE Lecture: TBD</span></td>
+                    <td><span class="red">2005 - 2050</span><br><span class="green">Drill &amp; Ceremonies</span><br><span class="yellow">Great Start Overview</span></td>
+                    <td><span class="red">2005 - 2050</span><br><span class="green">Operation Pulse Lift</span><br><span class="yellow">Goal Setting</span></td>
+                    <td><span class="red">2005 - 2050</span><br><span class="green">Character Development</span><br><span class="yellow">Membership Application</span></td>
+                  </tr>
+                  <tr>
+                    <td>Closing</td>
+                    <td><span class="red">2050 - 2100</span><br>Announcements</td>
+                    <td><span class="red">2050 - 2100</span><br>Announcements</td>
+                    <td><span class="red">2050 - 2100</span><br>Announcements</td>
+                    <td><span class="red">2050 - 2100</span><br>Announcements</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="footer-note">
+                Extracurricular Activities: Rummage Sale May 16th, Firearm Training May 11th &amp; 18th
+              </div>
             </div>
-            <div class="event">
-              <div class="date"><small>May</small><strong>11</strong></div>
-              <div><h3>Firearm Training</h3><p>0900 - 1200<br>Range</p></div>
-            </div>
-            <div class="event">
-              <div class="date"><small>May</small><strong>12</strong></div>
-              <div><h3>Safety Briefing Night</h3><p>1900 - 2100<br>Squadron Classroom</p></div>
-            </div>
-            <div class="event">
-              <div class="date"><small>May</small><strong>16</strong></div>
-              <div><h3>Rummage Sale</h3><p>0800 - 1500<br>Squadron Hangar</p></div>
-            </div>
-            <div class="event">
-              <div class="date"><small>May</small><strong>19</strong></div>
-              <div><h3>Red Ribbon Leadership Academy</h3><p>1900 - 2100<br>Squadron Classroom</p></div>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <section class="card side-card">
-          <h2>Quick Actions</h2>
-          <div class="quick">
-            <a href="schedule.html">Create Schedule<small>Use Template</small></a>
-            <a href="exports.html">Export Schedule<small>PDF / CSV / ICS</small></a>
-            <a href="calendar.html">Add Event<small>To Calendar</small></a>
-            <a href="documents.html">Upload Document<small>To Portal</small></a>
-          </div>
-        </section>
+        <aside class="right-stack">
+          <section class="card side-card">
+            <div class="panel-head panel-head--flush">
+              <h2>Upcoming Events</h2>
+              <a class="btn" href="calendar.html">View Calendar</a>
+            </div>
+            <div class="event-list">
+              <div class="event">
+                <div class="date"><small>May</small><strong>05</strong></div>
+                <div><h3>Weekly Squadron Meeting</h3><p>1900 - 2100<br>Squadron Classroom</p></div>
+              </div>
+              <div class="event">
+                <div class="date"><small>May</small><strong>11</strong></div>
+                <div><h3>Firearm Training</h3><p>0900 - 1200<br>Range</p></div>
+              </div>
+              <div class="event">
+                <div class="date"><small>May</small><strong>12</strong></div>
+                <div><h3>Safety Briefing Night</h3><p>1900 - 2100<br>Squadron Classroom</p></div>
+              </div>
+              <div class="event">
+                <div class="date"><small>May</small><strong>16</strong></div>
+                <div><h3>Rummage Sale</h3><p>0800 - 1500<br>Squadron Hangar</p></div>
+              </div>
+              <div class="event">
+                <div class="date"><small>May</small><strong>19</strong></div>
+                <div><h3>Red Ribbon Leadership Academy</h3><p>1900 - 2100<br>Squadron Classroom</p></div>
+              </div>
+            </div>
+          </section>
 
-      </aside>
-
-    </section>
-  </main>
-</div>
+          <section class="card side-card">
+            <h2>Quick Actions</h2>
+            <div class="quick">
+              <a href="schedule.html">Create Schedule<small>Use Template</small></a>
+              <a href="exports.html">Export Schedule<small>PDF / CSV / ICS</small></a>
+              <a href="calendar.html">Add Event<small>To Calendar</small></a>
+              <a href="documents.html">Upload Document<small>To Portal</small></a>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
 </body>
 </html>

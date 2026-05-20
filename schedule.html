@@ -3,28 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Prevent aggressive mobile/GitHub Pages caching -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-
-  <title>Oak Ridge Composite Squadron</title>
-
-  <!-- IMPORTANT -->
-  <link rel="stylesheet" href="./styles.css?v=5" />
+  <title>Oak Ridge Composite Squadron | Schedule Builder</title>
+  <link rel="stylesheet" href="./styles.css?v=6" />
 </head>
 <body>
-  <div class="shell">
+  <div class="app">
     <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a class="active" href="schedule.html">Schedule Builder</a>
-        <a href="calendar.html">Calendar / Events</a>
-        <a href="documents.html">Documents</a>
-        <a href="resources.html">Resources</a>
-        <a href="exports.html">Exports</a>
+      <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" />
+      <nav class="nav">
+        <a href="dashboard.html"><span>⌂</span> Dashboard</a>
+        <a class="active" href="schedule.html"><span>▣</span> Schedule Builder</a>
+        <a href="calendar.html"><span>◷</span> Calendar / Events</a>
+        <a href="documents.html"><span>□</span> Documents</a>
+        <a href="resources.html"><span>▤</span> Resources</a>
+        <a href="exports.html"><span>⇩</span> Exports</a>
       </nav>
     </aside>
 
@@ -34,15 +29,17 @@
           <h1>Monthly Operations Schedule</h1>
           <p>Choose a template, fill fields, generate the monthly schedule, then export.</p>
         </div>
+        <div class="user">
+          <span class="badge">Authorized Senior Member</span>
+          <div class="avatar">SM</div>
+        </div>
       </header>
 
       <section class="builder-layout">
-        <form class="panel form-panel">
+        <form class="card panel form-panel">
           <h2>Schedule Template</h2>
-
           <label>Month</label>
           <input type="month" value="2026-05" />
-
           <label>Template</label>
           <select>
             <option>Monthly Cadet Meeting Schedule</option>
@@ -50,36 +47,29 @@
             <option>Aerospace Education Month</option>
             <option>Custom Monthly Schedule</option>
           </select>
-
           <label>Week 1 Uniform</label>
           <input value="PT" />
-
           <label>Week 2 Uniform</label>
           <input value="ABU" />
-
           <label>Week 3 Uniform</label>
           <input value="ABU" />
-
           <label>Week 4 Uniform</label>
           <input value="Blues" />
-
           <label>Extracurricular Activities</label>
-          <textarea>Rummage Sale May 16th, Firearm Training May 11th & 18th</textarea>
-
+          <textarea>Rummage Sale May 16th, Firearm Training May 11th &amp; 18th</textarea>
           <button type="button" onclick="fakeGenerate()">Generate Schedule Preview</button>
         </form>
 
-        <section class="panel">
+        <section class="card">
           <div class="panel-head">
             <h2>Generated Schedule</h2>
-            <div class="btn-row">
-              <button class="ghost-btn">Save Draft</button>
-              <a href="exports.html" class="gold-btn">Export</a>
+            <div class="actions">
+              <button type="button" class="btn">Save Draft</button>
+              <a href="exports.html" class="btn gold">Export</a>
             </div>
           </div>
-
-          <div class="schedule-table-wrap print-card">
-            <table class="schedule-table light-print">
+          <div class="table-wrap print-card">
+            <table class="schedule light-print">
               <thead>
                 <tr>
                   <th></th>
@@ -93,18 +83,17 @@
                 <tr><td>Uniform</td><td>PT</td><td>ABU</td><td>ABU</td><td>Blues</td></tr>
                 <tr><td>Opening</td><td>1900 - 1905 Anthem</td><td>1900 - 1905 Anthem</td><td>1900 - 1905 Anthem</td><td>1900 - 1905 Anthem</td></tr>
                 <tr><td>Emphasis</td><td>Calisthenics</td><td>Safety Briefing</td><td>Leadership Academy</td><td>Cadet Advisory Council</td></tr>
-                <tr><td>Block #1</td><td>CPFT</td><td>CAP Radio Communications</td><td>AE Lecture</td><td>Drill & Ceremonies</td></tr>
-                <tr><td>Block #2</td><td>AE Lecture</td><td>Drill & Ceremonies</td><td>Operation Pulse Lift</td><td>Character Development</td></tr>
+                <tr><td>Block #1</td><td>CPFT</td><td>CAP Radio Communications</td><td>AE Lecture</td><td>Drill &amp; Ceremonies</td></tr>
+                <tr><td>Block #2</td><td>AE Lecture</td><td>Drill &amp; Ceremonies</td><td>Operation Pulse Lift</td><td>Character Development</td></tr>
                 <tr><td>Closing</td><td>Announcements</td><td>Announcements</td><td>Announcements</td><td>Announcements</td></tr>
               </tbody>
             </table>
-            <p class="export-note">Extracurricular Activities: Rummage Sale May 16th, Firearm Training May 11th & 18th</p>
+            <p class="export-note">Extracurricular Activities: Rummage Sale May 16th, Firearm Training May 11th &amp; 18th</p>
           </div>
         </section>
       </section>
     </main>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
