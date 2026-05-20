@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | Oak Ridge Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Logo" class="sidebar-logo" />
+      <h3>SMTN-170</h3>
+      <nav>
+        <a class="active" href="dashboard.html">Dashboard</a>
+        <a href="calendar.html">Calendar</a>
+        <a href="documents.html">Documents</a>
+        <a href="photos.html">Photos</a>
+        <a href="resources.html">Resources</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </aside>
+
+    <main class="page">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Senior Member Operations</p>
+          <h1>Squadron Command Center</h1>
+          <p>Monthly planning, resources, documents, photos, and event coordination in one private workspace.</p>
+        </div>
+        <button onclick="logout()">Log Out</button>
+      </header>
+
+      <section class="hero-panel">
+        <div>
+          <h2>Next Meeting</h2>
+          <p class="big-text">Monday · 18:30</p>
+          <p>Safety briefing, monthly planning, and AE activity prep.</p>
+        </div>
+        <div class="status-pill">Internal Use Only</div>
+      </section>
+
+      <section class="grid-3">
+        <article class="card">
+          <h3>Upcoming Events</h3>
+          <p class="metric">4</p>
+          <span>Events currently planned this month</span>
+        </article>
+
+        <article class="card">
+          <h3>Documents</h3>
+          <p class="metric">28</p>
+          <span>Stored forms, schedules, and local resources</span>
+        </article>
+
+        <article class="card">
+          <h3>Photo Albums</h3>
+          <p class="metric">7</p>
+          <span>Event photo collections archived</span>
+        </article>
+      </section>
+
+      <section class="split">
+        <article class="card">
+          <h2>Quick Actions</h2>
+          <div class="action-list">
+            <a href="calendar.html">Build Monthly Schedule</a>
+            <a href="documents.html">Upload Squadron Document</a>
+            <a href="photos.html">Create Event Photo Album</a>
+            <a href="resources.html">Add Resource Link</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Recent Activity</h2>
+          <ul class="clean-list">
+            <li>Monthly schedule draft started</li>
+            <li>Safety resources updated</li>
+            <li>Photos added from aerospace activity</li>
+            <li>Admin reviewed member access list</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
