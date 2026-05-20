@@ -1,0 +1,427 @@
+/* Mobile layout — 900px and below only */
+
+.login-page {
+  padding: 16px;
+  align-items: flex-start;
+  padding-top: max(24px, env(safe-area-inset-top));
+}
+
+.login-wrap {
+  max-width: none;
+}
+
+.login-card {
+  border-radius: 14px;
+  padding: 24px 20px;
+}
+
+.login-logo {
+  width: 120px;
+  margin-bottom: 16px;
+}
+
+.login-card h1 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.login-copy {
+  font-size: 0.92rem;
+}
+
+.login-form button {
+  width: 100%;
+  min-height: 48px;
+  font-size: 0.9rem;
+}
+
+/* App: content first, fixed bottom navigation */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255, 210, 31, 0.35);
+  border-right: 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.55);
+}
+
+.logo {
+  display: none;
+}
+
+.nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.nav a {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  min-height: 44px;
+  padding: 10px 14px;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+}
+
+.nav span {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 14px 14px 8px;
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+
+/* Top bar — compact, stacked */
+
+.topbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 210, 31, 0.4);
+}
+
+.topbar h1 {
+  font-size: 1.2rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.topbar p {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+.user {
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.badge {
+  font-size: 0.7rem;
+  line-height: 1.3;
+  white-space: normal;
+  max-width: calc(100% - 56px);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 0.85rem;
+}
+
+/* Single-column page layouts */
+
+.content,
+.dashboard-grid,
+.builder-layout,
+.calendar-grid,
+.page-stack,
+.resource-grid,
+.export-grid,
+.resource-sections,
+.left-stack,
+.right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.hero {
+  padding: 18px 16px;
+}
+
+.hero h2 {
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+
+.hero-desc {
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+/* Stats as 2x2 cards */
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.stat {
+  padding: 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(3, 11, 23, 0.75);
+}
+
+.stat strong {
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.stat span {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  margin-top: 4px;
+  display: block;
+}
+
+.stat-row {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.stat-card {
+  padding: 14px;
+}
+
+/* Panel headers & actions */
+
+.panel-head {
+  padding: 14px 16px 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.panel-head--flush {
+  padding: 0;
+}
+
+.side-card {
+  padding: 16px;
+}
+
+.actions,
+.btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.actions .btn,
+.btn-row .btn,
+.actions a.btn,
+.btn-row a.btn,
+.actions button,
+.btn-row button {
+  width: 100%;
+  min-height: 44px;
+  text-align: center;
+  justify-content: center;
+}
+
+.btn,
+button {
+  min-height: 44px;
+}
+
+/* Schedule — horizontal scroll with edge hint */
+
+.table-wrap,
+.schedule-table-wrap {
+  margin: 0 -16px;
+  padding: 0 16px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap::after,
+.schedule-table-wrap::after {
+  content: "Swipe →";
+  display: block;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 8px;
+}
+
+.schedule,
+.schedule-table {
+  min-width: 640px;
+  font-size: 0.72rem;
+}
+
+.schedule th,
+.schedule td,
+.schedule-table th,
+.schedule-table td {
+  padding: 8px 6px;
+}
+
+.schedule td:first-child,
+.schedule-table td:first-child {
+  width: 72px;
+  position: sticky;
+  left: 0;
+  background: rgba(5, 15, 29, 0.98);
+  z-index: 1;
+}
+
+.footer-note,
+.export-note {
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* Events */
+
+.event {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
+}
+
+.event:last-child {
+  border-bottom: 0;
+}
+
+.event-item {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.date {
+  padding: 6px 4px;
+}
+
+.date strong {
+  font-size: 1.35rem;
+}
+
+/* Quick actions — full-width list */
+
+.quick,
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.quick a,
+.quick-grid a {
+  min-height: auto;
+  padding: 16px;
+  justify-items: start;
+  text-align: left;
+}
+
+/* Documents list */
+
+.doc-list div {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* Resources */
+
+.resource-section-head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.resource-section-head .btn {
+  width: 100%;
+}
+
+.resource-doc {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.resource-doc .btn {
+  width: 100%;
+  min-height: 40px;
+}
+
+.resource-add-doc button {
+  width: 100%;
+  min-height: 44px;
+}
+
+/* Export cards */
+
+.export-card {
+  min-height: auto;
+  gap: 12px;
+}
+
+.export-card button {
+  width: 100%;
+  min-height: 44px;
+}
+
+/* Forms */
+
+input,
+select,
+textarea,
+.form-panel button {
+  font-size: 16px; /* prevents iOS zoom on focus */
+}
+
+.form-panel button {
+  width: 100%;
+  min-height: 48px;
+}
+
+.print-card {
+  padding: 10px;
+  margin: 0 -4px;
+}
