@@ -10,8 +10,8 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Senior Members | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
+  <link rel="stylesheet" href="./portal-nav.css?v=5" />
 </head>
 <body data-portal-page="senior">
   <div class="portal-app">
@@ -30,48 +30,28 @@
       <header class="portal-topbar">
         <div>
           <h1>Senior Members</h1>
-          <p>Staff tools · flight reviews · inspection · training files</p>
+          <p>Staff tools · flight reviews · inspection · training</p>
         </div>
       </header>
-      <div class="portal-content page-stack">
-        <p class="role-banner">Senior member &amp; staff area — cadet-only and parent-limited content is not shown here.</p>
-
-        <button type="button" class="steward-launch-strip" data-steward-open>
-          <span class="steward-launch-icon" aria-hidden="true">💬</span>
-          <span><strong>Need help?</strong> Open Steward chat for meeting prep, files, flight reviews, and inspection items.</span>
-        </button>
-
-        <div class="card-grid-2">
-          <a class="panel hub-card" href="flight-review.html">
-            <h3>Biannual Flight Review tracker</h3>
-            <p>Directorate packets, due dates, and scheduled review nights.</p>
-          </a>
-          <a class="panel hub-card" href="sui-readiness.html">
-            <h3>Inspection prep tracker</h3>
-            <p>SUI readiness by work unit and commander checklist.</p>
-          </a>
-          <a class="panel hub-card" href="training.html">
-            <h3>Training records</h3>
-            <p>Training nights, lesson plans, and specialty track references.</p>
-          </a>
-          <a class="panel hub-card" href="documents.html">
-            <h3>File review</h3>
-            <p>Uploaded squadron files — Steward suggests categories; staff may override.</p>
-          </a>
+      <div class="portal-content portal-content--wide">
+        <div class="page-frame page-stack">
+          <p class="role-banner">Senior member &amp; staff area — parent and cadet-only content is not shown here.</p>
+          <div data-steward-context="senior"></div>
+          <div class="card-grid-2">
+            <a class="card-action hub-card" href="flight-review.html"><h3>Flight reviews</h3><p>Department packets, due dates, and review nights.</p></a>
+            <a class="card-action hub-card" href="sui-readiness.html"><h3>Inspection prep</h3><p>Checklist by work area and commander review.</p></a>
+            <a class="card-info hub-card" href="schedule.html"><h3>Meeting planner</h3><p>Build the monthly meeting schedule and print.</p></a>
+            <a class="card-info hub-card" href="documents.html"><h3>Files &amp; forms</h3><p>Upload and review squadron documents.</p></a>
+          </div>
+          <article class="card-info"><h2 style="margin:0 0 10px;font-size:1.15rem">Staff planning</h2><p class="steward-planned" style="margin:0">Placeholder for directorate goals, agendas, and command briefings — Supabase later.</p></article>
         </div>
-
-        <article class="panel">
-          <h2>Staff planning</h2>
-          <p class="steward-planned">Placeholder — directorate goals, meeting agendas, and command briefings. Supabase tasking will connect here.</p>
-        </article>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
   <script src="./portal-config.js?v=2"></script>
-  <script src="./js/portal-data.js?v=1"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/portal-shell.js?v=1"></script>
-  <script src="./js/steward.js?v=2"></script>
+  <script src="./portal-nav.js?v=5"></script>
+  <script src="./js/portal-shell.js?v=4"></script>
+  <script src="./js/steward.js?v=3"></script>
 </body>
 </html>

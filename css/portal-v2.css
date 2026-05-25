@@ -244,10 +244,15 @@ button.btn-gold {
   color: var(--tn-gold);
 }
 
-.portal-sidebar nav a:hover,
+.portal-sidebar nav a:hover {
+  background: rgba(31, 95, 214, 0.2);
+  border-color: rgba(255, 210, 31, 0.2);
+}
+
 .portal-sidebar nav a.active {
-  background: linear-gradient(90deg, rgba(31, 95, 214, 0.4), rgba(8, 35, 70, 0.9));
-  border-color: rgba(255, 210, 31, 0.35);
+  background: linear-gradient(90deg, rgba(31, 95, 214, 0.45), rgba(8, 35, 70, 0.85));
+  border-color: rgba(255, 210, 31, 0.5);
+  box-shadow: inset 4px 0 0 var(--tn-gold);
 }
 
 .portal-main {
@@ -312,13 +317,29 @@ button.btn-gold {
 
 .portal-content {
   flex: 1;
-  padding: 24px 24px 40px;
-  max-width: 960px;
+  width: 100%;
+  max-width: none;
+  padding: 28px clamp(20px, 3vw, 40px) 48px;
 }
 
+.portal-content--wide,
 .portal-content--workspace {
-  max-width: 1280px;
-  padding: 28px 32px 48px;
+  max-width: none;
+}
+
+.page-frame {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
 }
 
 .page-home .portal-topbar {
@@ -371,11 +392,6 @@ button.btn-gold {
 
 .panel-head-inline h2 {
   margin: 0;
-}
-
-.page-stack {
-  display: grid;
-  gap: 18px;
 }
 
 .dash-grid-v2 {
@@ -1073,11 +1089,29 @@ button.btn-primary-lg {
 .card-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
+  gap: 20px;
+}
+
+.card-grid-3 {
+  gap: 20px;
+}
+
+.hub-card,
+a.hub-card {
+  padding: 20px 22px;
+  border-radius: 14px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.hub-card:hover,
+a.hub-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 210, 31, 0.35);
 }
 
 .hub-card h3 {
   margin: 0 0 8px;
+  font-size: 1.08rem;
 }
 
 .hub-card p {
@@ -1669,8 +1703,218 @@ body.steward-open {
 }
 
 .builder-layout,
-.calendar-grid {
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+.calendar-grid,
+.workspace-split {
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+}
+
+.workspace-split {
+  display: grid;
+  gap: 28px;
+  align-items: start;
+}
+
+.workspace-panel {
+  padding: 24px 26px;
+  border-radius: 16px;
+  border: 1px solid var(--tn-line);
+  background: linear-gradient(180deg, rgba(13, 31, 53, 0.94), rgba(5, 15, 29, 0.98));
+}
+
+.workspace-panel--preview {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 520px;
+}
+
+.workspace-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.workspace-panel-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.workspace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.form-section {
+  margin-bottom: 22px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.form-section:last-of-type {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-section-title {
+  margin: 0 0 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--tn-gold);
+}
+
+.schedule-preview-wrap {
+  flex: 1;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+
+.schedule-table {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border: 1px solid #333;
+  padding: 14px 12px;
+  text-align: center;
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.schedule-table th {
+  background: #f0f4fa;
+  color: #07111f;
+  font-weight: 900;
+  font-size: 0.88rem;
+}
+
+.schedule-table td:first-child {
+  font-weight: 900;
+  background: #e8eef8;
+  color: #07111f;
+  text-align: left;
+}
+
+.export-note {
+  margin-top: 14px;
+  padding: 12px;
+  text-align: center;
+  color: #07111f;
+  font-weight: 800;
+  font-size: 0.88rem;
+  background: #fff9c4;
+  border-radius: 8px;
+}
+
+.steward-context {
+  padding: 22px 24px;
+}
+
+.steward-context-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.steward-context-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: linear-gradient(135deg, #5865f2, #4752c4);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.steward-context-title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.steward-context-body {
+  margin: 0;
+  font-size: 0.98rem;
+  color: var(--tn-muted);
+  line-height: 1.5;
+}
+
+.steward-context-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.steward-context-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.steward-context-chip {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--tn-white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.steward-context-chip:hover {
+  background: rgba(88, 101, 242, 0.2);
+  border-color: rgba(88, 101, 242, 0.45);
+}
+
+.btn-lg {
+  min-height: 48px;
+  padding: 12px 20px;
+  font-size: 1rem;
+}
+
+.btn-outline.btn-lg {
+  border: 2px solid var(--tn-line);
+  background: transparent;
+  color: var(--tn-muted);
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  border: 1px solid var(--tn-line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--tn-white);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.page-intro {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--tn-muted);
+  line-height: 1.55;
+  max-width: 52rem;
 }
 
 .resource-grid,
@@ -1711,8 +1955,9 @@ body.steward-open {
 }
 
 .fr-module-layout {
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
   align-items: start;
+  gap: 28px;
 }
 
 .fr-summary-layout {
@@ -1825,6 +2070,7 @@ body.steward-open {
 @media (max-width: 900px) {
   .builder-layout,
   .calendar-grid,
+  .workspace-split,
   .fr-module-layout,
   .di-layout,
   .resource-grid,

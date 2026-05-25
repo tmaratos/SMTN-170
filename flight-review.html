@@ -10,8 +10,8 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Flight Reviews | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=2" />
-  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
+  <link rel="stylesheet" href="./portal-nav.css?v=5" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
 </head>
 <body data-portal-page="bfr">
@@ -31,46 +31,50 @@
       <header class="portal-topbar">
         <div>
           <h1>Flight Reviews</h1>
-          <p>Biannual flight review status · due dates · meeting nights</p>
+          <p>Biannual flight review status · due dates · review nights</p>
         </div>
+        <a class="ghost-btn" href="exports.html#fr-exports">Print reports</a>
       </header>
-      <div class="portal-content">
-        <section class="fr-summary-layout">
-          <div class="fr-summary-stats" id="frSummaryStats" aria-live="polite"></div>
-        </section>
-        <section class="fr-module-layout">
-          <aside class="panel">
-            <h2>Schedule directorate BFR</h2>
-            <p>Posts the review on the squadron calendar and ties it to the directorate packet.</p>
-            <form class="form-panel" id="frScheduleForm">
-              <label>Directorate</label>
-              <select name="departmentId" required><option value="">Select directorate</option></select>
-              <label>BFR date</label>
-              <input type="date" name="reviewDate" required />
-              <label>Reviewing officer</label>
-              <input name="reviewer" placeholder="Rank and name" />
-              <label>Location</label>
-              <input name="location" value="Squadron Classroom" />
-              <button type="submit" class="btn-gold">Post to squadron calendar</button>
-            </form>
-            <p class="fr-supabase-note"><strong>Supabase:</strong> BFR metadata and roles. Files in the <a href="documents.html" style="color:var(--tn-cyan);font-weight:800">File Library</a>.</p>
-          </aside>
-          <div id="departments">
-            <div class="panel-head" style="margin-bottom:14px;padding:0;">
-              <h2 style="margin:0">Directorate BFR status</h2>
-              <a class="ghost-btn" href="exports.html#fr-exports">Print BFR reports</a>
+      <div class="portal-content portal-content--wide">
+        <div class="page-frame page-stack">
+          <p class="page-intro">Track department flight review packets, schedule review nights on the squadron calendar, and see what still needs attention.</p>
+          <div data-steward-context="bfr"></div>
+          <section class="fr-summary-layout">
+            <div class="fr-summary-stats" id="frSummaryStats" aria-live="polite"></div>
+          </section>
+          <section class="fr-module-layout workspace-split">
+            <aside class="workspace-panel card-info">
+              <h2 style="margin:0 0 12px;font-size:1.15rem">Schedule a review night</h2>
+              <p style="margin:0 0 16px;color:var(--tn-muted);font-size:0.98rem;line-height:1.5">Posts the event on the squadron calendar and ties it to the department packet.</p>
+              <form class="form-panel" id="frScheduleForm">
+                <label>Department</label>
+                <select name="departmentId" required><option value="">Select department</option></select>
+                <label>Review date</label>
+                <input type="date" name="reviewDate" required />
+                <label>Reviewing officer</label>
+                <input name="reviewer" placeholder="Rank and name" />
+                <label>Location</label>
+                <input name="location" value="Squadron Classroom" />
+                <button type="submit" class="btn-gold">Post to calendar</button>
+              </form>
+              <p class="fr-supabase-note" style="margin-top:16px"><strong>Later:</strong> Supabase roles and file links. Upload packets under <a href="documents.html" style="color:var(--tn-cyan);font-weight:800">Files</a>.</p>
+            </aside>
+            <div id="departments" class="workspace-panel card-action" style="padding:22px 24px">
+              <div class="workspace-panel-head">
+                <h2 style="margin:0">Flight review status by department</h2>
+              </div>
+              <div class="fr-dept-grid" id="frDepartmentGrid" aria-live="polite"></div>
             </div>
-            <div class="fr-dept-grid" id="frDepartmentGrid" aria-live="polite"></div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
   <script src="./portal-config.js?v=2"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/portal-shell.js?v=1"></script>
+  <script src="./portal-nav.js?v=5"></script>
+  <script src="./js/portal-shell.js?v=4"></script>
   <script src="./flight-review.js?v=1"></script>
-  <script src="./js/steward.js?v=2"></script>
+  <script src="./js/steward.js?v=3"></script>
 </body>
 </html>

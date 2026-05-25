@@ -10,8 +10,8 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Inspection Prep | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=2" />
-  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
+  <link rel="stylesheet" href="./portal-nav.css?v=5" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
   <link rel="stylesheet" href="./sui-readiness.css?v=1" />
 </head>
@@ -35,14 +35,20 @@
           <p>Unit inspection checklist · open items · commander review</p>
         </div>
       </header>
-      <div class="portal-content page-stack" id="suiMain" aria-live="polite"></div>
+      <div class="portal-content portal-content--wide">
+        <div class="page-frame page-stack">
+          <p class="page-intro">Work through inspection checklist items by area. File supporting documents under Files when ready.</p>
+          <div data-steward-context="sui"></div>
+          <div id="suiMain" aria-live="polite"></div>
+        </div>
+      </div>
       <div data-portal-footer></div>
     </div>
   </div>
   <script src="./portal-config.js?v=2"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/portal-shell.js?v=1"></script>
+  <script src="./portal-nav.js?v=5"></script>
+  <script src="./js/portal-shell.js?v=4"></script>
   <script src="./sui-readiness.js?v=1"></script>
-  <script src="./js/steward.js?v=2"></script>
+  <script src="./js/steward.js?v=3"></script>
 </body>
 </html>

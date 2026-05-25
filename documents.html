@@ -10,8 +10,8 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Files &amp; Forms | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=2" />
-  <link rel="stylesheet" href="./portal-nav.css?v=4" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
+  <link rel="stylesheet" href="./portal-nav.css?v=5" />
   <link rel="stylesheet" href="./document-intake.css?v=1" />
 </head>
 <body data-portal-page="files">
@@ -31,34 +31,42 @@
       <header class="portal-topbar">
         <div>
           <h1>Files &amp; Forms</h1>
-          <p>Upload squadron files · find forms · organize folders</p>
+          <p>Upload · organize · review squadron documents</p>
         </div>
       </header>
-      <div class="portal-content">
-        <p class="steward-planned" style="margin-bottom:14px"><strong>Steward will suggest a category. Staff can override it.</strong> Move and reclassify controls are demo placeholders until Supabase + Google Drive connect.</p>
-        <div id="diStatusBar" aria-live="polite"></div>
-        <div class="card-grid-3" id="fileCategoryCards" style="margin-bottom:18px"></div>
-        <section class="di-layout">
-          <div><div id="diMainPanel" aria-live="polite"></div></div>
-          <aside class="di-sidebar-stack" id="diSidePanel" aria-live="polite"></aside>
-        </section>
+      <div class="portal-content portal-content--wide">
+        <div class="page-frame page-stack">
+          <p class="page-intro">Upload squadron files, sort them into folders, and review items that need staff attention. Steward will suggest categories when connected.</p>
+          <div data-steward-context="files"></div>
+          <div id="diStatusBar" aria-live="polite"></div>
+          <div class="card-grid-3" id="fileCategoryCards"></div>
+          <section class="di-layout">
+            <div class="workspace-panel card-action" style="padding:0;border:0;background:transparent">
+              <div id="diMainPanel" aria-live="polite"></div>
+            </div>
+            <aside class="di-sidebar-stack" id="diSidePanel" aria-live="polite"></aside>
+          </section>
+        </div>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
   <script src="./portal-config.js?v=2"></script>
-  <script src="./js/portal-data.js?v=1"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/portal-shell.js?v=1"></script>
+  <script src="./js/portal-data.js?v=2"></script>
+  <script src="./portal-nav.js?v=5"></script>
+  <script src="./js/portal-shell.js?v=4"></script>
   <script src="./document-intake.js?v=1"></script>
-  <script src="./js/steward.js?v=2"></script>
+  <script src="./js/steward.js?v=3"></script>
   <script>
     (function () {
       const cats = window.SMTN170_DATA?.FILE_CATEGORIES || [];
       const el = document.getElementById("fileCategoryCards");
       if (el) {
         el.innerHTML = cats
-          .map((c) => `<article class="panel" style="padding:14px"><h3 style="margin:0 0 6px;font-size:0.88rem">${c}</h3><button type="button" class="ghost-btn btn-sm" disabled>Reclassify</button></article>`)
+          .map(
+            (c) =>
+              `<article class="card-info" style="padding:16px 18px"><h3 style="margin:0 0 8px;font-size:1rem">${c}</h3><button type="button" class="ghost-btn" disabled>Reclassify</button></article>`
+          )
           .join("");
       }
     })();

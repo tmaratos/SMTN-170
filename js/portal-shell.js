@@ -328,14 +328,34 @@
     document.body.appendChild(script);
   }
 
+  function loadScriptOnce(src, cb) {
+    const base = src.split("?")[0];
+    if (document.querySelector(`script[src^="${base}"]`)) {
+      cb?.();
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = () => cb?.();
+    document.body.appendChild(s);
+  }
+
+  function bootPortalAssets(done) {
+    loadScriptOnce("./js/portal-pages.js?v=1", () => {
+      global.SMTN170Pages?.init?.();
+      ensureSteward(done);
+    });
+  }
+
   function init() {
     bindMobileNav();
     injectFooter();
     renderDashboardV2();
-    ensureSteward(() => {
+    bootPortalAssets(() => {
       global.SMTN170PortalNav?.renderDiscordPlacements?.();
       global.SMTN170Steward?.rebind?.();
       bindDashboardSteward();
+      global.SMTN170Pages?.bindStewardContextActions?.();
     });
   }
 

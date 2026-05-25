@@ -2,25 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-<!-- Prevent aggressive mobile/GitHub Pages caching -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-
   <title>Meetings | TN-170</title>
-
-  <!-- IMPORTANT -->
-  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
+  <link rel="stylesheet" href="./portal-nav.css?v=5" />
 </head>
 <body data-portal-page="schedule">
   <div class="portal-app">
@@ -39,84 +30,109 @@
       <header class="portal-topbar">
         <div>
           <h1>Meetings</h1>
-          <p>Weekly meeting plan · training nights · printable schedule</p>
+          <p>Plan the squadron meeting month · preview · print</p>
         </div>
+        <a class="btn-gold" href="exports.html">Print &amp; export</a>
       </header>
-      <div class="portal-content">
-      <section class="builder-layout">
-        <form class="panel form-panel">
-          <h2>Meeting schedule template</h2>
+      <div class="portal-content portal-content--wide">
+        <div class="page-frame">
+          <p class="page-intro">Build your monthly cadet meeting plan, set uniforms and activities, then preview a full-size printable schedule for meeting night.</p>
 
-          <label>Month</label>
-          <input type="month" value="2026-05" />
+          <div data-steward-context="schedule"></div>
 
-          <label>Template</label>
-          <select>
-            <option>Monthly Cadet Meeting Schedule</option>
-            <option>Senior Member Training Month</option>
-            <option>Aerospace Education Month</option>
-            <option>Custom Monthly Schedule</option>
-          </select>
+          <div class="workspace-split">
+            <div class="workspace-col workspace-col--tools">
+              <section class="workspace-panel card-info">
+                <h2 class="workspace-panel-head" style="margin:0 0 20px;font-size:1.2rem">Meeting planner</h2>
 
-          <label>Week 1 Uniform</label>
-          <input value="PT" />
+                <div class="form-section">
+                  <h3 class="form-section-title">Meeting setup</h3>
+                  <form class="form-panel" id="schedulePlannerForm">
+                    <label for="schedMonth">Month</label>
+                    <input type="month" id="schedMonth" value="2026-05" />
 
-          <label>Week 2 Uniform</label>
-          <input value="ABU" />
+                    <label for="schedTemplate">Template</label>
+                    <select id="schedTemplate">
+                      <option>Monthly Cadet Meeting Schedule</option>
+                      <option>Senior Member Training Month</option>
+                      <option>Aerospace Education Month</option>
+                      <option>Custom Monthly Schedule</option>
+                    </select>
+                  </form>
+                </div>
 
-          <label>Week 3 Uniform</label>
-          <input value="ABU" />
+                <div class="form-section">
+                  <h3 class="form-section-title">Weekly uniforms</h3>
+                  <form class="form-panel">
+                    <label>Week 1</label>
+                    <input value="PT" />
+                    <label>Week 2</label>
+                    <input value="ABU" />
+                    <label>Week 3</label>
+                    <input value="ABU" />
+                    <label>Week 4</label>
+                    <input value="Blues" />
+                  </form>
+                </div>
 
-          <label>Week 4 Uniform</label>
-          <input value="Blues" />
+                <div class="form-section">
+                  <h3 class="form-section-title">Extracurricular activities</h3>
+                  <form class="form-panel">
+                    <label for="schedExtra">Notes for the month</label>
+                    <textarea id="schedExtra" rows="4">Rummage Sale May 16th, Firearm Training May 11th &amp; 18th</textarea>
+                  </form>
+                </div>
 
-          <label>Extracurricular Activities</label>
-          <textarea>Rummage Sale May 16th, Firearm Training May 11th & 18th</textarea>
+                <button type="button" class="btn-primary-lg" style="width:100%;margin-top:8px" onclick="fakeGenerate()">Update preview</button>
+              </section>
+            </div>
 
-          <button type="button" onclick="fakeGenerate()">Generate Schedule Preview</button>
-        </form>
+            <div class="workspace-col workspace-col--preview">
+              <section class="workspace-panel workspace-panel--preview card-action">
+                <div class="workspace-panel-head">
+                  <h2>Live schedule preview</h2>
+                  <div class="workspace-toolbar">
+                    <button type="button" class="ghost-btn">Save draft</button>
+                    <a href="exports.html" class="btn-gold">Print PDF</a>
+                    <a href="exports.html" class="ghost-btn">Export image</a>
+                  </div>
+                </div>
 
-        <section class="panel">
-          <div class="panel-head">
-            <h2>Generated Schedule</h2>
-            <div class="btn-row">
-              <button class="ghost-btn">Save Draft</button>
-              <a href="exports.html" class="gold-btn">Print &amp; export</a>
+                <div class="schedule-preview-wrap print-card light-print" id="schedulePreview">
+                  <table class="schedule-table">
+                    <thead>
+                      <tr>
+                        <th></th>
+                        <th>Week 1 · 5/5</th>
+                        <th>Week 2 · 5/12</th>
+                        <th>Week 3 · 5/19</th>
+                        <th>Week 4 · 5/26</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>Uniform</td><td>PT</td><td>ABU</td><td>ABU</td><td>Blues</td></tr>
+                      <tr><td>Opening</td><td>1900–1905 Anthem</td><td>1900–1905 Anthem</td><td>1900–1905 Anthem</td><td>1900–1905 Anthem</td></tr>
+                      <tr><td>Emphasis</td><td>Calisthenics</td><td>Safety briefing</td><td>Leadership academy</td><td>Cadet advisory council</td></tr>
+                      <tr><td>Block 1</td><td>CPFT</td><td>CAP radio communications</td><td>Aerospace education</td><td>Drill &amp; ceremonies</td></tr>
+                      <tr><td>Block 2</td><td>Aerospace education</td><td>Drill &amp; ceremonies</td><td>Operation Pulse Lift</td><td>Character development</td></tr>
+                      <tr><td>Closing</td><td>Announcements</td><td>Announcements</td><td>Announcements</td><td>Announcements</td></tr>
+                    </tbody>
+                  </table>
+                  <p class="export-note" id="scheduleExtraNote">Extracurricular: Rummage Sale May 16th · Firearm Training May 11th &amp; 18th</p>
+                </div>
+              </section>
             </div>
           </div>
-
-          <div class="schedule-table-wrap print-card">
-            <table class="schedule-table light-print">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Week 1 - 5/5</th>
-                  <th>Week 2 - 5/12</th>
-                  <th>Week 3 - 5/19</th>
-                  <th>Week 4 - 5/26</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>Uniform</td><td>PT</td><td>ABU</td><td>ABU</td><td>Blues</td></tr>
-                <tr><td>Opening</td><td>1900 - 1905 Anthem</td><td>1900 - 1905 Anthem</td><td>1900 - 1905 Anthem</td><td>1900 - 1905 Anthem</td></tr>
-                <tr><td>Emphasis</td><td>Calisthenics</td><td>Safety Briefing</td><td>Leadership Academy</td><td>Cadet Advisory Council</td></tr>
-                <tr><td>Block #1</td><td>CPFT</td><td>CAP Radio Communications</td><td>AE Lecture</td><td>Drill & Ceremonies</td></tr>
-                <tr><td>Block #2</td><td>AE Lecture</td><td>Drill & Ceremonies</td><td>Operation Pulse Lift</td><td>Character Development</td></tr>
-                <tr><td>Closing</td><td>Announcements</td><td>Announcements</td><td>Announcements</td><td>Announcements</td></tr>
-              </tbody>
-            </table>
-            <p class="export-note">Extracurricular Activities: Rummage Sale May 16th, Firearm Training May 11th & 18th</p>
-          </div>
-        </section>
-      </section>
+        </div>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
   <script src="./portal-config.js?v=2"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/portal-shell.js?v=1"></script>
-  <script src="./js/steward.js?v=2"></script>
+  <script src="./js/portal-data.js?v=2"></script>
+  <script src="./portal-nav.js?v=5"></script>
+  <script src="./js/portal-shell.js?v=4"></script>
+  <script src="./js/steward.js?v=3"></script>
   <script src="app.js"></script>
 </body>
 </html>

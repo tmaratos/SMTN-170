@@ -9,9 +9,9 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Squadron Calendar | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+  <title>Calendar | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
+  <link rel="stylesheet" href="./portal-nav.css?v=5" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
 </head>
 <body data-portal-page="calendar">
@@ -30,43 +30,46 @@
     <div class="portal-main">
       <header class="portal-topbar">
         <div>
-          <h1>Squadron Calendar</h1>
-          <p>Weekly meetings · BFR nights · training · special activities</p>
+          <h1>Calendar</h1>
+          <p>Meeting nights · flight reviews · training · special events</p>
         </div>
-        <button type="button" class="btn-outline" disabled title="Planned">Export schedule</button>
+        <a class="btn-gold" href="schedule.html">Meeting planner</a>
       </header>
-      <div class="portal-content">
-        <section class="calendar-grid">
-          <article class="panel">
-            <h2>Post squadron event</h2>
-            <form class="form-panel" id="calendarAddForm">
-              <label>Event Title</label>
-              <input name="title" placeholder="Weekly Squadron Meeting" required />
-              <label>Date</label>
-              <input type="date" name="date" required />
-              <label>Start Time</label>
-              <input type="time" name="startTime" />
-              <label>End Time</label>
-              <input type="time" name="endTime" />
-              <label>Location</label>
-              <input name="location" placeholder="Squadron Classroom" />
-              <button type="submit" class="btn-gold">Add Event</button>
-            </form>
-            <p class="small-note" style="margin-top:14px">Directorate BFR nights from <a href="flight-review.html">Biannual Flight Reviews</a> show with a <span class="fr-event-badge">BFR</span> badge.</p>
-          </article>
-          <article class="panel">
-            <h2>May 2026 Events</h2>
-            <div class="event-list large" id="calendarEventList" aria-live="polite"></div>
-          </article>
-        </section>
+      <div class="portal-content portal-content--wide">
+        <div class="page-frame">
+          <p class="page-intro">Post squadron events and see what is coming up. Flight review nights show a BFR badge.</p>
+          <div data-steward-context="calendar"></div>
+          <section class="calendar-grid workspace-split">
+            <article class="workspace-panel card-info">
+              <h2 style="margin:0 0 16px;font-size:1.15rem">Add an event</h2>
+              <form class="form-panel" id="calendarAddForm">
+                <label>Event title</label>
+                <input name="title" placeholder="Weekly squadron meeting" required />
+                <label>Date</label>
+                <input type="date" name="date" required />
+                <label>Start time</label>
+                <input type="time" name="startTime" />
+                <label>End time</label>
+                <input type="time" name="endTime" />
+                <label>Location</label>
+                <input name="location" placeholder="Squadron classroom" />
+                <button type="submit" class="btn-gold">Add to calendar</button>
+              </form>
+            </article>
+            <article class="workspace-panel card-action">
+              <h2 style="margin:0 0 16px;font-size:1.15rem">Upcoming events</h2>
+              <div class="event-list large" id="calendarEventList" aria-live="polite"></div>
+            </article>
+          </section>
+        </div>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
   <script src="./portal-config.js?v=2"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/portal-shell.js?v=1"></script>
+  <script src="./portal-nav.js?v=5"></script>
+  <script src="./js/portal-shell.js?v=4"></script>
   <script src="./flight-review.js?v=1"></script>
-  <script src="./js/steward.js?v=2"></script>
+  <script src="./js/steward.js?v=3"></script>
 </body>
 </html>

@@ -10,7 +10,13 @@ function logout() {
 }
 
 function fakeGenerate() {
-  alert("Schedule preview generated. Real save/export logic can be connected to Supabase later.");
+  const extra = document.getElementById("schedExtra");
+  const note = document.getElementById("scheduleExtraNote");
+  if (extra && note) {
+    note.textContent = "Extracurricular: " + (extra.value || "None listed");
+  }
+  const preview = document.getElementById("schedulePreview");
+  preview?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 (function protectPrototypePages() {
