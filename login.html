@@ -39,14 +39,11 @@
     <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
-  <script src="./js/supabase-config.js?v=4"></script>
-  <script src="./js/supabase-client.js?v=4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      const ADMIN_MSG =
-        (window.TN170SupabaseConfig && window.TN170SupabaseConfig.adminMessage()) ||
-        "Supabase is not configured. Please contact the portal administrator.";
+      const SUPABASE_URL = "https://hmfbeqnlcchkjyzqnlni.supabase.co";
+      const SUPABASE_ANON_KEY = "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai";
 
       const form = document.getElementById("loginForm");
       const errEl = document.getElementById("loginError");
@@ -69,32 +66,13 @@
         sessionStorage.removeItem("smtn170_had_session");
       }
 
-      const supa = window.TN170_SUPABASE;
-      if (!supa || !supa.isConfigured || !supa.isConfigured()) {
-        showError(ADMIN_MSG);
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        showError("Supabase library failed to load. Check your connection and refresh the page.");
         btn.disabled = true;
         return;
       }
 
-      const client = supa.client;
-      if (!client) {
-        const initErr = supa.getInitError && supa.getInitError();
-        showError((initErr && initErr.message) || ADMIN_MSG);
-        btn.disabled = true;
-        return;
-      }
-
-      (async function checkSession() {
-        try {
-          const { data } = await client.auth.getSession();
-          if (data && data.session) {
-            sessionStorage.setItem("smtn170_had_session", "1");
-            location.replace("dashboard.html");
-          }
-        } catch (e) {
-          console.warn("[TN-170] session check", e);
-        }
-      })();
+      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
@@ -106,15 +84,9 @@
         const password = document.getElementById("loginPassword").value;
 
         try {
-          const activeClient = window.TN170_SUPABASE && window.TN170_SUPABASE.client;
-          if (!activeClient) {
-            showError(ADMIN_MSG);
-            return;
-          }
-
-          const { data, error } = await activeClient.auth.signInWithPassword({
-            email,
-            password,
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password,
           });
 
           if (error) {
@@ -124,24 +96,7 @@
 
           if (data && data.session) {
             sessionStorage.setItem("smtn170_had_session", "1");
-
-            try {
-              const userId = data.session.user.id;
-              const { data: profile } = await activeClient
-                .from("profiles")
-                .select("account_status")
-                .eq("id", userId)
-                .maybeSingle();
-
-              if (profile && profile.account_status === "awaiting_verification") {
-                location.href = "pending-approval.html";
-                return;
-              }
-            } catch (profileErr) {
-              console.warn("[TN-170] profile check after login", profileErr);
-            }
-
-            location.href = "dashboard.html";
+            window.location.href = "dashboard.html";
           } else {
             showError("Sign in did not return a session. Try again.");
           }
