@@ -5,8 +5,8 @@
 (function loadPortalScripts() {
   const PAGE_SCRIPTS = {
     schedule: ["./js/portal-data.js", "./js/schedule-builder.js"],
-    documents: ["./js/file-ingestion.js?v=1", "./js/file-library.js?v=2"],
-    orgchart: ["./js/file-ingestion.js?v=1", "./js/org-chart.js?v=8"],
+    documents: ["./js/file-ingestion.js?v=3", "./js/import-center.js?v=1", "./js/file-library.js?v=4"],
+    orgchart: ["./js/file-ingestion.js?v=3", "./js/org-chart.js?v=8"],
     "flight-review": ["./flight-review.js"],
     "sui-readiness": ["./sui-readiness.js?v=8"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js"],
@@ -33,7 +33,7 @@
     "./js/steward-api.js?v=2",
     "./js/steward-launcher.js?v=1",
     "./js/steward.js?v=12",
-    "./js/file-ingestion.js?v=1",
+    "./js/file-ingestion.js?v=3",
     "./app.js?v=7",
     "./js/profile-banner.js?v=1",
     "./js/portal-bootstrap.js?v=7",
@@ -46,6 +46,7 @@
     if (i >= urls.length) {
       global.SMTN170ScheduleBuilder?.init?.();
       global.SMTN170FileLibrary?.init?.();
+      global.SMTN170ImportCenter?.init?.();
       global.SMTN170OrgChart?.init?.();
       global.SMTN170TasksPage?.init?.();
       global.SMTN170SuiReadiness?.init?.();

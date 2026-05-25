@@ -73,7 +73,7 @@
     const rank = profileSvc()?.normalizeRank?.(profile?.rank || session?.rank) || "";
     const showRankLine = rank && preferred;
 
-    const approved = profileSvc()?.isProfileStatusApproved?.(profile || session);
+    const approved = profileSvc()?.isProfileStatusApproved?.(profile || session || {});
     return {
       name,
       rankLine: showRankLine ? rank : "",

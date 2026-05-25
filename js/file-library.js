@@ -143,6 +143,7 @@
           folder: folderKey,
         });
         showIngestNotice(ingestResult);
+        global.SMTN170ImportCenter?.setPending?.(ingestResult);
       } catch (err) {
         showIngestNotice({ message: err.message, ok: false });
       }
@@ -167,15 +168,21 @@
     const el = document.getElementById("flIngestNotice");
     if (!el) return;
     el.hidden = false;
-    el.innerHTML = `<p>${escapeHtml(result?.message || "Upload complete.")}</p>`;
+    const conf = result?.confidence != null ? ` · confidence ${Math.round(result.confidence * 100)}%` : "";
+    const detected = result?.importMeta?.label || result?.detectedType || "";
+    el.innerHTML = `<p><strong>Smart import:</strong> ${escapeHtml(result?.message || "Upload complete.")}${detected ? ` <em>(${escapeHtml(detected)}${conf})</em>` : ""}</p>`;
+    if (result?.needsReview) {
+      el.innerHTML += `<p class="page-intro" style="margin-top:8px">Review extracted records in the <strong>Import Center</strong> section above before confirming.</p>`;
+    }
     if (result?.needsReview && result.drafts?.length) {
-      el.innerHTML += `<button type="button" class="btn-gold btn-sm" id="flCommitDrafts" style="margin-top:10px">Save ${result.drafts.length} draft record(s)</button>`;
+      el.innerHTML += `<button type="button" class="btn-gold btn-sm" id="flCommitDrafts" style="margin-top:10px">Confirm ${result.drafts.length} record(s) here</button>`;
       document.getElementById("flCommitDrafts")?.addEventListener("click", async () => {
         try {
-          await global.SMTN170FileIngestion.commitDrafts(result);
-          el.innerHTML = `<p>${escapeHtml(result.drafts.length)} record(s) saved to the portal.</p>`;
+          const out = await global.SMTN170FileIngestion.confirmImport(result);
+          el.innerHTML = `<p>${escapeHtml(out.message || `${result.drafts.length} record(s) imported.`)}</p>`;
+          global.SMTN170Shell?.renderDashboardV2?.();
         } catch (e) {
-          alert(e.message);
+          el.innerHTML = `<p class="import-error">${escapeHtml(e.message)}</p>`;
         }
       });
     }

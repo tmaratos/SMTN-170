@@ -18,7 +18,7 @@
     const { data, error } = await sb
       .from("profiles")
       .select("id, email, first_name, last_name, preferred_name, rank, role, status, created_at, updated_at")
-      .eq("status", "awaiting_approval")
+      .in("status", ["awaiting_approval", "awaiting_verification"])
       .order("created_at", { ascending: true });
     if (error) return { rows: [], configured: true, error: error.message };
     return { rows: data || [], configured: true };

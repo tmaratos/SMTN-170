@@ -19,7 +19,7 @@
     ACTIVE: "active",
   };
 
-  const ADMIN_ROLES = [ROLES.COMMANDER.id, ROLES.COMMAND_STAFF.id];
+  const ADMIN_ROLES = [ROLES.COMMANDER.id, ROLES.COMMAND_STAFF.id, "admin", "Admin"];
   const ADMIN_ACTIONS = new Set([
     "approve_users",
     "change_roles",
@@ -94,7 +94,6 @@
     if (row) console.log("PROFILE_LOAD_OK");
     else console.log("PROFILE_LOAD_ERROR", "no profiles row — using session fallback");
     profile = row;
-    console.log("Loaded profile:", profile);
     session = mapProfile(row) || {
       userId: user.id,
       email: user.email || "",
@@ -129,7 +128,18 @@
   }
 
   function getRoleLabel(roleId) {
-    return Object.values(ROLES).find((r) => r.id === roleId)?.label || roleId;
+    if (!roleId) return "—";
+    const id = String(roleId);
+    const normalized = id.toLowerCase().replace(/\s+/g, "_");
+    const found = Object.values(ROLES).find((r) => r.id === normalized || r.id === id);
+    if (found) return found.label;
+    if (normalized === "admin") return "Admin";
+    return id;
+  }
+
+  function isAdminRole(roleId) {
+    const r = String(roleId || "").toLowerCase();
+    return ADMIN_ROLES.some((a) => String(a).toLowerCase() === r) || r === "admin";
   }
 
   function getWelcomeGreeting() {
@@ -150,8 +160,8 @@
   }
 
   function isAdmin(s) {
-    const x = s || session;
-    return x && isApproved(x) && ADMIN_ROLES.includes(x.role);
+    const x = s || profile || session;
+    return x && isApproved(x) && isAdminRole(x.role);
   }
 
   function can(action, s) {
