@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Flight Review Readiness | Oak Ridge Composite Squadron</title>
+  <link rel="stylesheet" href="./styles.css?v=6" />
+  <link rel="stylesheet" href="./flight-review.css?v=1" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="schedule.html">Schedule Builder</a>
+        <a href="calendar.html">Calendar / Events</a>
+        <a href="flight-review.html" class="active">Flight Review Readiness</a>
+        <a href="documents.html">Documents</a>
+        <a href="resources.html">Resources</a>
+        <a href="exports.html">Exports</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>Flight Review Readiness</h1>
+          <p>Department biannual reviews · documentation · scheduling</p>
+        </div>
+      </header>
+
+      <section class="fr-summary-layout">
+        <div class="fr-summary-stats" id="frSummaryStats" aria-live="polite"></div>
+      </section>
+
+      <section class="fr-module-layout">
+        <aside class="panel">
+          <h2>Schedule department review</h2>
+          <p>Adds a biannual flight review session to the squadron calendar.</p>
+          <form class="form-panel" id="frScheduleForm">
+            <label>Department</label>
+            <select name="departmentId" required>
+              <option value="">Select department</option>
+            </select>
+            <label>Review date</label>
+            <input type="date" name="reviewDate" required />
+            <label>Assigned reviewer / officer</label>
+            <input name="reviewer" placeholder="Rank and name" />
+            <label>Location</label>
+            <input name="location" value="Squadron Classroom" />
+            <button type="submit">Schedule on calendar</button>
+          </form>
+          <p class="fr-supabase-note">
+            <strong>Future-ready:</strong> This demo stores state in <code>localStorage</code>. Later connect to Supabase for auth, officer roles, document uploads, and review history.
+          </p>
+        </aside>
+
+        <div id="departments">
+          <div class="panel-head" style="margin-bottom:14px;padding:0;">
+            <h2 style="margin:0">Department readiness</h2>
+            <a class="ghost-btn" href="exports.html#fr-exports">Export reports</a>
+          </div>
+          <div class="fr-dept-grid" id="frDepartmentGrid" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="./flight-review.js?v=1"></script>
+</body>
+</html>

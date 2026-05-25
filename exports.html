@@ -2,65 +2,94 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Oak Ridge Composite Squadron | Exports</title>
-  <link rel="stylesheet" href="./styles.css?v=8" />
-  <link rel="stylesheet" href="./desktop.css?v=8" media="(min-width: 901px)" />
-  <link rel="stylesheet" href="./mobile.css?v=8" media="(max-width: 900px)" />
+  <title>Exports | Oak Ridge Composite Squadron</title>
+  <link rel="stylesheet" href="./styles.css?v=6" />
+  <link rel="stylesheet" href="./flight-review.css?v=1" />
 </head>
 <body>
-  <div class="app">
+  <div class="shell">
     <aside class="sidebar">
-      <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" />
-      <nav class="nav">
-        <a href="dashboard.html"><span>⌂</span> Dashboard</a>
-        <a href="schedule.html"><span>▣</span> Schedule Builder</a>
-        <a href="calendar.html"><span>◷</span> Calendar / Events</a>
-        <a href="documents.html"><span>□</span> Documents</a>
-        <a href="resources.html"><span>▤</span> Resources</a>
-        <a class="active" href="exports.html"><span>⇩</span> Exports</a>
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="schedule.html">Schedule Builder</a>
+        <a href="calendar.html">Calendar / Events</a>
+        <a href="flight-review.html">Flight Review Readiness</a>
+        <a href="documents.html">Documents</a>
+        <a href="resources.html">Resources</a>
+        <a class="active" href="exports.html">Exports</a>
       </nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>Export Schedule</h1>
-          <p>Export the generated monthly operations schedule for print, records, or calendar import.</p>
-        </div>
-        <div class="user">
-          <span class="badge">Authorized Senior Member</span>
-          <div class="avatar">SM</div>
+          <h1>Exports</h1>
+          <p>Schedule exports · biannual flight review packets and readiness reports</p>
         </div>
       </header>
 
       <section class="export-grid">
-        <article class="card panel export-card">
+        <article class="panel export-card">
           <h2>PDF Schedule</h2>
           <p>Printable monthly schedule sheet.</p>
           <button type="button">Export PDF</button>
         </article>
-        <article class="card panel export-card">
+
+        <article class="panel export-card">
           <h2>PNG / JPG</h2>
           <p>Image version for quick sharing in BAND.</p>
           <button type="button">Export Image</button>
         </article>
-        <article class="card panel export-card">
+
+        <article class="panel export-card">
           <h2>CSV</h2>
           <p>Spreadsheet-friendly event list.</p>
           <button type="button">Export CSV</button>
         </article>
-        <article class="card panel export-card">
+
+        <article class="panel export-card">
           <h2>ICS Calendar</h2>
           <p>Import into Google Calendar, Apple Calendar, or Outlook.</p>
           <button type="button">Export ICS</button>
         </article>
       </section>
+
+      <section class="fr-exports-section" id="fr-exports">
+        <h2>Flight review exports</h2>
+        <p class="small-note" style="margin:0 0 16px">Printable demo exports open in a new window. Connect to Supabase-backed document storage for production packets.</p>
+        <section class="export-grid export-grid--flight-review">
+          <article class="panel export-card">
+            <h2>Department review checklist</h2>
+            <p>Printable checklist with required documents and action items.</p>
+            <button type="button" data-export="checklist">Print checklist</button>
+          </article>
+
+          <article class="panel export-card">
+            <h2>Department review packet</h2>
+            <p>Summary packet with uploads, missing docs, and follow-up tasks.</p>
+            <button type="button" data-export="packet">Print packet PDF</button>
+          </article>
+
+          <article class="panel export-card">
+            <h2>Overdue review report</h2>
+            <p>Departments past due date with reviewer and missing documentation.</p>
+            <button type="button" data-export="overdue">Export overdue report</button>
+          </article>
+
+          <article class="panel export-card">
+            <h2>Squadron readiness summary</h2>
+            <p>Squadron-wide readiness percentage and department status table.</p>
+            <button type="button" data-export="summary">Export readiness summary</button>
+          </article>
+        </section>
+      </section>
     </main>
   </div>
-  <script src="app.js"></script>
+  <script src="./flight-review.js?v=1"></script>
 </body>
 </html>
