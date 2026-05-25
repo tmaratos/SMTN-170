@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="./styles.css?v=8" />
   <link rel="stylesheet" href="./desktop.css?v=8" media="(min-width: 901px)" />
   <link rel="stylesheet" href="./mobile.css?v=8" media="(max-width: 900px)" />
+  <link rel="stylesheet" href="./portal-nav.css?v=2" />
 </head>
 <body class="login-page">
   <main class="login-wrap">
@@ -47,9 +48,13 @@
       </form>
 
       <p class="small-note">Prototype login. Supabase authentication can be added later.</p>
+
+      <div class="login-discord" data-portal-discord></div>
     </section>
   </main>
 
+  <script src="./portal-config.js?v=1"></script>
+  <script src="./portal-nav.js?v=2"></script>
   <script src="app.js"></script>
 </body>
 </html>
