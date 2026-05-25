@@ -37,11 +37,17 @@
 
   const MISSION_READINESS = {
     percent: 78,
-    bfr: { label: "Biannual Flight Reviews", current: 3, dueSoon: 2, overdue: 1 },
-    sui: { label: "SUI Readiness", percent: 72 },
-    training: { label: "Training currency", status: "current" },
-    safety: { label: "Safety program", status: "due_soon" },
+    bfr: { label: "Flight Reviews", current: 3, dueSoon: 2, overdue: 1 },
+    sui: { label: "Inspection Prep", percent: 72 },
+    training: { label: "Training", status: "current" },
+    safety: { label: "Safety", status: "due_soon" },
   };
+
+  const THIS_WEEK = [
+    "Weekly squadron meeting — check calendar for time and uniform.",
+    "Update the squadron calendar if your meeting night changed.",
+    "Safety briefing should be logged after this week's meeting.",
+  ];
 
   const UPCOMING_MEETINGS = [
     { date: "2026-05-05", title: "Weekly Squadron Meeting", time: "1900–2100", loc: "Squadron Classroom" },
@@ -72,15 +78,15 @@
 
   const STEWARD_RESPONSES = {
     monthly:
-      "For this month, prioritize the monthly activity report, logged safety briefing, updated squadron calendar, and filed staff meeting minutes. Check Mission Readiness for status chips before the weekly meeting.",
+      "This month, focus on the monthly activity report, safety briefing log, squadron calendar, and staff meeting minutes. Open Squadron Overview on the home page to see what is due.",
     agenda:
-      "Suggested senior member meeting flow: call to order, safety moment, commander remarks, directorate updates (Ops, Safety, Training, Admin), Biannual Flight Review snapshot, training block, and announcements. File approved minutes in the File Library.",
+      "A simple senior member meeting can include: opening, safety moment, commander remarks, department updates, flight review update, training, and announcements. Save minutes under Files & Forms when approved.",
     inspection:
-      "Inspection prep should cover ORMS evidence, cadet protection compliance, finance accountability, vehicle/aircraft records, and directorate packets. Use the SUI Readiness checklist to close open work units before wing review.",
+      "Inspection prep includes safety records, cadet protection, finances, vehicles, and department checklists. Use Inspection Prep in the menu to work through open items.",
     bfr:
-      "Biannual Flight Review items include directorate packets, scheduled review nights on the squadron calendar, overdue directorates, and missing documentation. Open the BFR tracker for per-directorate status and print exports for command briefings.",
+      "Flight review items include department packets, scheduled review nights on the calendar, and any overdue paperwork. Open Flight Reviews in the menu for the full list.",
     files:
-      "When uploading, Steward will suggest a category (Aerospace Education, Safety, Biannual Flight Review, Inspection Prep, etc.). Staff can override before filing to Google Drive. Use the needs-review queue for uncertain matches.",
+      "When you upload a file, Steward can suggest a folder category. Staff can change the category before filing. Check Files & Forms for uploads that need review.",
   };
 
   const STEWARD_PLACEHOLDER_RESPONSES = Object.values(STEWARD_RESPONSES);
@@ -91,6 +97,7 @@
     READINESS_TASKS,
     MISSION_READINESS,
     UPCOMING_MEETINGS,
+    THIS_WEEK,
     FILE_CATEGORIES,
     STEWARD_PROMPTS,
     STEWARD_RESPONSES,

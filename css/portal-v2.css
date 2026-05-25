@@ -30,6 +30,10 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 17px;
+}
+
 html,
 body {
   margin: 0;
@@ -37,6 +41,7 @@ body {
   font-family: var(--font);
   background: var(--tn-navy);
   color: var(--tn-white);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -211,12 +216,13 @@ button.btn-gold {
   gap: 6px;
 }
 
-.portal-sidebar nav a {
-  min-height: 48px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 0.88rem;
+.portal-sidebar nav a,
+.portal-sidebar nav .portal-nav-link {
+  min-height: 52px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.05rem;
   border: 1px solid transparent;
   display: flex;
   align-items: center;
@@ -247,24 +253,22 @@ button.btn-gold {
 
 .portal-topbar h1 {
   margin: 0;
-  font-size: clamp(1.35rem, 3vw, 2rem);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 
 .portal-topbar p {
-  margin: 6px 0 0;
-  color: var(--tn-gold);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  margin: 8px 0 0;
+  color: var(--tn-muted);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .portal-menu-toggle {
   display: none;
-  min-width: 48px;
-  min-height: 48px;
+  min-width: 56px;
+  min-height: 56px;
   border-radius: 10px;
   border: 1px solid var(--tn-line);
   background: rgba(255, 255, 255, 0.06);
@@ -278,8 +282,8 @@ button.btn-gold {
   position: absolute;
   top: 12px;
   right: 12px;
-  min-width: 48px;
-  min-height: 48px;
+  min-width: 56px;
+  min-height: 56px;
   border-radius: 10px;
   border: 1px solid var(--tn-line);
   background: var(--tn-red);
@@ -292,7 +296,8 @@ button.btn-gold {
 
 .portal-content {
   flex: 1;
-  padding: 20px 22px 32px;
+  padding: 24px 24px 40px;
+  max-width: 960px;
 }
 
 .portal-backdrop {
@@ -326,9 +331,9 @@ button.btn-gold {
 
 .panel h2 {
   margin: 0 0 12px;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 
 .panel-head-inline {
@@ -352,6 +357,287 @@ button.btn-gold {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+}
+
+/* —— Simplified home dashboard —— */
+.dash-welcome {
+  margin-bottom: 28px;
+}
+
+.dash-welcome-title {
+  margin: 0 0 8px;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  color: var(--tn-white);
+}
+
+.dash-welcome-sub {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--tn-muted);
+  font-weight: 600;
+}
+
+.dash-hero-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.dash-hero-card {
+  padding: 22px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--tn-line);
+  background: linear-gradient(180deg, rgba(13, 31, 53, 0.96), rgba(5, 15, 29, 0.98));
+  box-shadow: var(--tn-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dash-hero-card--steward {
+  border-color: rgba(88, 101, 242, 0.5);
+  background: linear-gradient(160deg, rgba(88, 101, 242, 0.2), rgba(5, 15, 29, 0.98));
+}
+
+.dash-hero-card-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--tn-gold);
+}
+
+.dash-hero-lead {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--tn-white);
+}
+
+.dash-hero-meta {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--tn-muted);
+  line-height: 1.5;
+}
+
+.btn-primary-lg,
+button.btn-primary-lg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 14px 22px;
+  margin-top: auto;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--tn-gold), #ffe983);
+  color: #07111f;
+  font-weight: 900;
+  font-size: 1.05rem;
+  cursor: pointer;
+  text-align: center;
+  width: 100%;
+}
+
+.btn-primary-lg:hover,
+button.btn-primary-lg:hover {
+  filter: brightness(1.05);
+}
+
+.btn-steward-lg {
+  background: linear-gradient(135deg, #5865f2, #4752c4);
+  color: #fff;
+}
+
+.btn-secondary-lg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 20px;
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 210, 31, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--tn-white);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.dash-section {
+  margin-bottom: 32px;
+  padding-bottom: 8px;
+}
+
+.dash-section-title {
+  margin: 0 0 16px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--tn-white);
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(255, 210, 31, 0.25);
+}
+
+.dash-simple-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.dash-simple-list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--tn-line);
+}
+
+.dash-list-icon {
+  color: var(--tn-gold);
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.dash-meeting-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.dash-meeting-item {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--tn-line);
+}
+
+.dash-meeting-date {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--tn-gold);
+}
+
+.dash-meeting-body strong {
+  display: block;
+  font-size: 1.08rem;
+  margin-bottom: 4px;
+}
+
+.dash-meeting-meta {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: var(--tn-muted);
+}
+
+.dash-attention-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.dash-attention-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--tn-line);
+}
+
+.dash-attention-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  flex: 1;
+  min-width: 12rem;
+}
+
+.dash-empty-note {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--tn-muted);
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(57, 255, 101, 0.06);
+  border: 1px solid rgba(57, 255, 101, 0.2);
+}
+
+.dash-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.dash-quick-btn {
+  min-height: 56px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--tn-line);
+  background: rgba(31, 95, 214, 0.15);
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-quick-btn:hover {
+  background: rgba(31, 95, 214, 0.28);
+  border-color: rgba(255, 210, 31, 0.35);
+}
+
+.dash-quick-btn--muted {
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-height: 50px;
+}
+
+.dash-staff-tools {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--tn-line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dash-staff-tools summary {
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--tn-muted);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.dash-staff-tools[open] summary {
+  margin-bottom: 12px;
+}
+
+.dash-discord-wrap {
+  margin-top: 20px;
 }
 
 .mission-hero {
@@ -436,12 +722,11 @@ button.btn-gold {
 
 .status-chip {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.65rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   border: 1px solid var(--tn-line);
   flex-shrink: 0;
 }
@@ -1355,7 +1640,7 @@ body.steward-open {
     position: fixed;
     left: 0;
     top: 0;
-    width: min(300px, 88vw);
+    width: min(320px, 92vw);
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 100;
@@ -1370,9 +1655,21 @@ body.steward-open {
   }
 
   .dash-grid-v2,
+  .dash-hero-cards,
+  .dash-quick-grid,
   .card-grid-3,
   .card-grid-2 {
     grid-template-columns: 1fr;
+  }
+
+  .dash-meeting-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .portal-content {
+    padding: 20px 16px 32px;
+    max-width: none;
   }
 
   .steward-panel {

@@ -569,7 +569,7 @@
       <div class="fr-dash-head">
         <div>
           <p class="kicker" style="margin:0 0 6px">Biannual Flight Reviews</p>
-          <h2 style="margin:0;font-size:1.35rem;text-transform:uppercase">Directorate status</h2>
+          <h2 style="margin:0;font-size:1.35rem">Flight review status</h2>
         </div>
         <div class="fr-readiness-ring" aria-label="BFR squadron status ${m.readinessPercent} percent">
           <strong>${m.readinessPercent}%</strong>

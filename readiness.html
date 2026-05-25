@@ -9,9 +9,9 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Mission Readiness | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+  <title>Squadron Overview | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=2" />
+  <link rel="stylesheet" href="./portal-nav.css?v=4" />
 </head>
 <body data-portal-page="readiness">
   <div class="portal-app">
@@ -29,8 +29,8 @@
     <div class="portal-main">
       <header class="portal-topbar">
         <div>
-          <h1>Mission Readiness</h1>
-          <p>Monthly · annual · inspection · Biannual Flight Review</p>
+          <h1>Squadron Overview</h1>
+          <p>What is due · what needs a look · links to details</p>
         </div>
       </header>
       <div class="portal-content page-stack" id="readinessPage"></div>
@@ -39,8 +39,8 @@
   </div>
   <script src="./portal-config.js?v=2"></script>
   <script src="./js/portal-data.js?v=1"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/portal-shell.js?v=1"></script>
+  <script src="./portal-nav.js?v=4"></script>
+  <script src="./js/portal-shell.js?v=2"></script>
   <script src="./js/steward.js?v=2"></script>
   <script>
     (function () {
@@ -49,19 +49,19 @@
       const root = document.getElementById("readinessPage");
       if (!root || !d) return;
       root.innerHTML = `
-        <div class="card-grid-3">
-          <a class="panel hub-card" href="flight-review.html"><h3>Biannual Flight Reviews</h3><p>Directorate BFR packets and due dates.</p><span class="btn-gold" style="display:inline-block;margin-top:8px">Open BFR tracker</span></a>
-          <a class="panel hub-card" href="sui-readiness.html"><h3>SUI Readiness</h3><p>Subordinate unit inspection prep.</p><span class="btn-gold" style="display:inline-block;margin-top:8px">SUI checklist</span></a>
-          <a class="panel hub-card" href="safety.html"><h3>Safety program</h3><p>Briefings · ORMS · range documentation.</p><span class="btn-gold" style="display:inline-block;margin-top:8px">Safety hub</span></a>
+        <p class="dash-welcome-sub" style="margin:0 0 20px;font-size:1.1rem">A simple checklist for the squadron. Open a section below for more detail.</p>
+        <div class="dash-quick-grid" style="margin-bottom:24px">
+          <a class="dash-quick-btn" href="flight-review.html"><span class="dash-quick-label">Flight reviews</span></a>
+          <a class="dash-quick-btn" href="sui-readiness.html"><span class="dash-quick-label">Inspection prep</span></a>
+          <a class="dash-quick-btn" href="documents.html"><span class="dash-quick-label">Files &amp; forms</span></a>
         </div>
-        <article class="panel"><h2>Monthly tasks</h2><ul class="task-list">${d.READINESS_TASKS.monthly.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
-        <article class="panel"><h2>Annual requirements</h2><ul class="task-list">${d.READINESS_TASKS.annual.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
-        <article class="panel"><h2>Compliance areas</h2><div class="card-grid-2">
-          <div><strong>Awards tracking</strong><p class="steward-planned">Placeholder — wing awards deadlines.</p></div>
-          <div><strong>Training currency</strong><p class="steward-planned">Placeholder — member specialty tracks.</p></div>
-          <div><strong>Safety briefings</strong><p class="steward-planned">Link to Safety hub and file library.</p></div>
-          <div><strong>Inspection prep</strong><p class="steward-planned">SUI checklist and inspection files.</p></div>
-        </div></article>`;
+        <article class="panel"><h2 style="font-size:1.25rem;text-transform:none">Monthly tasks</h2><ul class="task-list">${d.READINESS_TASKS.monthly.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
+        <article class="panel"><h2 style="font-size:1.25rem;text-transform:none">Annual items</h2><ul class="task-list">${d.READINESS_TASKS.annual.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
+        <button type="button" class="steward-launch-strip" data-steward-open style="margin-top:8px">
+          <span class="steward-launch-icon" aria-hidden="true">💬</span>
+          <span><strong>Questions?</strong> Ask Steward for help with due items and filing.</span>
+        </button>`;
+      window.SMTN170Steward?.rebind?.();
     })();
   </script>
 </body>
