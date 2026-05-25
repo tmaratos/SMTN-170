@@ -115,9 +115,8 @@
 
   function renderNav(active) {
     const isAdmin = global.SMTN170Auth?.isAdmin?.() ?? false;
-    const account = renderAccountBlock();
 
-    const groups = NAV_SECTIONS.map((section) => {
+    return NAV_SECTIONS.map((section) => {
       const links = section.items
         .filter((n) => !n.requireAdmin || isAdmin)
         .map((n) => renderNavLink(n, active))
@@ -125,8 +124,6 @@
       if (!links) return "";
       return `<div class="portal-nav-group"><span class="portal-nav-group-label">${escapeHtml(section.label)}</span>${links}</div>`;
     }).join("");
-
-    return `${account}${groups}`;
   }
 
   function bindLogout() {
@@ -197,6 +194,8 @@
     NAV_HIDDEN,
     allNavItems,
     currentKey,
+    renderAccountBlock,
+    bindLogout,
     init,
   };
 

@@ -112,6 +112,7 @@
       full: session?.email ? `Welcome back, ${session.email.split("@")[0]}.` : "Welcome back.",
     };
     const welcomeTitle = welcome.full || "Welcome back.";
+    const accountBlock = global.SMTN170PortalNav?.renderAccountBlock?.() || "";
 
     const summary = (await global.SMTN170Dashboard?.fetchSummary?.()) || {
       configured: false,
@@ -173,6 +174,7 @@
             <p class="dash-hero-eyebrow">TN-170 Oak Ridge Composite Squadron</p>
             <h2 class="dash-hero-title">${escapeHtml(welcomeTitle)}</h2>
             <p class="dash-hero-lead">Private Senior Member operations workspace for TN-170 — shared with all approved Senior Members.</p>
+            ${accountBlock}
           </div>
           <div class="card-info dash-hero-summary">
             <h3 class="card-info-title">This week at a glance</h3>
@@ -226,6 +228,7 @@
       </div>`;
 
     bindDashboardSteward();
+    global.SMTN170PortalNav?.bindLogout?.();
   }
 
   function ensureSteward(callback) {

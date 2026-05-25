@@ -58,10 +58,29 @@ body.menu-open {
   font-size: 0.92rem;
 }
 
-.portal-nav-account-card {
-  margin-bottom: 10px;
-  padding: 10px;
-  font-size: 0.88rem;
+/* Account card lives on dashboard welcome block, not sidebar */
+.dash-hero-welcome .portal-nav-account-card {
+  margin-top: 18px;
+  margin-bottom: 0;
+  padding: 16px 18px;
+  max-width: 100%;
+}
+
+.dash-hero-welcome .portal-nav-account-email {
+  word-break: break-word;
+}
+
+.dash-hero-welcome .portal-nav-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dash-hero-welcome .portal-nav-account-btn {
+  width: auto;
+  min-width: 140px;
+  flex: 1 1 140px;
 }
 
 .portal-main {
