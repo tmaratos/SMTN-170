@@ -1,18 +1,11 @@
 /**
- * Portal bootstrap — session restore loading gate, standard init order.
+ * Portal bootstrap — profile sync only. Page routing is in js/auth-guard.js (login/dashboard).
  */
 (function initPortalBootstrap(global) {
-  const LOGIN_PAGES = ["login.html", "index.html", "pending-approval.html", ""];
-
-  function currentPage() {
-    return (global.location.pathname || "").split("/").pop() || "";
-  }
-
-  function isLoginPage() {
-    return LOGIN_PAGES.includes(currentPage());
-  }
+  let authChecked = false;
 
   function showLoading(msg) {
+    if (global.TN170_PAGE_AUTH_HANDLED) return;
     let el = document.getElementById("portalSessionLoading");
     if (!el) {
       el = document.createElement("div");
@@ -30,16 +23,29 @@
   }
 
   async function bootstrap() {
-    if (isLoginPage()) {
-      hideLoading();
-      if (global.SMTN170Supabase?.whenReady) {
-        await global.SMTN170Supabase.whenReady();
+    if (global.TN170_PAGE_AUTH_HANDLED) {
+      try {
+        await global.SMTN170Auth?.init?.();
+      } finally {
+        hideLoading();
       }
-      return global.SMTN170Auth?.init?.();
+      return;
     }
+
     showLoading("Loading workspace…");
     try {
-      await global.SMTN170Supabase?.whenReady?.();
+      const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+      if (sb) {
+        const { data } = await sb.auth.getSession();
+        if (!authChecked) {
+          authChecked = true;
+          if (!data?.session) {
+            console.log("REDIRECT REASON: protected page no session");
+            global.location.href = "login.html";
+            return;
+          }
+        }
+      }
       await global.SMTN170Auth?.init?.();
     } finally {
       hideLoading();

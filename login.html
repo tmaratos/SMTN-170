@@ -40,54 +40,26 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/supabase-config.js?v=5"></script>
-  <script src="./js/supabase-client.js?v=5"></script>
+  <script src="./js/auth-guard.js?v=6"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async function () {
       const form = document.getElementById("loginForm");
       const errEl = document.getElementById("loginError");
-      const noticeEl = document.getElementById("loginNotice");
       const btn = document.getElementById("loginSubmit");
-      const params = new URLSearchParams(location.search);
 
       function showError(msg) {
         errEl.textContent = msg;
         errEl.hidden = false;
+        console.log("LOGIN_ERROR", msg);
       }
 
-      if (params.get("expired") === "1") {
-        noticeEl.textContent = "Your session expired. Please sign in again.";
-        noticeEl.hidden = false;
-      } else if (params.get("signed_out") === "1") {
-        noticeEl.textContent = "You have been signed out.";
-        noticeEl.hidden = false;
-      }
+      await window.TN170AuthGuard.runLoginPage();
 
-      let supabaseClient;
-      try {
-        supabaseClient = await window.SMTN170Supabase.whenReady();
-      } catch (e) {
-        console.error(e);
-        showError("Supabase failed to load. Refresh the page.");
-        btn.disabled = true;
-        return;
-      }
-
+      const supabaseClient = window.TN170AuthGuard.getSupabase();
       if (!supabaseClient) {
         showError("Supabase failed to load. Refresh the page.");
         btn.disabled = true;
         return;
-      }
-
-      try {
-        const { data: existing } = await supabaseClient.auth.getSession();
-        if (existing && existing.session) {
-          console.log("Session found");
-          window.location.href = "dashboard.html";
-          return;
-        }
-      } catch (e) {
-        console.warn("[TN-170] session check on login", e);
       }
 
       form.addEventListener("submit", async function (e) {
@@ -95,15 +67,13 @@
         errEl.hidden = true;
         btn.disabled = true;
         btn.textContent = "Signing in…";
+        console.log("LOGIN_SUBMIT_START");
 
         const email = document.getElementById("loginEmail").value.trim();
         const password = document.getElementById("loginPassword").value;
 
         try {
-          const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password,
-          });
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
           if (error) {
             showError(error.message);
@@ -111,7 +81,7 @@
           }
 
           if (data && data.session) {
-            console.log("Login success");
+            console.log("LOGIN_SUCCESS_SESSION_FOUND");
             window.location.href = "dashboard.html";
           } else {
             showError("Sign in did not return a session. Try again.");

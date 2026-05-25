@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="./css/steward-workspace.css?v=1" />
 </head>
 <body class="page-home" data-portal-page="home">
-  <div class="portal-app">
+  <div class="portal-app" id="portalApp" hidden>
     <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
     <div class="portal-backdrop" id="portalBackdrop"></div>
     <aside class="portal-sidebar" id="portalSidebar">
@@ -35,6 +35,15 @@
       <div data-portal-footer></div>
     </div>
   </div>
-  <script src="./js/portal-scripts.js?v=1" data-page="dashboard"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/auth-guard.js?v=6"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      const ok = await window.TN170AuthGuard.runDashboardPage();
+      if (ok) {
+        window.TN170AuthGuard.loadPortalScripts("dashboard");
+      }
+    });
+  </script>
 </body>
 </html>

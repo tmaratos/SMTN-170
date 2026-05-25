@@ -32,6 +32,10 @@
 
   function buildClient() {
     if (client) return client;
+    if (global.TN170SupabaseClient) {
+      client = global.TN170SupabaseClient;
+      return client;
+    }
     if (!global.supabase || typeof global.supabase.createClient !== "function") {
       return null;
     }

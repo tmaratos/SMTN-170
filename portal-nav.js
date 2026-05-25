@@ -137,18 +137,16 @@
       btn.addEventListener("click", async (e) => {
         e.preventDefault();
         try {
-          if (global.SMTN170AuthSession?.signOut) {
+          if (global.TN170AuthGuard?.logout) {
+            await global.TN170AuthGuard.logout();
+          } else if (global.SMTN170AuthSession?.signOut) {
             await global.SMTN170AuthSession.signOut();
           } else if (typeof global.logout === "function") {
             await global.logout();
-            global.location.href = "login.html?signed_out=1";
-          } else if (global.SMTN170Auth?.logout) {
-            await global.SMTN170Auth.logout();
-            global.location.href = "login.html?signed_out=1";
           }
         } catch (err) {
           console.error("[TN-170] sign out", err);
-          global.location.href = "login.html?signed_out=1";
+          global.location.href = "login.html";
         }
       });
     });

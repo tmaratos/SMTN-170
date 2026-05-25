@@ -1,34 +1,11 @@
-async function portalLogin(event) {
-  if (event) event.preventDefault();
-  const email = document.getElementById("loginEmail")?.value?.trim() || "";
-  const password = document.getElementById("loginPassword")?.value || "";
-  const auth = window.SMTN170Auth;
-
-  if (window.SUPABASE_CONFIG?.isConfigured && window.SMTN170Supabase?.isConfigured?.() && auth?.signIn) {
-    await auth.signIn(email, password);
-    const s = auth.loadSession();
-    window.location.href =
-      s?.accountStatus === auth.ACCOUNT_STATUS.AWAITING ? "pending-approval.html" : "dashboard.html";
-    return;
-  }
-
-  if (auth) {
-    auth.login(email, auth.ACCOUNT_STATUS.APPROVED, auth.ROLES.SENIOR_MEMBER.id);
-  } else {
-    localStorage.setItem("smtn170_logged_in", "true");
-  }
-  window.location.href = "dashboard.html";
-}
-
 async function logout() {
-  if (window.SMTN170AuthSession?.signOut) {
-    await window.SMTN170AuthSession.signOut();
+  if (window.TN170AuthGuard?.logout) {
+    await window.TN170AuthGuard.logout();
     return;
   }
-  if (window.SMTN170Auth?.logout) {
-    await window.SMTN170Auth.logout();
-  } else {
-    localStorage.removeItem("smtn170_logged_in");
-  }
-  window.location.href = "login.html?signed_out=1";
+  console.log("LOGOUT_CLICKED");
+  const sb = window.TN170SupabaseClient || window.SMTN170Supabase?.getClient?.();
+  if (sb) await sb.auth.signOut();
+  console.log("SIGNOUT_COMPLETE");
+  window.location.href = "login.html";
 }

@@ -4,29 +4,6 @@
   <meta charset="UTF-8" />
   <meta http-equiv="refresh" content="0;url=login.html" />
   <title>TN-170 Senior Member Portal</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/supabase-config.js?v=5"></script>
-  <script src="./js/supabase-client.js?v=5"></script>
-  <script src="./js/profile-service.js?v=1"></script>
-  <script src="./js/auth.js?v=5"></script>
-  <script>
-    (async function () {
-      if (!window.SUPABASE_CONFIG?.isConfigured) {
-        location.replace("login.html");
-        return;
-      }
-      if (window.SMTN170Supabase?.whenReady) await window.SMTN170Supabase.whenReady();
-      if (window.SMTN170Auth?.init) await window.SMTN170Auth.init();
-      if (window.SMTN170Auth?.isAuthenticated?.()) {
-        const s = window.SMTN170Auth.loadSession();
-        location.replace(
-          s?.accountStatus === "awaiting_verification" ? "pending-approval.html" : "dashboard.html"
-        );
-      } else {
-        location.replace("login.html");
-      }
-    })();
-  </script>
 </head>
 <body><p><a href="login.html">TN-170 Senior Member portal — sign in</a></p></body>
 </html>

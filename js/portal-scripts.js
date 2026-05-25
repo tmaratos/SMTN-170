@@ -25,8 +25,8 @@
     "./js/supabase-config.js?v=5",
     "./js/supabase-client.js?v=5",
     "./js/profile-service.js?v=1",
-    "./js/auth.js?v=5",
-    "./js/auth-session.js?v=5",
+    "./js/auth.js?v=6",
+    "./js/auth-session.js?v=6",
     "./portal-nav.js?v=11",
     "./js/portal-shell.js?v=5",
     "./js/portal-pages.js?v=3",
@@ -34,7 +34,7 @@
     "./js/steward.js?v=9",
     "./app.js?v=2",
     "./js/profile-banner.js?v=1",
-    "./js/portal-bootstrap.js?v=5",
+    "./js/portal-bootstrap.js?v=6",
   ];
 
   const page = document.currentScript?.dataset?.page || document.body?.dataset?.portalPage || "";
