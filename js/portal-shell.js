@@ -282,7 +282,17 @@
     document.querySelectorAll("[data-portal-discord]").forEach((el) => el.remove());
   }
 
+  function injectPortalLayoutCss() {
+    if (document.getElementById("portalLayoutCss")) return;
+    const link = document.createElement("link");
+    link.id = "portalLayoutCss";
+    link.rel = "stylesheet";
+    link.href = "./css/portal-layout.css?v=1";
+    document.head.appendChild(link);
+  }
+
   function init() {
+    injectPortalLayoutCss();
     bindMobileNav();
     injectFooter();
     normalizeTopbarCopy();

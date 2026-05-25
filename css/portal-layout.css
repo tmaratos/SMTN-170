@@ -1,0 +1,308 @@
+/**
+ * TN-170 portal layout — system-wide grid, overflow, and responsive refinements.
+ * Load after portal-v2.css on all protected pages.
+ */
+
+:root {
+  --tn-sidebar: clamp(196px, 15vw, 228px);
+  --portal-gap: clamp(16px, 1.5vw, 28px);
+  --portal-pad-x: clamp(18px, 2.2vw, 44px);
+  --portal-pad-y: clamp(22px, 2.5vw, 40px);
+  --portal-content-max: min(1680px, 100%);
+  --portal-card-pad: clamp(20px, 2vw, 28px) clamp(20px, 2.2vw, 32px);
+}
+
+html {
+  overflow-x: clip;
+}
+
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
+/* —— App shell grid —— */
+.portal-app {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+  grid-template-columns: var(--tn-sidebar) minmax(0, 1fr);
+}
+
+.portal-sidebar {
+  width: 100%;
+  max-width: var(--tn-sidebar);
+  padding: clamp(14px, 1.5vw, 18px) clamp(10px, 1vw, 12px);
+  flex-shrink: 0;
+}
+
+.portal-brand {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+}
+
+.portal-brand img {
+  width: clamp(88px, 10vw, 108px);
+}
+
+.portal-sidebar nav a,
+.portal-sidebar nav .portal-nav-link {
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: clamp(0.88rem, 0.9vw, 0.98rem);
+}
+
+.portal-nav-group {
+  margin-bottom: 12px;
+}
+
+.portal-nav-account-card {
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.portal-main {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  display: flex;
+  flex-direction: column;
+}
+
+.portal-topbar {
+  flex-shrink: 0;
+  padding: clamp(14px, 1.5vw, 18px) var(--portal-pad-x);
+  gap: clamp(12px, 1.5vw, 20px);
+  min-width: 0;
+}
+
+.portal-topbar > div {
+  min-width: 0;
+}
+
+.portal-content {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--portal-pad-y) var(--portal-pad-x) clamp(36px, 4vw, 56px);
+  box-sizing: border-box;
+}
+
+.portal-content--wide,
+.portal-content--workspace {
+  max-width: 100%;
+}
+
+.page-frame,
+.page-stack,
+#dashboardV2,
+#orgChartApp,
+#tasksMain,
+#suiMain,
+#profilePage {
+  width: 100%;
+  max-width: var(--portal-content-max);
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.page-stack {
+  gap: var(--portal-gap);
+}
+
+/* —— Cards & sections —— */
+.card-info,
+.card-action,
+.card-warning,
+.card-assistant,
+.panel,
+.steward-launch-card {
+  min-width: 0;
+  padding: var(--portal-card-pad);
+}
+
+.dash-workspace {
+  width: 100%;
+  min-width: 0;
+  gap: var(--portal-gap);
+}
+
+.dash-hero-band {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--portal-gap);
+  align-items: stretch;
+}
+
+.dash-hero-welcome,
+.dash-hero-summary,
+.dash-col,
+.dash-block,
+.steward-launch-card {
+  min-width: 0;
+}
+
+.dash-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--portal-gap);
+}
+
+.dash-action-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+  gap: clamp(10px, 1.2vw, 14px);
+}
+
+.dash-meeting-compact li {
+  grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr);
+}
+
+/* —— Split workspaces (schedule, org chart, calendar) —— */
+.workspace-split,
+.builder-layout,
+.calendar-grid {
+  grid-template-columns: minmax(0, min(300px, 32%)) minmax(0, 1fr);
+  gap: var(--portal-gap);
+  width: 100%;
+  min-width: 0;
+}
+
+.workspace-col,
+.org-main,
+.org-sidebar,
+.workspace-panel {
+  min-width: 0;
+}
+
+.org-workspace.workspace-split {
+  align-items: start;
+}
+
+.org-hero {
+  min-width: 0;
+}
+
+.org-hero-actions {
+  gap: clamp(8px, 1vw, 12px);
+}
+
+.org-hero-actions .btn-lg {
+  flex: 0 1 auto;
+}
+
+.org-card,
+.org-dept-section {
+  min-width: 0;
+}
+
+/* —— Footer —— */
+.portal-footer,
+[data-portal-footer] footer,
+[data-portal-footer] .portal-footer {
+  width: 100%;
+  max-width: var(--portal-content-max);
+  margin-inline: auto;
+  margin-top: auto;
+  padding: 20px var(--portal-pad-x) clamp(24px, 3vw, 36px);
+  box-sizing: border-box;
+}
+
+/* —— Steward panel (prevent horizontal squeeze/overflow) —— */
+.steward-panel {
+  min-width: 0 !important;
+  width: min(920px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+}
+
+.steward-workspace-layout {
+  min-width: 0;
+}
+
+.steward-side-col,
+.steward-main-col {
+  min-width: 0;
+}
+
+/* —— Tables / wide content scroll inside container only —— */
+.schedule-preview-wrap,
+.table-scroll,
+.admin-table-wrap {
+  max-width: 100%;
+}
+
+/* —— Laptop —— */
+@media (max-width: 1280px) {
+  .dash-hero-band {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-split,
+  .builder-layout,
+  .calendar-grid {
+    grid-template-columns: minmax(0, min(280px, 36%)) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .dash-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-split,
+  .builder-layout,
+  .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* —— Ultrawide —— */
+@media (min-width: 1600px) {
+  :root {
+    --portal-content-max: min(1760px, calc(100vw - var(--tn-sidebar) - 80px));
+  }
+
+  .dash-columns {
+    gap: clamp(24px, 2vw, 36px);
+  }
+}
+
+@media (min-width: 2000px) {
+  :root {
+    --tn-sidebar: 232px;
+    --portal-content-max: min(1920px, calc(100vw - var(--tn-sidebar) - 96px));
+  }
+}
+
+/* —— Mobile (preserve drawer nav) —— */
+@media (max-width: 900px) {
+  .portal-app {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-sidebar {
+    max-width: min(300px, 92vw);
+  }
+
+  .portal-content,
+  .portal-content--workspace {
+    padding: 18px 16px 32px;
+  }
+
+  .page-frame {
+    max-width: 100%;
+  }
+
+  .dash-hero-band,
+  .dash-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .org-hero-actions .btn-lg {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+  }
+}

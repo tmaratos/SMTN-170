@@ -715,11 +715,7 @@ textarea {
 
 @media (max-width: 900px) {
   .workspace-split {
-    flex-direction: column !important;
-  }
-
-  .portal-content {
-    padding: 16px !important;
+    grid-template-columns: 1fr !important;
   }
 
   .schedule-table {
