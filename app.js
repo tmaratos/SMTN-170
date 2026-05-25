@@ -4,7 +4,7 @@ async function portalLogin(event) {
   const password = document.getElementById("loginPassword")?.value || "";
   const auth = window.SMTN170Auth;
 
-  if (window.SMTN170Supabase?.isConfigured?.() && auth?.signIn) {
+  if (window.SUPABASE_CONFIG?.isConfigured && window.SMTN170Supabase?.isConfigured?.() && auth?.signIn) {
     await auth.signIn(email, password);
     const s = auth.loadSession();
     window.location.href =

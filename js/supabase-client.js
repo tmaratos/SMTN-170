@@ -2,22 +2,41 @@
  * TN-170 Supabase client — auth persistence, session restore, realtime.
  */
 (function initSupabaseClient(global) {
-  const cfg = () => global.SMTN170_SUPABASE_CONFIG || {};
+  function readCfg() {
+    const c = global.SUPABASE_CONFIG;
+    if (c && c.url) {
+      return {
+        url: c.url,
+        anonKey: c.anonKey,
+        storageBucket: c.storageBucket || "squadron-files",
+      };
+    }
+    const legacy = global.SMTN170_SUPABASE_CONFIG || {};
+    return {
+      url: legacy.SUPABASE_URL,
+      anonKey: legacy.SUPABASE_ANON_KEY,
+      storageBucket: legacy.STORAGE_BUCKET || "squadron-files",
+    };
+  }
+
+  function isConfigured() {
+    if (global.TN170SupabaseConfig?.isConfigured) {
+      return global.TN170SupabaseConfig.isConfigured();
+    }
+    const c = readCfg();
+    return !!(
+      c.url &&
+      c.anonKey &&
+      c.anonKey.length > 10 &&
+      !String(c.url).includes("YOUR_PROJECT")
+    );
+  }
+
   let client = null;
   let readyResolve;
   const readyPromise = new Promise((r) => {
     readyResolve = r;
   });
-
-  function isConfigured() {
-    const c = cfg();
-    return (
-      c.SUPABASE_URL &&
-      !c.SUPABASE_URL.includes("YOUR_PROJECT") &&
-      c.SUPABASE_ANON_KEY &&
-      c.SUPABASE_ANON_KEY.length > 10
-    );
-  }
 
   function loadSdk() {
     return new Promise((resolve, reject) => {
@@ -37,23 +56,29 @@
   async function init() {
     if (client) return client;
     if (!isConfigured()) {
-      console.warn("[TN-170] Supabase URL not configured — set SUPABASE_URL in js/supabase-config.js");
-      readyResolve(client);
+      console.warn("[TN-170] Supabase is not configured.");
+      readyResolve(null);
       return null;
     }
-    const lib = await loadSdk();
-    const c = cfg();
-    client = lib.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storage: global.localStorage,
-      },
-      realtime: { params: { eventsPerSecond: 8 } },
-    });
-    readyResolve(client);
-    return client;
+    try {
+      const lib = await loadSdk();
+      const c = readCfg();
+      client = lib.createClient(c.url, c.anonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: global.localStorage,
+        },
+        realtime: { params: { eventsPerSecond: 8 } },
+      });
+      readyResolve(client);
+      return client;
+    } catch (err) {
+      console.error("[TN-170] Supabase init failed", err);
+      readyResolve(null);
+      return null;
+    }
   }
 
   function getClient() {
@@ -74,7 +99,7 @@
   function subscribeTable(table, filter, cb) {
     return whenReady().then((sb) => {
       if (!sb) return null;
-      let ch = sb.channel("tn170-" + table).on(
+      const ch = sb.channel("tn170-" + table).on(
         "postgres_changes",
         { event: "*", schema: "public", table, filter },
         cb
@@ -91,11 +116,8 @@
     isConfigured,
     onAuthStateChange,
     subscribeTable,
-    storageBucket: () => cfg().STORAGE_BUCKET || "squadron-files",
+    storageBucket: () => readCfg().storageBucket || "squadron-files",
   };
 
-  init().catch((err) => {
-    console.error("[TN-170] Supabase init failed", err);
-    readyResolve(null);
-  });
+  init();
 })(window);

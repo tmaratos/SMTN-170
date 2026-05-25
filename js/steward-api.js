@@ -6,11 +6,15 @@
   const CAP_SEARCH_MARKER = "CAP_SEARCH_URL:";
 
   function config() {
+    const c = global.SUPABASE_CONFIG;
+    if (c?.url) {
+      return { SUPABASE_URL: c.url, SUPABASE_ANON_KEY: c.anonKey };
+    }
     return global.SMTN170_SUPABASE_CONFIG || {};
   }
 
   function isConfigured() {
-    return global.SMTN170Supabase?.isConfigured?.();
+    return global.TN170SupabaseConfig?.isConfigured?.() || global.SMTN170Supabase?.isConfigured?.() || false;
   }
 
   async function getAccessToken() {

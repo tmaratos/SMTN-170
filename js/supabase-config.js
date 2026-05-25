@@ -1,13 +1,43 @@
 /**
- * Supabase connection — set your project URL before deploy.
- * Anon key is safe for browser use (RLS protects data).
- * For GitHub Pages: edit this file or inject via build step.
+ * Supabase connection — browser-safe anon key only (RLS protects data).
  */
 (function initSupabaseConfig(global) {
+  const url = "https://hmfbeqnlcchkjyzqnlni.supabase.co";
+  const anonKey = "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai";
+  const storageBucket = "squadron-files";
+
+  const isConfigured = !!(
+    url &&
+    anonKey &&
+    anonKey.length > 10 &&
+    !String(url).includes("YOUR_PROJECT")
+  );
+
+  global.SUPABASE_CONFIG = {
+    url,
+    anonKey,
+    storageBucket,
+    isConfigured,
+  };
+
+  /** Legacy shape used by existing portal modules */
   global.SMTN170_SUPABASE_CONFIG = {
-    /** Replace with your project URL from Supabase Dashboard → Settings → API */
-    SUPABASE_URL: "https://hmfbeqnlcchkjyzqnlni.supabase.co",
-    SUPABASE_ANON_KEY: "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai",
-    STORAGE_BUCKET: "squadron-files",
+    SUPABASE_URL: url,
+    SUPABASE_ANON_KEY: anonKey,
+    STORAGE_BUCKET: storageBucket,
+  };
+
+  global.TN170SupabaseConfig = {
+    get() {
+      return global.SUPABASE_CONFIG || null;
+    },
+    isConfigured() {
+      const cfg = global.SUPABASE_CONFIG;
+      if (cfg && typeof cfg.isConfigured === "boolean") return cfg.isConfigured;
+      return false;
+    },
+    adminMessage() {
+      return "Supabase is not configured. Please contact the portal administrator.";
+    },
   };
 })(window);

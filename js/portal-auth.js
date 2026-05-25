@@ -157,7 +157,12 @@
 
   async function signIn(email, password) {
     const sb = global.SMTN170Supabase?.getClient?.();
-    if (!sb) throw new Error("Supabase is not configured. Set SUPABASE_URL in js/supabase-config.js");
+    if (!sb) {
+      throw new Error(
+        global.TN170SupabaseConfig?.adminMessage?.() ||
+          "Supabase is not configured. Please contact the portal administrator."
+      );
+    }
     const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
     if (error) throw error;
     await syncSessionFromSupabase();
@@ -166,7 +171,12 @@
 
   async function signUp(email, password) {
     const sb = global.SMTN170Supabase?.getClient?.();
-    if (!sb) throw new Error("Supabase is not configured");
+    if (!sb) {
+      throw new Error(
+        global.TN170SupabaseConfig?.adminMessage?.() ||
+          "Supabase is not configured. Please contact the portal administrator."
+      );
+    }
     const { error } = await sb.auth.signUp({
       email: email.trim(),
       password,

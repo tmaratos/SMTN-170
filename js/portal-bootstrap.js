@@ -32,6 +32,9 @@
   async function bootstrap() {
     if (isLoginPage()) {
       hideLoading();
+      if (global.SMTN170Supabase?.whenReady) {
+        await global.SMTN170Supabase.whenReady();
+      }
       return global.SMTN170Auth?.init?.();
     }
     showLoading("Loading workspace…");
