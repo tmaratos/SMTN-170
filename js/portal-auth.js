@@ -318,11 +318,11 @@
     });
   }
 
-  /** Offline demo when Supabase URL not configured */
+  /** Local-only fallback when Supabase URL is not configured (development). */
   function login(email, accountStatus, role) {
     profile = {
-      id: "demo-user",
-      email: email || "demo@example.com",
+      id: "local-user",
+      email: email || "member@example.com",
       first_name: "",
       last_name: "",
       preferred_name: "",

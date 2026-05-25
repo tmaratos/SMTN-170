@@ -74,9 +74,8 @@
 
         try {
           if (!window.SMTN170Supabase.isConfigured()) {
-            window.SMTN170Auth.login(email, window.SMTN170Auth.ACCOUNT_STATUS.APPROVED);
-            sessionStorage.setItem("smtn170_had_session", "1");
-            location.href = "dashboard.html";
+            errEl.textContent = "Supabase is not configured. Set SUPABASE_URL in js/supabase-config.js.";
+            errEl.hidden = false;
             return;
           }
           await window.SMTN170Auth.signIn(email, password);

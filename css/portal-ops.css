@@ -27,6 +27,13 @@ body {
   letter-spacing: 0.02em;
 }
 
+.dash-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .portal-topbar p {
   font-size: 1rem;
   margin-top: 6px;

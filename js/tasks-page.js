@@ -45,12 +45,12 @@
     const res = await fetchTasks();
 
     if (!global.SMTN170Supabase?.isConfigured?.()) {
-      root.innerHTML = `<p class="page-intro">Connect Supabase to load shared squadron tasks.</p>`;
+      root.innerHTML = `<p class="page-intro">Sign in with Supabase configured to load squadron tasks.</p>`;
       return;
     }
 
     if (res?.error) {
-      root.innerHTML = `<p class="page-intro">Tasks table is not available yet. Run steward-phase2-tables.sql in Supabase, or ask Steward to create a task.</p>
+      root.innerHTML = `<p class="page-intro">Tasks could not be loaded. Confirm <code>portal_tasks</code> exists in Supabase.</p>
         <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
       global.SMTN170Steward?.rebind?.();
       return;
@@ -59,24 +59,33 @@
     const open = (res.rows || []).filter((t) => t.status !== "completed");
     const done = (res.rows || []).filter((t) => t.status === "completed");
 
-    const list = (rows) =>
+    const list = (rows, emptyMsg) =>
       rows.length
         ? `<ul class="dash-due-list">${rows
             .map(
               (t) => `<li class="dash-due-item">${statusChip(t.status)}<span><strong>${escapeHtml(t.title)}</strong>${t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}</span></li>`
             )
             .join("")}</ul>`
-        : `<p class="dash-caught-up">None listed.</p>`;
+        : `<p class="dash-empty">${escapeHtml(emptyMsg)}</p>`;
+
+    if (!res.rows.length) {
+      root.innerHTML = `
+        <p class="page-intro">Squadron tasks and follow-ups for approved Senior Members.</p>
+        <article class="card-info dash-block"><h2>No tasks yet</h2><p>Add your first record with Steward or during staff planning.</p>
+        <button type="button" class="btn-gold" data-steward-open style="margin-top:12px">Open Steward</button></article>`;
+      global.SMTN170Steward?.rebind?.();
+      return;
+    }
 
     root.innerHTML = `
       ${intro ? intro.outerHTML : '<p class="page-intro">Squadron tasks for approved Senior Members.</p>'}
       <div class="card-warning dash-block">
         <h2 class="card-warning-title">Open (${open.length})</h2>
-        ${list(open)}
+        ${list(open, "No open tasks.")}
       </div>
       <div class="card-info dash-block">
         <h2 class="card-info-title">Completed (${done.length})</h2>
-        ${list(done.slice(0, 10))}
+        ${list(done.slice(0, 10), "No completed tasks yet.")}
       </div>
       <button type="button" class="btn-gold" data-steward-open>Create or manage tasks in Steward</button>`;
 

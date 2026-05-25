@@ -1,6 +1,5 @@
 /**
- * TN-170 Organization Chart — squadron staff structure (front-end prototype).
- * Future: Supabase org_positions table (read/write via prepared hooks below).
+ * TN-170 Organization Chart — squadron staff structure (Supabase org_positions).
  * All approved Senior Members may view and update; audit via last_worked_by.
  */
 (function initOrgChartModule(global) {
@@ -122,9 +121,7 @@
   }
 
   function actorName() {
-    const s = global.SMTN170Auth?.loadSession?.();
-    if (!s) return "Capt. M. Ellis";
-    return (s.rank ? s.rank + " " : "") + (s.displayName || s.email || "Member");
+    return global.SMTN170Auth?.actorDisplay?.() || "Member";
   }
 
   function touchAudit(pos) {
@@ -341,8 +338,7 @@
 
   async function loadAsync() {
     const fromDb = await SUPABASE.fetchPositions();
-    if (fromDb && fromDb.length) return { positions: fromDb, source: "supabase" };
-    return load();
+    return { positions: fromDb || [], source: fromDb?.length ? "supabase" : "empty" };
   }
 
   function load() {
@@ -355,9 +351,7 @@
         /* reset */
       }
     }
-    const data = { positions: defaultPositions(), updatedAt: new Date().toISOString() };
-    save(data);
-    return data;
+    return { positions: [], updatedAt: new Date().toISOString() };
   }
 
   function save(data) {
@@ -503,6 +497,9 @@
   }
 
   function renderChart(positions) {
+    if (!positions.length) {
+      return `<div class="org-empty card-info"><h3>No organization chart positions have been created yet.</h3><p>Add your first position to build the squadron staff structure.</p><button type="button" class="btn-gold" data-action="add-position" style="margin-top:12px">Add position</button></div>`;
+    }
     const depts =
       state.departmentFilter === "all"
         ? DEPARTMENTS
@@ -560,7 +557,6 @@
             <input type="checkbox" name="is_command" ${p.is_command ? "checked" : ""} />
             Command-level position (emphasized on chart)
           </label>
-          <p class="steward-planned" style="margin:0">Future: assign profiles.id · drag-and-drop hierarchy · Supabase org_positions sync</p>
           <footer class="org-modal-foot">
             ${!isNew ? `<button type="button" class="ghost-btn btn-lg org-btn-danger" data-action="delete-position" data-org-id="${escapeHtml(p.id)}">Remove position</button>` : ""}
             <button type="button" class="ghost-btn btn-lg" data-action="close-editor">Cancel</button>
@@ -587,7 +583,7 @@
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>TN-170 Organization Chart</title>
       <style>body{font-family:Georgia,serif;margin:24px;color:#111}h1{font-size:1.35rem}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #333;padding:10px;text-align:left}th{background:#e8eef8}.meta{color:#444;font-size:0.9rem}</style></head><body>
       <h1>TN-170 Oak Ridge Composite Squadron</h1>
-      <p class="meta">Organization Chart · ${new Date().toLocaleString()} · Demo export (PDF snapshot planned)</p>
+      <p class="meta">Organization Chart · ${new Date().toLocaleString()} · TN-170 Senior Member operations portal</p>
       <table><thead><tr><th>Department</th><th>Position</th><th>Member</th><th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>
       <p class="meta" style="margin-top:20px">Future: org_chart_snapshots + printable PDF via Supabase.</p></body></html>`);
     w.document.close();
@@ -670,7 +666,7 @@
   function render() {
     const root = document.getElementById("orgChartApp");
     if (!root) return;
-    const data = load();
+    const data = chartData.positions?.length ? chartData : load();
     const m = getMetrics(data.positions);
 
     root.innerHTML = `
@@ -716,7 +712,6 @@
             </label>
           </section>
           <div data-steward-context="orgchart"></div>
-          <p class="steward-planned org-future-note">Planned: Supabase <code>org_positions</code> · drag-and-drop hierarchy · chart snapshots/history · PDF export.</p>
         </aside>
         <div class="org-main workspace-col">
           <div id="orgChartDisplay">${renderChart(data.positions)}</div>
@@ -786,11 +781,18 @@
     });
   }
 
+  let chartData = { positions: [] };
+
   async function hydrateFromSupabase() {
-    const rows = await SUPABASE.fetchPositions();
-    if (rows && rows.length) {
-      save({ positions: rows, source: "supabase" });
+    chartData = await loadAsync();
+    if (!chartData.positions.length) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
     }
+    save(chartData);
   }
 
   async function init() {

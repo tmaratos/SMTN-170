@@ -1,6 +1,5 @@
 /**
- * TN-170 — shared page UX: Steward workflow panels, layout helpers.
- * Future: Supabase-driven contextual help per role.
+ * TN-170 — Steward workflow panels on operational pages.
  */
 (function initPortalPages(global) {
   function escapeHtml(t) {
@@ -11,54 +10,42 @@
 
   const STEWARD_CONTEXTS = {
     schedule: {
-      title: "Need help building this schedule?",
+      title: "Meeting planning help",
       body: "Ask Steward about CAP meeting standards, weekly templates, uniforms, and training blocks for your squadron meeting plan.",
-      prompts: [
-        "Help prepare a senior member meeting agenda.",
-        "What should our monthly meeting schedule include?",
-      ],
-      showGenerate: true,
+      prompts: ["Help prepare a senior member meeting agenda.", "What should our monthly meeting schedule include?"],
     },
     calendar: {
-      title: "Questions about squadron events?",
-      body: "Steward can help you plan meeting nights, safety briefings, and special activities on the calendar.",
-      prompts: ["What monthly tasks should our squadron complete?", "Summarize upcoming meeting nights."],
+      title: "Squadron calendar",
+      body: "Steward can help plan meeting nights, safety briefings, and special activities on the calendar.",
+      prompts: ["Summarize upcoming meeting nights.", "What should we post on the squadron calendar this month?"],
     },
     bfr: {
       title: "Flight review guidance",
       body: "Ask Steward about Biannual Flight Review packets, due items, and what to prepare before review night.",
-      prompts: [
-        "Find Biannual Flight Review readiness items.",
-        "What inspection items should we check this month?",
-      ],
+      prompts: ["Show overdue flight reviews.", "What should a flight review packet include?"],
     },
     sui: {
       title: "Inspection prep help",
-      body: "Steward can walk through unit inspection checklist items and what documentation wing staff typically expect.",
-      prompts: [
-        "What inspection items should we check this month?",
-        "What should we file before a unit inspection?",
-      ],
+      body: "Steward can walk through unit inspection checklist items and supporting documentation.",
+      prompts: ["What inspection items should we check this month?", "Show open inspection items."],
     },
     files: {
-      title: "Filing and uploads",
-      body: "Steward will suggest file categories when uploads connect. For now, ask how to organize squadron documents.",
+      title: "Files and forms",
+      body: "Ask Steward how to organize squadron documents and where to file meeting minutes and readiness packets.",
       prompts: ["Help categorize uploaded files.", "Where should meeting minutes be filed?"],
     },
     senior: {
-      title: "Senior member workspace",
-      body: "Open Steward for staff planning, flight reviews, inspection prep, and training file questions.",
+      title: "Senior Member Workspace",
+      body: "Use Steward for staff planning, flight reviews, inspection prep, and meeting preparation.",
       prompts: ["Help prepare a senior member meeting agenda."],
     },
     orgchart: {
-      title: "Need help organizing the squadron structure?",
-      body: "Steward can suggest typical CAP billets, highlight vacancies, and help you think through staff assignments — not a corporate HR tool, just squadron ops guidance.",
+      title: "Organization chart",
+      body: "Steward can suggest typical CAP billets, highlight vacancies, and help with staff assignments.",
       prompts: [
         "Help build the squadron org chart.",
         "Show vacant operational positions.",
-        "Recommend org chart improvements.",
         "What positions are normally present in a CAP squadron?",
-        "Help reorganize staff assignments.",
       ],
     },
   };
@@ -70,9 +57,6 @@
           `<button type="button" class="steward-context-chip" data-steward-ask="${escapeHtml(p)}">${escapeHtml(p)}</button>`
       )
       .join("");
-    const generateBtn = ctx.showGenerate
-      ? `<button type="button" class="btn-outline btn-lg" disabled title="Planned for Supabase + AI">Generate with Steward</button>`
-      : "";
 
     return `<aside class="steward-context card-assistant">
       <div class="steward-context-head">
@@ -83,8 +67,7 @@
         </div>
       </div>
       <div class="steward-context-actions">
-        <button type="button" class="btn-primary-lg btn-steward-lg" data-steward-ask>Ask Steward</button>
-        ${generateBtn}
+        <button type="button" class="btn-primary-lg btn-steward-lg" data-steward-ask>Open Steward</button>
       </div>
       ${chips ? `<div class="steward-context-prompts">${chips}</div>` : ""}
     </aside>`;
@@ -112,20 +95,6 @@
       el.replaceWith(aside.firstElementChild);
     });
     bindStewardContextActions();
-  }
-
-  function wrapPageFrames() {
-    document.querySelectorAll(".portal-content--wide > :not(.page-frame)").forEach(() => {});
-    const content = document.querySelector(".portal-content--wide:not(:has(.page-frame))");
-    if (!content || content.querySelector(".page-frame")) return;
-    const children = Array.from(content.childNodes).filter(
-      (n) => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim())
-    );
-    if (!children.length) return;
-    const frame = document.createElement("div");
-    frame.className = "page-frame";
-    children.forEach((c) => frame.appendChild(c));
-    content.appendChild(frame);
   }
 
   function init() {

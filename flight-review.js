@@ -1,6 +1,5 @@
 /**
- * Biannual Flight Review Readiness — front-end demo module.
- * Future: replace load/save with Supabase (auth, roles, documents, history).
+ * Biannual Flight Review Readiness — Supabase flight_reviews table.
  */
 (function initFlightReviewModule(global) {
   const STORAGE_KEY = "smtn170_flight_review";
@@ -221,23 +220,47 @@
     return base.map((d) => ({ id: uid(), ...d }));
   }
 
+  const STATUS_FROM_DB = {
+    current: STATUS.CURRENT,
+    due_soon: STATUS.DUE_SOON,
+    overdue: STATUS.OVERDUE,
+    scheduled: STATUS.SCHEDULED,
+    completed: STATUS.COMPLETED,
+    needs_review: STATUS.DUE_SOON,
+  };
+
+  let reviewCache = { departments: [], updatedAt: new Date().toISOString() };
+
+  async function loadFromSupabase() {
+    const sb = global.SMTN170Supabase?.getClient?.();
+    if (!sb) return { departments: [], updatedAt: new Date().toISOString() };
+    const { data, error } = await sb.from("flight_reviews").select("*").order("department");
+    if (error || !data?.length) return { departments: [], updatedAt: new Date().toISOString() };
+    return {
+      departments: data.map((row) => ({
+        id: row.id,
+        name: row.department,
+        lastReviewDate: row.last_review_date,
+        nextReviewDueDate: row.next_review_due_date,
+        assignedReviewer: row.assigned_reviewer || "",
+        status: STATUS_FROM_DB[row.status] || STATUS.CURRENT,
+        requiredDocuments: [...DEFAULT_REQUIRED],
+        missingDocuments: [],
+        uploadedFiles: [],
+        actionItems: [],
+        notes: row.notes || "",
+        followUpTasks: [],
+        completionConfirmed: row.status === "completed",
+        scheduledReviewDate: null,
+        last_worked_at: row.last_worked_at,
+        last_worked_by_name: null,
+      })),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   function load() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      const data = { departments: defaultDepartments(), updatedAt: new Date().toISOString() };
-      save(data);
-      return data;
-    }
-    try {
-      const data = JSON.parse(raw);
-      if (!Array.isArray(data.departments)) throw new Error("invalid");
-      return data;
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-      const data = { departments: defaultDepartments(), updatedAt: new Date().toISOString() };
-      save(data);
-      return data;
-    }
+    return reviewCache;
   }
 
   function save(data) {
@@ -313,9 +336,7 @@
   }
 
   function actorName() {
-    const s = global.SMTN170Auth?.loadSession?.();
-    if (!s) return "Capt. M. Ellis";
-    return (s.rank ? s.rank + " " : "") + (s.displayName || s.email || "Member");
+    return global.SMTN170Auth?.actorDisplay?.() || "Member";
   }
 
   function touchAudit(dept) {
@@ -504,7 +525,7 @@
         .footer{margin-top:24px;font-size:0.8rem;color:#555}
         @media print{body{margin:12px}}
       </style></head><body>${bodyHtml}
-      <p class="footer">Oak Ridge Composite Squadron · Senior Member Operations Portal · Demo export · ${new Date().toLocaleString()}</p>
+      <p class="footer">TN-170 Oak Ridge Composite Squadron · Senior Member operations portal · ${new Date().toLocaleString()}</p>
       </body></html>`);
     w.document.close();
     w.focus();
@@ -591,6 +612,20 @@
     if (!root) return;
     const data = refreshStatuses(load());
     const m = getMetrics(data);
+    if (!data.departments.length) {
+      root.innerHTML = `
+        <div class="fr-dash-head">
+          <div>
+            <p class="kicker" style="margin:0 0 6px">Flight reviews</p>
+            <h2 style="margin:0;font-size:1.35rem">Flight review status</h2>
+          </div>
+        </div>
+        <p class="dash-empty">No flight review records yet. Add your first record on the Flight Reviews page.</p>
+        <div class="fr-dash-actions">
+          <a class="btn gold" href="flight-review.html">Open Flight Reviews</a>
+        </div>`;
+      return;
+    }
     root.innerHTML = `
       <div class="fr-dash-head">
         <div>
@@ -655,7 +690,7 @@
       .join("");
     const files = (dept.uploadedFiles || [])
       .map((f) => `<li>${escapeHtml(f.name)} <small>${formatDate(f.uploadedAt)}</small></li>`)
-      .join("") || "<li class=\"fr-muted\">No uploads yet (demo)</li>";
+      .join("") || "<li class=\"fr-muted\">No files linked yet. Upload supporting documents in Files and forms.</li>";
     const actions = (dept.actionItems || [])
       .map(
         (a) =>
@@ -674,7 +709,7 @@
           <h3>Uploaded review files</h3>
           <ul>${files}</ul>
           <form class="fr-inline-form" data-action="upload-file" data-dept-id="${dept.id}">
-            <input name="fileName" placeholder="File name (demo)" required />
+            <input name="fileName" placeholder="File name" required />
             <button type="submit">Add file record</button>
           </form>
         </section>
@@ -731,7 +766,10 @@
     }
 
     if (deptRoot) {
-      deptRoot.innerHTML = data.departments.map(renderDepartmentCard).join("");
+      deptRoot.innerHTML = data.departments.length
+        ? data.departments.map(renderDepartmentCard).join("")
+        : `<article class="panel card-info"><h2>No flight review records yet</h2><p>Add your first department flight review record with Steward or during staff planning.</p><button type="button" class="btn-gold" data-steward-open style="margin-top:12px">Open Steward</button></article>`;
+      global.SMTN170Steward?.rebind?.();
     }
 
     if (scheduleForm) {
@@ -915,9 +953,14 @@
     }
   }
 
-  function init() {
-    const data = refreshStatuses(load());
-    syncCalendarFromReviews(data);
+  async function init() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore legacy cached demo rows */
+    }
+    reviewCache = refreshStatuses(await loadFromSupabase());
+    syncCalendarFromReviews(reviewCache);
 
     renderDashboardCard(document.getElementById("frDashboardCard"));
     renderModulePage();

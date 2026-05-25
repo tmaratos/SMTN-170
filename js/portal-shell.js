@@ -1,6 +1,6 @@
 /**
  * TN-170 portal shell — layout, mobile menu, footer, workspace home dashboard.
- * Future: Supabase session. Roles do not filter operational pages — see portal-auth.js.
+ * Roles do not filter operational pages — see portal-auth.js.
  */
 (function initPortalShell(global) {
   const MOTTO = "Not Without Effort.";
@@ -48,9 +48,9 @@
     }
   }
 
-  function getAttentionItems(d) {
-    const all = [...(d.READINESS_TASKS?.monthly || []), ...(d.READINESS_TASKS?.annual || [])];
-    return all.filter((t) => ["due_soon", "overdue", "needs_review"].includes(t.status));
+  function emptyList(message, link) {
+    const linkHtml = link ? `<a class="card-link" href="${link.href}">${escapeHtml(link.label)} →</a>` : "";
+    return `<p class="dash-empty">${escapeHtml(message)}</p>${linkHtml}`;
   }
 
   function bindMobileNav() {
@@ -102,30 +102,65 @@
     global.SMTN170Steward?.rebind?.();
   }
 
-  function renderDashboardV2() {
+  async function renderDashboardV2() {
     const root = document.getElementById("dashboardV2");
-    if (!root || !global.SMTN170_DATA || !global.SMTN170Auth?.loadSession?.()) return;
+    if (!root || !global.SMTN170Auth?.loadSession?.()) return;
 
-    const d = global.SMTN170_DATA;
-    const user = d.MOCK_USER;
-    const nextMeeting = d.UPCOMING_MEETINGS?.[0];
-    const attention = getAttentionItems(d);
-    const m = d.MISSION_READINESS || {};
-
-    const welcome =
-      global.SMTN170Auth?.getWelcomeGreeting?.() ||
-      (user ? { full: `Welcome back, ${user.displayName || user.name || ""}.` } : { full: "Welcome back." });
+    const welcome = global.SMTN170Auth?.getWelcomeGreeting?.() || { full: "Welcome back." };
     const welcomeTitle = welcome.full;
+
+    const summary = (await global.SMTN170Dashboard?.fetchSummary?.()) || {
+      configured: false,
+      meetings: [],
+      attention: [],
+      flightReviews: { current: 0, dueSoon: 0, overdue: 0, total: 0 },
+      inspection: { open: 0, total: 0 },
+    };
+
+    const nextMeeting = summary.meetings[0];
+    const fr = summary.flightReviews;
 
     const summaryItems = [
       nextMeeting
         ? `<li><strong>Next meeting:</strong> ${escapeHtml(nextMeeting.title)} · ${escapeHtml(formatDateFriendly(nextMeeting.date))}</li>`
-        : `<li><strong>Next meeting:</strong> See the calendar</li>`,
-      attention.length
-        ? `<li><strong>Needs attention:</strong> ${attention.length} item${attention.length === 1 ? "" : "s"} due or waiting on review</li>`
-        : `<li><strong>Needs attention:</strong> Nothing urgent right now</li>`,
-      `<li><strong>Flight reviews:</strong> ${m.bfr?.current ?? 0} on track · ${m.bfr?.dueSoon ?? 0} due soon</li>`,
+        : `<li><strong>Next meeting:</strong> No meetings scheduled yet</li>`,
+      summary.attention.length
+        ? `<li><strong>Needs attention:</strong> ${summary.attention.length} open task${summary.attention.length === 1 ? "" : "s"}</li>`
+        : `<li><strong>Needs attention:</strong> No urgent tasks</li>`,
+      fr.total
+        ? `<li><strong>Flight reviews:</strong> ${fr.current} on track · ${fr.dueSoon} due soon${fr.overdue ? ` · ${fr.overdue} overdue` : ""}</li>`
+        : `<li><strong>Flight reviews:</strong> No records yet</li>`,
     ].join("");
+
+    const meetingsHtml = summary.meetings.length
+      ? summary.meetings
+          .slice(0, 4)
+          .map(
+            (ev) => `
+          <li>
+            <time>${escapeHtml(formatDateFriendly(ev.date))}</time>
+            <div>
+              <strong>${escapeHtml(ev.title)}</strong>
+              ${ev.tag ? `<span class="tag-bfr">${escapeHtml(ev.tag)}</span>` : ""}
+              <span>${escapeHtml(ev.time)}${ev.loc ? ` · ${escapeHtml(ev.loc)}` : ""}</span>
+            </div>
+          </li>`
+          )
+          .join("")
+      : emptyList("No meetings have been saved yet.", { href: "schedule.html", label: "Create a meeting schedule" });
+
+    const attentionHtml = summary.attention.length
+      ? `<ul class="dash-due-list">${summary.attention
+          .map(
+            (t) => `
+          <li class="dash-due-item">
+            ${renderChip(t.status)}
+            <span>${escapeHtml(t.label)}</span>
+          </li>`
+          )
+          .join("")}</ul>
+        <a class="card-link card-link--light" href="tasks.html">Review tasks →</a>`
+      : `<p class="dash-caught-up">No urgent tasks. You are caught up.</p>`;
 
     root.innerHTML = `
       <div class="dash-workspace">
@@ -149,50 +184,18 @@
 
         <div class="dash-columns">
           <div class="dash-col dash-col--left">
-            <section class="card-info dash-block" aria-labelledby="dashWeek">
-              <h3 id="dashWeek" class="card-info-title">Today / This Week</h3>
-              <ul class="dash-bullet-list">
-                ${(d.THIS_WEEK || [])
-                  .map((item) => `<li>${escapeHtml(item)}</li>`)
-                  .join("")}
-              </ul>
-            </section>
-
             <section class="card-info dash-block" aria-labelledby="dashMeetings">
               <h3 id="dashMeetings" class="card-info-title">Upcoming Meetings</h3>
-              <ul class="dash-meeting-compact">
-                ${(d.UPCOMING_MEETINGS || [])
-                  .slice(0, 4)
-                  .map(
-                    (ev) => `
-                  <li>
-                    <time>${escapeHtml(formatDateFriendly(ev.date))}</time>
-                    <div>
-                      <strong>${escapeHtml(ev.title)}</strong>
-                      ${ev.tag ? `<span class="tag-bfr">${escapeHtml(ev.tag)}</span>` : ""}
-                      <span>${escapeHtml(ev.time)} · ${escapeHtml(ev.loc)}</span>
-                    </div>
-                  </li>`
-                  )
-                  .join("")}
-              </ul>
+              ${summary.meetings.length ? `<ul class="dash-meeting-compact">${meetingsHtml}</ul>` : meetingsHtml}
               <a class="card-link" href="calendar.html">Open calendar →</a>
             </section>
 
-            <section class="card-info dash-block" aria-labelledby="dashAnnounce">
-              <h3 id="dashAnnounce" class="card-info-title">Announcements</h3>
-              <ul class="dash-announce-list">
-                ${(d.ANNOUNCEMENTS || [])
-                  .map(
-                    (a) => `
-                  <li class="dash-announce-item">
-                    <time>${escapeHtml(formatDateFriendly(a.date))}</time>
-                    <strong>${escapeHtml(a.title)}</strong>
-                    <p>${escapeHtml(a.body)}</p>
-                    ${global.SMTN170Auth?.renderAuditHtml?.(a) || ""}
-                  </li>`
-                  )
-                  .join("")}
+            <section class="card-info dash-block" aria-labelledby="dashOps">
+              <h3 id="dashOps" class="card-info-title">Squadron operations</h3>
+              <ul class="dash-bullet-list">
+                <li>Private Senior Member operations workspace — approved Senior Members only.</li>
+                <li>Use <a href="schedule.html">Meeting planning</a>, <a href="documents.html">Files and forms</a>, and <a href="orgchart.html">Organization chart</a> for day-to-day work.</li>
+                <li>Ask <strong>Steward for CAP</strong> for meetings, flight reviews, inspection prep, and CAP references.</li>
               </ul>
             </section>
           </div>
@@ -200,23 +203,7 @@
           <div class="dash-col dash-col--right">
             <section class="card-warning dash-block" aria-labelledby="dashDue">
               <h3 id="dashDue" class="card-warning-title">Due Soon</h3>
-              ${
-                attention.length
-                  ? `<ul class="dash-due-list">
-                ${attention
-                  .map(
-                    (t) => `
-                  <li class="dash-due-item">
-                    ${renderChip(t.status)}
-                    <span>${escapeHtml(t.label)}</span>
-                    ${global.SMTN170Auth?.renderAuditHtml?.(t) || ""}
-                  </li>`
-                  )
-                  .join("")}
-              </ul>
-              <a class="card-link card-link--light" href="tasks.html">Review tasks →</a>`
-                  : `<p class="dash-caught-up">You are caught up. Nice work.</p>`
-              }
+              ${attentionHtml}
             </section>
 
             <section class="card-action dash-block" aria-labelledby="dashActions">
@@ -295,7 +282,7 @@
     bindMobileNav();
     injectFooter();
     normalizeTopbarCopy();
-    renderDashboardV2();
+    renderDashboardV2().catch((e) => console.warn("[TN-170] dashboard", e));
     bootPortalAssets(() => {
       global.SMTN170Steward?.rebind?.();
       bindDashboardSteward();
@@ -306,7 +293,7 @@
   global.SMTN170Shell = { renderChip, statusClass, statusLabel, init };
 
   function onProfileChange() {
-    renderDashboardV2();
+    renderDashboardV2().catch((e) => console.warn("[TN-170] dashboard", e));
     global.SMTN170PortalNav?.init?.();
   }
 

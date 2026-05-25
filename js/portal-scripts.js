@@ -12,7 +12,7 @@
     admin: ["./js/portal-data.js", "./js/portal-admin.js"],
     profile: ["./js/portal-data.js", "./js/profile-page.js"],
     tasks: ["./js/tasks-page.js"],
-    dashboard: ["./js/portal-data.js"],
+    dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js"],
     calendar: ["./flight-review.js"],
     resources: [],
     exports: ["./flight-review.js"],

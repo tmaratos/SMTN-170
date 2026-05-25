@@ -46,7 +46,7 @@
           <div>
             <label for="profilePhotoUrl">Profile photo link</label>
             <input type="url" id="profilePhotoUrl" name="profile_photo_url" value="${escapeHtml(row?.profile_photo_url || "")}" placeholder="https://… (optional)" />
-            <p class="profile-hint">Paste a link to your photo for now. Direct upload may be added later.</p>
+            <p class="profile-hint">Optional link to a profile photo hosted elsewhere.</p>
           </div>
         </div>
 

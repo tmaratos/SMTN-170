@@ -24,6 +24,17 @@
     return r.replace(/\.\s*$/, "").replace(/\s+/g, " ");
   }
 
+  /** Avoid "Capt Capt. M. Ellis" when rank is already in the name. */
+  function nameIncludesRank(rank, name) {
+    if (!rank || !name) return false;
+    const r = normalizeRank(rank).toLowerCase();
+    const n = name.toLowerCase();
+    if (n.startsWith(r + " ") || n.startsWith(r + ".")) return true;
+    const abbr = r.replace(/\./g, "");
+    if (abbr.length >= 2 && n.startsWith(abbr + " ")) return true;
+    return false;
+  }
+
   function fullName(row) {
     const first = trim(row?.first_name);
     const last = trim(row?.last_name);
@@ -45,7 +56,7 @@
 
     const rank = normalizeRank(row?.rank);
     const name = fullName(row);
-    if (rank && name) return `${rank} ${name}`;
+    if (rank && name && !nameIncludesRank(rank, name)) return `${rank} ${name}`;
     if (name) return name;
 
     const email = trim(row?.email);
@@ -65,7 +76,7 @@
 
     const rank = normalizeRank(row?.rank);
     const name = fullName(row);
-    if (rank && name) {
+    if (rank && name && !nameIncludesRank(rank, name)) {
       return { label: `${rank} ${name}`, full: `Welcome back, ${rank} ${name}.` };
     }
     if (name) {

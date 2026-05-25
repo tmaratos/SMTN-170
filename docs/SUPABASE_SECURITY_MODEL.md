@@ -156,9 +156,9 @@ WITH CHECK (
 
 ---
 
-## Frontend prototype (pre-Supabase)
+## Frontend auth
 
-See `js/portal-auth.js` for mock session, route guards, and admin capability checks. Replace with Supabase Auth session + `profiles` row when connected.
+See `js/portal-auth.js` for Supabase session, route guards, and admin capability checks. Only `login.html` is public; all operational pages require an approved profile.
 
 ---
 

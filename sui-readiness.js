@@ -1,114 +1,147 @@
 /**
- * SUI Readiness — demo tracker for subordinate unit inspections.
+ * TN-170 Inspection Prep — inspection_items from Supabase.
  */
 (function initSuiReadiness(global) {
-  const STORAGE_KEY = "smtn170_sui_readiness";
-
-  function uid() {
-    return global.crypto?.randomUUID?.() || "sui-" + Date.now();
-  }
-
-  function load() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-    const data = {
-      nextSuiWindow: "2026-09-01",
-      overallPercent: 72,
-      workUnits: [
-        { name: "Command & Admin", status: "On track", lead: "Lt. Col. S. Brennan", open: 2 },
-        { name: "Operations", status: "Needs attention", lead: "Maj. J. Whitmore", open: 5 },
-        { name: "Emergency Services", status: "On track", lead: "Capt. R. Delgado", open: 1 },
-        { name: "Cadet Programs", status: "On track", lead: "Capt. M. Ellis", open: 3 },
-        { name: "Aerospace Education", status: "Overdue item", lead: "1st Lt. K. Nguyen", open: 4 },
-        { name: "Safety", status: "On track", lead: "Maj. T. Owens", open: 2 },
-      ],
-      checklist: [
-        { item: "CC briefing binder current", done: true },
-        { item: "ORMS / safety culture evidence", done: true },
-        { item: "Aircraft & vehicle records", done: false },
-        { item: "Cadet protection compliance file", done: true },
-        { item: "Finance & property accountability", done: false },
-      ],
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    return data;
-  }
-
   function escapeHtml(t) {
     const d = document.createElement("div");
     d.textContent = t == null ? "" : String(t);
     return d.innerHTML;
   }
 
-  function render() {
+  function statusClass(status) {
+    if (status === "completed") return "fr-status--current";
+    if (status === "due_soon" || status === "needs_review") return "fr-status--due-soon";
+    if (status === "overdue") return "fr-status--overdue";
+    return "fr-status--scheduled";
+  }
+
+  function statusLabel(status) {
+    const map = {
+      open: "Open",
+      due_soon: "Due soon",
+      needs_review: "Needs review",
+      completed: "Completed",
+      overdue: "Overdue",
+    };
+    return map[status] || status || "Open";
+  }
+
+  async function fetchItems() {
+    const sb = global.SMTN170Supabase?.getClient?.();
+    if (!sb) return { rows: [], error: null, configured: false };
+    const { data, error } = await sb
+      .from("inspection_items")
+      .select("*")
+      .order("due_date", { ascending: true, nullsFirst: false });
+    if (error) return { rows: [], error: error.message, configured: true };
+    return { rows: data || [], configured: true };
+  }
+
+  function groupByWorkUnit(rows) {
+    const map = new Map();
+    rows.forEach((r) => {
+      const unit = r.work_unit || "General";
+      if (!map.has(unit)) map.set(unit, []);
+      map.get(unit).push(r);
+    });
+    return map;
+  }
+
+  async function render() {
     const root = document.getElementById("suiMain");
     const dash = document.getElementById("suiDashboardCard");
-    if (!root && !dash) return;
+    const res = await fetchItems();
 
-    const data = load();
-    const openCheck = data.checklist.filter((c) => !c.done).length;
+    const open = (res.rows || []).filter((r) => r.status !== "completed");
+    const done = (res.rows || []).filter((r) => r.status === "completed");
+    const percent = res.rows.length ? Math.round((done.length / res.rows.length) * 100) : 0;
 
     if (dash) {
       dash.innerHTML = `
         <div class="fr-dash-head">
           <div>
-            <p class="kicker" style="margin:0 0 6px">Subordinate Unit Inspection</p>
-            <h2 style="margin:0;font-size:1.35rem;text-transform:uppercase">SUI Readiness</h2>
+            <p class="kicker" style="margin:0 0 6px">Inspection prep</p>
+            <h2 style="margin:0;font-size:1.35rem;text-transform:uppercase">Inspection Prep</h2>
           </div>
-          <div class="fr-readiness-ring" aria-label="SUI readiness ${data.overallPercent} percent">
-            <strong>${data.overallPercent}%</strong>
-            <span>Prepared</span>
+          <div class="fr-readiness-ring" aria-label="Inspection prep ${percent} percent complete">
+            <strong>${percent}%</strong>
+            <span>Complete</span>
           </div>
         </div>
         <div class="fr-dash-stats">
-          <div><strong>${openCheck}</strong><span>Open checklist items</span></div>
-          <div><strong>${data.workUnits.filter((w) => w.status !== "On track").length}</strong><span>Work units flagged</span></div>
+          <div><strong>${open.length}</strong><span>Open items</span></div>
+          <div><strong>${done.length}</strong><span>Completed</span></div>
         </div>
         <div class="di-dash-actions">
-          <a class="btn gold" href="sui-readiness.html">SUI checklist</a>
+          <a class="btn gold" href="sui-readiness.html">Inspection checklist</a>
         </div>`;
     }
 
-    if (root) {
-      root.innerHTML = `
-        <article class="panel sui-hero">
-          <p class="kicker">Subordinate Unit Inspection</p>
-          <h2>SUI Readiness</h2>
-          <p>Track inspection prep by work unit — command, operations, ES, cadet programs, AE, and safety — before the wing SUI team arrives.</p>
-          <p class="sui-meta">Next inspection window: <strong>${escapeHtml(data.nextSuiWindow)}</strong> · Overall: <strong>${data.overallPercent}%</strong> prepared</p>
-        </article>
-        <div class="sui-grid">
-          ${data.workUnits
-            .map(
-              (w) =>
-                `<article class="panel"><h3>${escapeHtml(w.name)}</h3>
-                <span class="fr-status-pill ${w.status === "On track" ? "fr-status--current" : "fr-status--due-soon"}">${escapeHtml(w.status)}</span>
-                <p class="sui-meta">Lead: ${escapeHtml(w.lead)} · ${w.open} open action${w.open === 1 ? "" : "s"}</p></article>`
-            )
-            .join("")}
-        </div>
-        <article class="panel">
-          <h2>Commander's SUI checklist</h2>
-          <ul class="sui-checklist">
-            ${data.checklist
-              .map(
-                (c) =>
-                  `<li class="${c.done ? "sui-check--done" : ""}">${c.done ? "☑" : "☐"} ${escapeHtml(c.item)}</li>`
-              )
-              .join("")}
-          </ul>
-        </article>
-        <p class="di-arch-note"><strong>Note:</strong> Live SUI records will sync from Supabase; supporting documents live in the <a href="documents.html" style="color:var(--cyan);font-weight:800">File Library</a>.</p>`;
+    if (!root) return;
+
+    if (!res.configured) {
+      root.innerHTML = `<p class="page-intro">Sign in with Supabase configured to load inspection prep records.</p>`;
+      return;
     }
+
+    if (res.error) {
+      root.innerHTML = `<p class="page-intro">Inspection items could not be loaded. Confirm <code>inspection_items</code> exists in Supabase (see steward-phase2-tables.sql).</p>
+        <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
+      global.SMTN170Steward?.rebind?.();
+      return;
+    }
+
+    if (!res.rows.length) {
+      root.innerHTML = `
+        <article class="panel sui-hero card-info">
+          <h2>Inspection Prep</h2>
+          <p>No inspection checklist items have been created yet.</p>
+          <p>Add your first item with Steward or during squadron staff planning.</p>
+          <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>
+        </article>`;
+      global.SMTN170Steward?.rebind?.();
+      return;
+    }
+
+    const byUnit = groupByWorkUnit(res.rows);
+    const unitCards = [...byUnit.entries()]
+      .map(([unit, items]) => {
+        const openCount = items.filter((i) => i.status !== "completed").length;
+        const worst = items.find((i) => i.status === "due_soon" || i.status === "needs_review") || items[0];
+        return `<article class="panel">
+          <h3>${escapeHtml(unit)}</h3>
+          <span class="fr-status-pill ${statusClass(worst?.status)}">${escapeHtml(statusLabel(worst?.status))}</span>
+          <p class="sui-meta">${openCount} open · ${items.length} total item${items.length === 1 ? "" : "s"}</p>
+        </article>`;
+      })
+      .join("");
+
+    const checklist = res.rows
+      .map(
+        (c) =>
+          `<li class="${c.status === "completed" ? "sui-check--done" : ""}">${c.status === "completed" ? "☑" : "☐"} ${escapeHtml(c.title)}${c.due_date ? ` <small>· due ${escapeHtml(c.due_date)}</small>` : ""}</li>`
+      )
+      .join("");
+
+    root.innerHTML = `
+      <article class="panel sui-hero">
+        <p class="kicker">Subordinate Unit Inspection</p>
+        <h2>Inspection Prep</h2>
+        <p>Track inspection prep by work unit — command, operations, emergency services, aerospace education, and safety.</p>
+        <p class="sui-meta"><strong>${open.length}</strong> open · <strong>${percent}%</strong> complete</p>
+      </article>
+      <div class="sui-grid">${unitCards}</div>
+      <article class="panel">
+        <h2>Checklist</h2>
+        <ul class="sui-checklist">${checklist}</ul>
+      </article>
+      <p class="page-intro">Supporting documents belong in <a href="documents.html">Files and forms</a>.</p>
+      <button type="button" class="btn-gold" data-steward-open>Manage items in Steward</button>`;
+
+    global.SMTN170Steward?.rebind?.();
   }
 
-  global.SMTN170SuiReadiness = { load, render };
+  global.SMTN170SuiReadiness = { fetchItems, render };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", render);

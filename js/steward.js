@@ -772,14 +772,14 @@
       <section class="steward-panel" id="stewardPanel" role="dialog" aria-modal="true" aria-labelledby="stewardTitle" aria-hidden="true">
         <header class="steward-panel-head">
           <div class="steward-head-text">
-            <p class="steward-kicker">TN-170 Senior Member operations assistant</p>
+            <p class="steward-kicker">Squadron operations assistant</p>
             <h2 id="stewardTitle">Steward for CAP</h2>
             <p class="steward-status"><span class="steward-status-dot" aria-hidden="true"></span> Ready to help</p>
           </div>
           <button type="button" class="steward-close" id="stewardClose" aria-label="Close Steward">✕</button>
         </header>
 
-        <p class="steward-continuity">Steward helps preserve squadron continuity on the TN-170 Senior Member operations portal — conversations, files, schedules, and operational context.</p>
+        <p class="steward-continuity">Steward helps preserve squadron continuity on the TN-170 Senior Member operations portal — meetings, files, flight reviews, inspection prep, and org chart data.</p>
 
         <div class="steward-mode-tabs" id="stewardModeTabs" role="tablist" aria-label="Steward modes"></div>
         <p class="steward-mode-hint" id="stewardModeHint"></p>

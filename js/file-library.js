@@ -237,7 +237,7 @@
         </div>`;
           })
           .join("")
-      : `<p class="page-intro" style="margin:0">No files in this folder yet. Drop a file above to upload.</p>`;
+      : `<p class="page-intro" style="margin:0">No files have been uploaded yet. Drop a file above to add your first upload.</p>`;
 
     list.innerHTML = uploads + rows;
   }
