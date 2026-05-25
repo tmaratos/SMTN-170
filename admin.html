@@ -9,11 +9,11 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Reference Shelf | TN-170</title>
+  <title>Admin &amp; Settings | TN-170</title>
   <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=3" />
 </head>
-<body data-portal-page="resources">
+<body data-portal-page="admin">
   <div class="portal-app">
     <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
     <div class="portal-backdrop" id="portalBackdrop"></div>
@@ -29,24 +29,20 @@
     <div class="portal-main">
       <header class="portal-topbar">
         <div>
-          <h1>Reference Shelf</h1>
-          <p>CAP publications · wing notices · lesson references · external links</p>
+          <h1>Admin &amp; Settings</h1>
+          <p>Roles · permissions · Steward policy · categories</p>
         </div>
       </header>
       <div class="portal-content page-stack">
-        <section class="resource-grid">
-          <article class="panel"><h2>Schedules</h2><p>Monthly templates and previous schedule exports.</p></article>
-          <article class="panel"><h2>Safety</h2><p>Safety briefing notes and recurring safety references.</p></article>
-          <article class="panel"><h2>Aerospace Education</h2><p>AEX, STEM, lesson planning, and activity resources.</p></article>
-          <article class="panel"><h2>Training</h2><p>Training nights, leadership lessons, and meeting plans.</p></article>
-          <article class="panel"><h2>Forms</h2><p>Frequently used local forms and shared templates.</p></article>
-          <article class="panel">
-            <h2>Squadron comms</h2>
-            <div data-portal-discord></div>
-          </article>
-          <article class="panel"><h2>External Links</h2><p>eServices, CAP.gov, BAND, and wing references.</p></article>
-        </section>
-        <p class="small-note">Squadron uploads and directorate files belong in the <a href="documents.html">File Library</a>.</p>
+        <p class="role-banner">Commander / admin shell — no database writes in this prototype.</p>
+        <div class="card-grid-2">
+          <article class="panel"><h2>Role management</h2><p class="steward-planned">Assign Commander, Command Staff, Senior Member, Cadet Staff, Cadet, Parent/Observer. Supabase RLS later.</p><button type="button" class="ghost-btn" disabled>Manage roles</button></article>
+          <article class="panel"><h2>Portal permissions</h2><p class="steward-planned">Channel and section access by role (placeholder).</p><button type="button" class="ghost-btn" disabled>Edit permissions</button></article>
+          <article class="panel"><h2>Steward access policy</h2><p class="steward-planned">Which roles may use Steward, CAP sources, and squadron file scope.</p><button type="button" class="ghost-btn" disabled>Steward policy</button></article>
+          <article class="panel"><h2>File categories</h2><p class="steward-planned">Edit filing categories for the upload center and Google Drive mapping.</p><a class="btn-gold" href="documents.html" style="display:inline-block;margin-top:8px">File Library</a></article>
+          <article class="panel"><h2>Announcements</h2><p class="steward-planned">Squadron-wide and cadet/parent announcement manager.</p><button type="button" class="ghost-btn" disabled>New announcement</button></article>
+          <a class="panel hub-card" href="operations.html"><h3>Operations hub</h3><p>Schedules, calendar, BFR, and operations file links.</p></a>
+        </div>
       </div>
       <div data-portal-footer></div>
     </div>

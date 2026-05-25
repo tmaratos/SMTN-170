@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
+  <link rel="manifest" href="./assets/site.webmanifest" />
+  <meta name="theme-color" content="#030914" />
+  <title>Mission Readiness | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+</head>
+<body data-portal-page="readiness">
+  <div class="portal-app">
+    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
+    <div class="portal-backdrop" id="portalBackdrop"></div>
+    <aside class="portal-sidebar" id="portalSidebar">
+      <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
+      <div class="portal-brand">
+        <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" />
+        <strong>TN-170</strong>
+        <span>Oak Ridge Composite</span>
+      </div>
+      <nav id="portalNav"></nav>
+    </aside>
+    <div class="portal-main">
+      <header class="portal-topbar">
+        <div>
+          <h1>Mission Readiness</h1>
+          <p>Monthly · annual · inspection · Biannual Flight Review</p>
+        </div>
+      </header>
+      <div class="portal-content page-stack" id="readinessPage"></div>
+      <div data-portal-footer></div>
+    </div>
+  </div>
+  <script src="./portal-config.js?v=2"></script>
+  <script src="./js/portal-data.js?v=1"></script>
+  <script src="./portal-nav.js?v=3"></script>
+  <script src="./js/portal-shell.js?v=1"></script>
+  <script src="./js/steward.js?v=2"></script>
+  <script>
+    (function () {
+      const d = window.SMTN170_DATA;
+      const chip = window.SMTN170Shell?.renderChip || (() => "");
+      const root = document.getElementById("readinessPage");
+      if (!root || !d) return;
+      root.innerHTML = `
+        <div class="card-grid-3">
+          <a class="panel hub-card" href="flight-review.html"><h3>Biannual Flight Reviews</h3><p>Directorate BFR packets and due dates.</p><span class="btn-gold" style="display:inline-block;margin-top:8px">Open BFR tracker</span></a>
+          <a class="panel hub-card" href="sui-readiness.html"><h3>SUI Readiness</h3><p>Subordinate unit inspection prep.</p><span class="btn-gold" style="display:inline-block;margin-top:8px">SUI checklist</span></a>
+          <a class="panel hub-card" href="safety.html"><h3>Safety program</h3><p>Briefings · ORMS · range documentation.</p><span class="btn-gold" style="display:inline-block;margin-top:8px">Safety hub</span></a>
+        </div>
+        <article class="panel"><h2>Monthly tasks</h2><ul class="task-list">${d.READINESS_TASKS.monthly.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
+        <article class="panel"><h2>Annual requirements</h2><ul class="task-list">${d.READINESS_TASKS.annual.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
+        <article class="panel"><h2>Compliance areas</h2><div class="card-grid-2">
+          <div><strong>Awards tracking</strong><p class="steward-planned">Placeholder — wing awards deadlines.</p></div>
+          <div><strong>Training currency</strong><p class="steward-planned">Placeholder — member specialty tracks.</p></div>
+          <div><strong>Safety briefings</strong><p class="steward-planned">Link to Safety hub and file library.</p></div>
+          <div><strong>Inspection prep</strong><p class="steward-planned">SUI checklist and inspection files.</p></div>
+        </div></article>`;
+    })();
+  </script>
+</body>
+</html>

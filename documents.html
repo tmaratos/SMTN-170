@@ -2,47 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>File Library | Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./styles.css?v=8" />
+  <title>File Library &amp; Upload | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=3" />
   <link rel="stylesheet" href="./document-intake.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=2" />
 </head>
 <body data-portal-page="files">
-  <div class="shell">
-    <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav data-portal-nav="shell"></nav>
+  <div class="portal-app">
+    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
+    <div class="portal-backdrop" id="portalBackdrop"></div>
+    <aside class="portal-sidebar" id="portalSidebar">
+      <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
+      <div class="portal-brand">
+        <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" />
+        <strong>TN-170</strong>
+        <span>Oak Ridge Composite</span>
+      </div>
+      <nav id="portalNav"></nav>
     </aside>
-
-    <main class="main">
-      <header class="topbar">
+    <div class="portal-main">
+      <header class="portal-topbar">
         <div>
           <h1>File Library</h1>
-          <p>Squadron filing · Google Drive folders · Supabase records</p>
+          <p>Upload center · drag-drop · squadron folders</p>
         </div>
       </header>
-
-      <div id="diStatusBar" aria-live="polite"></div>
-
-      <section class="di-layout">
-        <div>
-          <div id="diMainPanel" aria-live="polite"></div>
-        </div>
-        <aside class="di-sidebar-stack" id="diSidePanel" aria-live="polite"></aside>
-      </section>
-    </main>
+      <div class="portal-content">
+        <p class="steward-planned" style="margin-bottom:14px"><strong>Steward will suggest a category. Staff can override it.</strong> Move and reclassify controls are demo placeholders until Supabase + Google Drive connect.</p>
+        <div id="diStatusBar" aria-live="polite"></div>
+        <div class="card-grid-3" id="fileCategoryCards" style="margin-bottom:18px"></div>
+        <section class="di-layout">
+          <div><div id="diMainPanel" aria-live="polite"></div></div>
+          <aside class="di-sidebar-stack" id="diSidePanel" aria-live="polite"></aside>
+        </section>
+      </div>
+      <div data-portal-footer></div>
+    </div>
   </div>
-  <script src="./portal-config.js?v=1"></script>
-  <script src="./portal-nav.js?v=2"></script>
+  <script src="./portal-config.js?v=2"></script>
+  <script src="./js/portal-data.js?v=1"></script>
+  <script src="./portal-nav.js?v=3"></script>
+  <script src="./js/portal-shell.js?v=1"></script>
   <script src="./document-intake.js?v=1"></script>
+  <script src="./js/steward.js?v=2"></script>
+  <script>
+    (function () {
+      const cats = window.SMTN170_DATA?.FILE_CATEGORIES || [];
+      const el = document.getElementById("fileCategoryCards");
+      if (el) {
+        el.innerHTML = cats
+          .map((c) => `<article class="panel" style="padding:14px"><h3 style="margin:0 0 6px;font-size:0.88rem">${c}</h3><button type="button" class="ghost-btn btn-sm" disabled>Reclassify</button></article>`)
+          .join("");
+      }
+    })();
+  </script>
 </body>
 </html>

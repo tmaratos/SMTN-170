@@ -9,11 +9,11 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Safety | TN-170</title>
+  <title>Senior Member | TN-170</title>
   <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=3" />
 </head>
-<body data-portal-page="safety">
+<body data-portal-page="senior">
   <div class="portal-app">
     <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
     <div class="portal-backdrop" id="portalBackdrop"></div>
@@ -29,43 +29,47 @@
     <div class="portal-main">
       <header class="portal-topbar">
         <div>
-          <h1>Safety</h1>
-          <p>ORMS · range safety · briefing records · mishap prevention</p>
+          <h1>Senior Member</h1>
+          <p>Staff planning · BFR · inspection · training records</p>
         </div>
       </header>
       <div class="portal-content page-stack">
-        <article class="panel ops-hero">
-          <p class="kicker">Safety Officer</p>
-          <h2>Squadron Safety Program</h2>
-          <p>Maintain safety briefing logs, range and firearms documentation, ORMS habits, and wing safety reporting — not a generic compliance dashboard.</p>
+        <p class="role-banner">Senior member &amp; staff area — cadet-only and parent-limited content is not shown here.</p>
+
+        <button type="button" class="steward-launch-strip" data-steward-open>
+          <span class="steward-launch-icon" aria-hidden="true">💬</span>
+          <span><strong>Steward for CAP</strong>Your operations assistant — private chat history will live on your profile (Supabase, planned).</span>
+        </button>
+
+        <div class="card-grid-2">
+          <a class="panel hub-card" href="flight-review.html">
+            <h3>Biannual Flight Review tracker</h3>
+            <p>Directorate packets, due dates, and scheduled review nights.</p>
+          </a>
+          <a class="panel hub-card" href="sui-readiness.html">
+            <h3>Inspection prep tracker</h3>
+            <p>SUI readiness by work unit and commander checklist.</p>
+          </a>
+          <a class="panel hub-card" href="training.html">
+            <h3>Training records</h3>
+            <p>Training nights, lesson plans, and specialty track references.</p>
+          </a>
+          <a class="panel hub-card" href="documents.html">
+            <h3>File review</h3>
+            <p>Uploaded squadron files — Steward suggests categories; staff may override.</p>
+          </a>
+        </div>
+
+        <article class="panel">
+          <h2>Staff planning</h2>
+          <p class="steward-planned">Placeholder — directorate goals, meeting agendas, and command briefings. Supabase tasking will connect here.</p>
         </article>
-        <section class="ops-grid">
-          <article class="panel ops-card">
-            <h3>Safety briefing night</h3>
-            <p>Align the monthly safety topic with the squadron meeting schedule.</p>
-            <a class="gold-btn" href="calendar.html">Calendar — safety events</a>
-          </article>
-          <article class="panel ops-card">
-            <h3>Safety files</h3>
-            <p>Waivers, briefing slides, and recurring safety references in the file library.</p>
-            <a class="gold-btn" href="documents.html">File library — Safety</a>
-          </article>
-          <article class="panel ops-card">
-            <h3>BFR — Safety directorate</h3>
-            <p>Safety work unit packet for the biannual flight review cycle.</p>
-            <a class="gold-btn" href="flight-review.html#departments">Safety BFR status</a>
-          </article>
-          <article class="panel ops-card">
-            <h3>Reference shelf</h3>
-            <p>Wing safety notices and CAP safety publications.</p>
-            <a class="gold-btn" href="resources.html">Reference shelf</a>
-          </article>
-        </section>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
   <script src="./portal-config.js?v=2"></script>
+  <script src="./js/portal-data.js?v=1"></script>
   <script src="./portal-nav.js?v=3"></script>
   <script src="./js/portal-shell.js?v=1"></script>
   <script src="./js/steward.js?v=2"></script>

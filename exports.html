@@ -2,96 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>Print &amp; Export | Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./styles.css?v=8" />
+  <title>Print &amp; Export | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=3" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=2" />
 </head>
-<body data-portal-page="schedule">
-  <div class="shell">
-    <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav data-portal-nav="shell"></nav>
+<body data-portal-page="exports">
+  <div class="portal-app">
+    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
+    <div class="portal-backdrop" id="portalBackdrop"></div>
+    <aside class="portal-sidebar" id="portalSidebar">
+      <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
+      <div class="portal-brand">
+        <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" />
+        <strong>TN-170</strong>
+        <span>Oak Ridge Composite</span>
+      </div>
+      <nav id="portalNav"></nav>
     </aside>
-
-    <main class="main">
-      <header class="topbar">
+    <div class="portal-main">
+      <header class="portal-topbar">
         <div>
           <h1>Print &amp; Export</h1>
           <p>Monthly schedule · BFR packets · SUI brief · roster prints</p>
         </div>
       </header>
-
-      <section class="export-grid">
-        <article class="panel export-card">
-          <h2>PDF Schedule</h2>
-          <p>Printable monthly schedule sheet.</p>
-          <button type="button">Export PDF</button>
-        </article>
-
-        <article class="panel export-card">
-          <h2>PNG / JPG</h2>
-          <p>Image version for quick sharing in BAND.</p>
-          <button type="button">Export Image</button>
-        </article>
-
-        <article class="panel export-card">
-          <h2>CSV</h2>
-          <p>Spreadsheet-friendly event list.</p>
-          <button type="button">Export CSV</button>
-        </article>
-
-        <article class="panel export-card">
-          <h2>ICS Calendar</h2>
-          <p>Import into Google Calendar, Apple Calendar, or Outlook.</p>
-          <button type="button">Export ICS</button>
-        </article>
-      </section>
-
-      <section class="fr-exports-section" id="fr-exports">
-        <h2>Biannual flight review — print</h2>
-        <p class="small-note" style="margin:0 0 16px">Print directorate BFR checklists and squadron summaries for command briefings.</p>
-        <section class="export-grid export-grid--flight-review">
+      <div class="portal-content page-stack">
+        <section class="export-grid">
           <article class="panel export-card">
-            <h2>Department review checklist</h2>
-            <p>Printable checklist with required documents and action items.</p>
-            <button type="button" data-export="checklist">Print checklist</button>
+            <h2>PDF Schedule</h2>
+            <p>Printable monthly schedule sheet.</p>
+            <button type="button" class="btn-outline" disabled>Export PDF</button>
           </article>
-
           <article class="panel export-card">
-            <h2>Department review packet</h2>
-            <p>Summary packet with uploads, missing docs, and follow-up tasks.</p>
-            <button type="button" data-export="packet">Print packet PDF</button>
+            <h2>PNG / JPG</h2>
+            <p>Image version for quick sharing in BAND.</p>
+            <button type="button" class="btn-outline" disabled>Export Image</button>
           </article>
-
           <article class="panel export-card">
-            <h2>Overdue review report</h2>
-            <p>Departments past due date with reviewer and missing documentation.</p>
-            <button type="button" data-export="overdue">Export overdue report</button>
+            <h2>CSV</h2>
+            <p>Spreadsheet-friendly event list.</p>
+            <button type="button" class="btn-outline" disabled>Export CSV</button>
           </article>
-
           <article class="panel export-card">
-            <h2>Squadron BFR summary</h2>
-            <p>Directorate status table for commander or ops officer briefing.</p>
-            <button type="button" data-export="summary">Print BFR summary</button>
+            <h2>ICS Calendar</h2>
+            <p>Import into Google Calendar, Apple Calendar, or Outlook.</p>
+            <button type="button" class="btn-outline" disabled>Export ICS</button>
           </article>
         </section>
-      </section>
-    </main>
+        <section class="fr-exports-section" id="fr-exports">
+          <h2>Biannual Flight Review — print</h2>
+          <p class="small-note" style="margin:0 0 16px">Print directorate BFR checklists and squadron summaries for command briefings.</p>
+          <section class="export-grid export-grid--flight-review">
+            <article class="panel export-card">
+              <h2>Department review checklist</h2>
+              <p>Printable checklist with required documents and action items.</p>
+              <button type="button" class="btn-gold" data-export="checklist">Print checklist</button>
+            </article>
+            <article class="panel export-card">
+              <h2>Department review packet</h2>
+              <p>Summary packet with uploads, missing docs, and follow-up tasks.</p>
+              <button type="button" class="btn-gold" data-export="packet">Print packet PDF</button>
+            </article>
+            <article class="panel export-card">
+              <h2>Overdue review report</h2>
+              <p>Departments past due date with reviewer and missing documentation.</p>
+              <button type="button" class="btn-gold" data-export="overdue">Export overdue report</button>
+            </article>
+            <article class="panel export-card">
+              <h2>Squadron BFR summary</h2>
+              <p>Directorate status table for commander or ops officer briefing.</p>
+              <button type="button" class="btn-gold" data-export="summary">Print BFR summary</button>
+            </article>
+          </section>
+        </section>
+      </div>
+      <div data-portal-footer></div>
+    </div>
   </div>
-  <script src="./portal-config.js?v=1"></script>
-  <script src="./portal-nav.js?v=2"></script>
+  <script src="./portal-config.js?v=2"></script>
+  <script src="./portal-nav.js?v=3"></script>
+  <script src="./js/portal-shell.js?v=1"></script>
   <script src="./flight-review.js?v=1"></script>
+  <script src="./js/steward.js?v=2"></script>
 </body>
 </html>

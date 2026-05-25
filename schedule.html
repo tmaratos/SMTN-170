@@ -16,27 +16,33 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>Oak Ridge Composite Squadron</title>
+  <title>Monthly Schedule | TN-170</title>
 
   <!-- IMPORTANT -->
-  <link rel="stylesheet" href="./styles.css?v=8" />
-  <link rel="stylesheet" href="./portal-nav.css?v=2" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=3" />
 </head>
 <body data-portal-page="schedule">
-  <div class="shell">
-    <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav data-portal-nav="shell"></nav>
+  <div class="portal-app">
+    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
+    <div class="portal-backdrop" id="portalBackdrop"></div>
+    <aside class="portal-sidebar" id="portalSidebar">
+      <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
+      <div class="portal-brand">
+        <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" />
+        <strong>TN-170</strong>
+        <span>Oak Ridge Composite</span>
+      </div>
+      <nav id="portalNav"></nav>
     </aside>
-
-    <main class="main">
-      <header class="topbar">
+    <div class="portal-main">
+      <header class="portal-topbar">
         <div>
           <h1>Monthly Schedule</h1>
-          <p>Cadet meeting plan · uniform nights · training blocks · print for meeting night</p>
+          <p>Cadet meeting plan · weekly view · export placeholder</p>
         </div>
       </header>
-
+      <div class="portal-content">
       <section class="builder-layout">
         <form class="panel form-panel">
           <h2>Meeting schedule template</h2>
@@ -103,11 +109,14 @@
           </div>
         </section>
       </section>
-    </main>
+      </div>
+      <div data-portal-footer></div>
+    </div>
   </div>
-
-  <script src="./portal-config.js?v=1"></script>
-  <script src="./portal-nav.js?v=2"></script>
+  <script src="./portal-config.js?v=2"></script>
+  <script src="./portal-nav.js?v=3"></script>
+  <script src="./js/portal-shell.js?v=1"></script>
+  <script src="./js/steward.js?v=2"></script>
   <script src="app.js"></script>
 </body>
 </html>

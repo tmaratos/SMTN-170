@@ -2,65 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>Squadron Calendar | Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./styles.css?v=8" />
+  <title>Squadron Calendar | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=3" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=2" />
 </head>
-<body data-portal-page="schedule">
-  <div class="shell">
-    <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav data-portal-nav="shell"></nav>
+<body data-portal-page="calendar">
+  <div class="portal-app">
+    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
+    <div class="portal-backdrop" id="portalBackdrop"></div>
+    <aside class="portal-sidebar" id="portalSidebar">
+      <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
+      <div class="portal-brand">
+        <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" />
+        <strong>TN-170</strong>
+        <span>Oak Ridge Composite</span>
+      </div>
+      <nav id="portalNav"></nav>
     </aside>
-
-    <main class="main">
-      <header class="topbar">
+    <div class="portal-main">
+      <header class="portal-topbar">
         <div>
           <h1>Squadron Calendar</h1>
-          <p>Meeting nights · BFR sessions · training · special activities</p>
+          <p>Weekly meetings · BFR nights · training · special activities</p>
         </div>
+        <button type="button" class="btn-outline" disabled title="Planned">Export schedule</button>
       </header>
-
-      <section class="calendar-grid">
-        <article class="panel">
-          <h2>Post squadron event</h2>
-          <form class="form-panel" id="calendarAddForm">
-            <label>Event Title</label>
-            <input name="title" placeholder="Weekly Squadron Meeting" required />
-            <label>Date</label>
-            <input type="date" name="date" required />
-            <label>Start Time</label>
-            <input type="time" name="startTime" />
-            <label>End Time</label>
-            <input type="time" name="endTime" />
-            <label>Location</label>
-            <input name="location" placeholder="Squadron Classroom" />
-            <button type="submit">Add Event</button>
-          </form>
-          <p class="small-note" style="margin-top:14px">Directorate BFR nights from <a href="flight-review.html" style="color:var(--cyan);font-weight:800">Biannual Flight Reviews</a> show with a <span class="fr-event-badge">BFR</span> badge.</p>
-        </article>
-
-        <article class="panel">
-          <h2>May 2026 Events</h2>
-          <div class="event-list large" id="calendarEventList" aria-live="polite"></div>
-        </article>
-      </section>
-    </main>
+      <div class="portal-content">
+        <section class="calendar-grid">
+          <article class="panel">
+            <h2>Post squadron event</h2>
+            <form class="form-panel" id="calendarAddForm">
+              <label>Event Title</label>
+              <input name="title" placeholder="Weekly Squadron Meeting" required />
+              <label>Date</label>
+              <input type="date" name="date" required />
+              <label>Start Time</label>
+              <input type="time" name="startTime" />
+              <label>End Time</label>
+              <input type="time" name="endTime" />
+              <label>Location</label>
+              <input name="location" placeholder="Squadron Classroom" />
+              <button type="submit" class="btn-gold">Add Event</button>
+            </form>
+            <p class="small-note" style="margin-top:14px">Directorate BFR nights from <a href="flight-review.html">Biannual Flight Reviews</a> show with a <span class="fr-event-badge">BFR</span> badge.</p>
+          </article>
+          <article class="panel">
+            <h2>May 2026 Events</h2>
+            <div class="event-list large" id="calendarEventList" aria-live="polite"></div>
+          </article>
+        </section>
+      </div>
+      <div data-portal-footer></div>
+    </div>
   </div>
-  <script src="./portal-config.js?v=1"></script>
-  <script src="./portal-nav.js?v=2"></script>
+  <script src="./portal-config.js?v=2"></script>
+  <script src="./portal-nav.js?v=3"></script>
+  <script src="./js/portal-shell.js?v=1"></script>
   <script src="./flight-review.js?v=1"></script>
+  <script src="./js/steward.js?v=2"></script>
 </body>
 </html>

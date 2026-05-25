@@ -2,73 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>Biannual Flight Reviews | Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./styles.css?v=8" />
+  <title>Biannual Flight Reviews | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=3" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=2" />
 </head>
 <body data-portal-page="bfr">
-  <div class="shell">
-    <aside class="sidebar">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav data-portal-nav="shell"></nav>
+  <div class="portal-app">
+    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
+    <div class="portal-backdrop" id="portalBackdrop"></div>
+    <aside class="portal-sidebar" id="portalSidebar">
+      <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
+      <div class="portal-brand">
+        <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" />
+        <strong>TN-170</strong>
+        <span>Oak Ridge Composite</span>
+      </div>
+      <nav id="portalNav"></nav>
     </aside>
-
-    <main class="main">
-      <header class="topbar">
+    <div class="portal-main">
+      <header class="portal-topbar">
         <div>
           <h1>Biannual Flight Reviews</h1>
           <p>Directorate BFR packets · due dates · squadron calendar</p>
         </div>
       </header>
-
-      <section class="fr-summary-layout">
-        <div class="fr-summary-stats" id="frSummaryStats" aria-live="polite"></div>
-      </section>
-
-      <section class="fr-module-layout">
-        <aside class="panel">
-          <h2>Schedule directorate BFR</h2>
-          <p>Posts the review on the squadron calendar and ties it to the directorate packet.</p>
-          <form class="form-panel" id="frScheduleForm">
-            <label>Directorate</label>
-            <select name="departmentId" required>
-              <option value="">Select directorate</option>
-            </select>
-            <label>BFR date</label>
-            <input type="date" name="reviewDate" required />
-            <label>Reviewing officer</label>
-            <input name="reviewer" placeholder="Rank and name" />
-            <label>Location</label>
-            <input name="location" value="Squadron Classroom" />
-            <button type="submit">Post to squadron calendar</button>
-          </form>
-          <p class="fr-supabase-note">
-            <strong>Live system:</strong> Supabase will store BFR metadata and roles; review files remain in the <a href="documents.html" style="color:var(--cyan);font-weight:800">File Library</a>.
-          </p>
-        </aside>
-
-        <div id="departments">
-          <div class="panel-head" style="margin-bottom:14px;padding:0;">
-            <h2 style="margin:0">Directorate BFR status</h2>
-            <a class="ghost-btn" href="exports.html#fr-exports">Print BFR reports</a>
+      <div class="portal-content">
+        <section class="fr-summary-layout">
+          <div class="fr-summary-stats" id="frSummaryStats" aria-live="polite"></div>
+        </section>
+        <section class="fr-module-layout">
+          <aside class="panel">
+            <h2>Schedule directorate BFR</h2>
+            <p>Posts the review on the squadron calendar and ties it to the directorate packet.</p>
+            <form class="form-panel" id="frScheduleForm">
+              <label>Directorate</label>
+              <select name="departmentId" required><option value="">Select directorate</option></select>
+              <label>BFR date</label>
+              <input type="date" name="reviewDate" required />
+              <label>Reviewing officer</label>
+              <input name="reviewer" placeholder="Rank and name" />
+              <label>Location</label>
+              <input name="location" value="Squadron Classroom" />
+              <button type="submit" class="btn-gold">Post to squadron calendar</button>
+            </form>
+            <p class="fr-supabase-note"><strong>Supabase:</strong> BFR metadata and roles. Files in the <a href="documents.html" style="color:var(--tn-cyan);font-weight:800">File Library</a>.</p>
+          </aside>
+          <div id="departments">
+            <div class="panel-head" style="margin-bottom:14px;padding:0;">
+              <h2 style="margin:0">Directorate BFR status</h2>
+              <a class="ghost-btn" href="exports.html#fr-exports">Print BFR reports</a>
+            </div>
+            <div class="fr-dept-grid" id="frDepartmentGrid" aria-live="polite"></div>
           </div>
-          <div class="fr-dept-grid" id="frDepartmentGrid" aria-live="polite"></div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </div>
+      <div data-portal-footer></div>
+    </div>
   </div>
-  <script src="./portal-config.js?v=1"></script>
-  <script src="./portal-nav.js?v=2"></script>
+  <script src="./portal-config.js?v=2"></script>
+  <script src="./portal-nav.js?v=3"></script>
+  <script src="./js/portal-shell.js?v=1"></script>
   <script src="./flight-review.js?v=1"></script>
+  <script src="./js/steward.js?v=2"></script>
 </body>
 </html>

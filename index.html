@@ -3,58 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-  
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-
-  <!-- Prevent aggressive mobile/GitHub Pages caching -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-
-  <title>Oak Ridge Composite Squadron</title>
-
-  <!-- IMPORTANT -->
-  <link rel="stylesheet" href="./styles.css?v=8" />
-  <link rel="stylesheet" href="./desktop.css?v=8" media="(min-width: 901px)" />
-  <link rel="stylesheet" href="./mobile.css?v=8" media="(max-width: 900px)" />
-  <link rel="stylesheet" href="./portal-nav.css?v=2" />
+  <title>TN-170 Oak Ridge Composite Squadron</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=3" />
 </head>
-<body class="login-page">
-  <main class="login-wrap">
-    <section class="login-card">
-      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" class="login-logo" />
+<body class="login-v2">
+  <main class="login-card-v2">
+    <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170 Oak Ridge Composite Squadron" class="login-patch" />
+    <p class="login-motto">Not Without Effort.</p>
+    <h1>Squadron Operations Desk</h1>
+    <p class="login-unit">TN-170 · Oak Ridge Composite Squadron<br>Civil Air Patrol</p>
+    <p class="login-unit" style="font-size:0.85rem">Mission readiness · schedules · files · Steward for CAP</p>
 
-      <p class="kicker">Oak Ridge Composite Squadron</p>
-      <h1>Squadron Operations Desk</h1>
-      <p class="login-copy">
-        Monthly schedule, biannual flight reviews, SUI prep, operations and safety files,
-        training records, and the squadron file library — built for CAP senior members and officers.
-      </p>
+    <form class="login-form-v2" onsubmit="portalLogin(event)">
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" placeholder="senior.member@example.com" autocomplete="username" />
+      <label for="loginCode">Access code</label>
+      <input id="loginCode" type="password" placeholder="Portal access code" autocomplete="current-password" />
+      <button type="submit" class="btn-gold">Enter Portal</button>
+    </form>
 
-      <form onsubmit="portalLogin(event)" class="login-form">
-        <label>Email</label>
-        <input type="email" placeholder="senior.member@example.com" />
-
-        <label>Access Code</label>
-        <input type="password" placeholder="Portal access code" />
-
-        <button type="submit">Enter Portal</button>
-      </form>
-
-      <p class="small-note">Prototype login. Supabase authentication can be added later.</p>
-
-      <div class="login-discord" data-portal-discord></div>
-    </section>
+    <p class="steward-planned" style="margin-top:16px;text-align:center">Prototype entry — Supabase authentication will connect here.</p>
+    <div class="login-discord" data-portal-discord style="margin-top:18px"></div>
+    <p class="portal-fbi" style="margin-top:20px;font-size:0.72rem;color:var(--tn-muted)">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
 
-  <script src="./portal-config.js?v=1"></script>
-  <script src="./portal-nav.js?v=2"></script>
-  <script src="app.js"></script>
+  <script src="./portal-config.js?v=2"></script>
+  <script src="./js/portal-data.js?v=1"></script>
+  <script src="./portal-nav.js?v=3"></script>
+  <script src="./js/steward.js?v=2"></script>
+  <script src="./app.js"></script>
 </body>
 </html>

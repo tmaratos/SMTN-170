@@ -9,11 +9,11 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Reference Shelf | TN-170</title>
+  <title>Parent / Observer | TN-170</title>
   <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=3" />
 </head>
-<body data-portal-page="resources">
+<body data-portal-page="parent">
   <div class="portal-app">
     <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
     <div class="portal-backdrop" id="portalBackdrop"></div>
@@ -29,24 +29,23 @@
     <div class="portal-main">
       <header class="portal-topbar">
         <div>
-          <h1>Reference Shelf</h1>
-          <p>CAP publications · wing notices · lesson references · external links</p>
+          <h1>Parent / Observer</h1>
+          <p>Meeting info · logistics · cadet events</p>
         </div>
       </header>
       <div class="portal-content page-stack">
-        <section class="resource-grid">
-          <article class="panel"><h2>Schedules</h2><p>Monthly templates and previous schedule exports.</p></article>
-          <article class="panel"><h2>Safety</h2><p>Safety briefing notes and recurring safety references.</p></article>
-          <article class="panel"><h2>Aerospace Education</h2><p>AEX, STEM, lesson planning, and activity resources.</p></article>
-          <article class="panel"><h2>Training</h2><p>Training nights, leadership lessons, and meeting plans.</p></article>
-          <article class="panel"><h2>Forms</h2><p>Frequently used local forms and shared templates.</p></article>
-          <article class="panel">
-            <h2>Squadron comms</h2>
-            <div data-portal-discord></div>
-          </article>
-          <article class="panel"><h2>External Links</h2><p>eServices, CAP.gov, BAND, and wing references.</p></article>
-        </section>
-        <p class="small-note">Squadron uploads and directorate files belong in the <a href="documents.html">File Library</a>.</p>
+        <p class="role-banner parent">Limited access — parent-safe announcements and logistics only. No senior staff or inspection content.</p>
+        <div class="card-grid-2">
+          <a class="panel hub-card" href="calendar.html"><h3>Meeting info</h3><p>Squadron calendar — meeting nights and locations.</p></a>
+          <article class="panel hub-card"><h3>Logistics</h3><p>Parking, drop-off, uniform guidance for meetings (placeholder).</p></article>
+          <article class="panel hub-card"><h3>Forms &amp; resources</h3><p>Parent handbook links and cadet program forms (placeholder).</p></article>
+          <article class="panel hub-card"><h3>Announcements</h3><p>Squadron-wide cadet and family announcements.</p></article>
+        </div>
+        <button type="button" class="steward-launch-strip" data-steward-open>
+          <span class="steward-launch-icon" aria-hidden="true">💬</span>
+          <span><strong>Steward — parent-safe help</strong>Meeting times, logistics, and cadet events (demo chat)</span>
+        </button>
+        <div data-portal-discord></div>
       </div>
       <div data-portal-footer></div>
     </div>

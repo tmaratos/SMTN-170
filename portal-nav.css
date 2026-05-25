@@ -8,6 +8,26 @@
   gap: 6px;
 }
 
+.portal-nav-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+}
+
+.portal-nav-section > span {
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+}
+
+.portal-nav-staff {
+  font-size: 0.82rem !important;
+}
+
 .portal-nav-tools::before {
   content: "Tools";
   font-size: 0.68rem;
