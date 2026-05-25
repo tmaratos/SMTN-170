@@ -53,7 +53,7 @@
       var btn = e.target.closest("[data-action],[data-steward-ask]");
       if (!btn) return;
       if (btn.dataset.stewardAsk) {
-        window.SMTN170Steward?.askFromDashboard?.(btn.dataset.stewardAsk);
+        (window.openSteward || window.SMTN170Steward?.openSteward)?.(btn.dataset.stewardAsk);
         return;
       }
       document.getElementById("orgChartApp")?.querySelector('[data-action="' + btn.dataset.action + '"]')?.click();

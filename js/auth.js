@@ -87,8 +87,10 @@
       profile = null;
       return null;
     }
-    console.log("Session found");
+    console.log("SESSION_FOUND");
     const row = await fetchProfile(user.id);
+    if (row) console.log("PROFILE_LOAD_OK");
+    else console.log("PROFILE_LOAD_ERROR", "no profiles row — using session fallback");
     profile = row;
     session = mapProfile(row) || {
       userId: user.id,

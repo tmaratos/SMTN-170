@@ -158,11 +158,12 @@
       btn.dataset.stewardNavBound = "1";
       btn.addEventListener("click", (e) => {
         e.preventDefault();
-        if (global.SMTN170Steward?.openPanel) {
+        if (typeof global.openSteward === "function") {
+          global.openSteward();
+        } else if (global.SMTN170Steward?.openSteward) {
+          global.SMTN170Steward.openSteward();
+        } else if (global.SMTN170Steward?.openPanel) {
           global.SMTN170Steward.openPanel();
-        } else {
-          global.location.href = "dashboard.html";
-          setTimeout(() => global.SMTN170Steward?.openPanel?.(), 400);
         }
         if (global.matchMedia("(max-width: 900px)").matches) {
           document.getElementById("portalSidebar")?.classList.remove("open");

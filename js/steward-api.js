@@ -54,9 +54,20 @@
       body: JSON.stringify(body || {}),
     });
 
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) {
-      throw new Error(data.error || `Steward unavailable (${res.status})`);
+    const text = await res.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { error: text || `Steward unavailable (${res.status})` };
+    }
+    if (!res.ok || data.ok === false) {
+      const msg =
+        data.error ||
+        data.message ||
+        (typeof data.details === "string" ? data.details : null) ||
+        `Steward unavailable (${res.status})`;
+      throw new Error(msg);
     }
     return data;
   }

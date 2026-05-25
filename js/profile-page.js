@@ -21,7 +21,25 @@
   }
 
   function getProfileRow() {
-    return global.SMTN170Auth?.getProfile?.() || null;
+    const profile = global.SMTN170Auth?.getProfile?.();
+    if (profile) return profile;
+    const session = global.SMTN170Auth?.loadSession?.();
+    if (!session) return null;
+    return {
+      id: session.userId,
+      email: session.email,
+      first_name: session.firstName || "",
+      last_name: session.lastName || "",
+      preferred_name: session.preferredName || "",
+      rank: session.rank || "",
+      cap_id: session.capId || "",
+      phone: session.phone || "",
+      duty_position: session.dutyPosition || "",
+      profile_photo_url: session.profilePhotoUrl || "",
+      role: session.role,
+      account_status: session.accountStatus,
+      updated_at: session.updatedAt || null,
+    };
   }
 
   function renderForm(row, message) {
@@ -130,16 +148,25 @@
   }
 
   async function init() {
-    await global.SMTN170Supabase?.whenReady?.();
-    await global.SMTN170Auth?.syncSessionFromSupabase?.();
+    const root = document.getElementById("profilePage");
+    if (!root) return;
+    root.innerHTML = '<p class="page-intro">Loading your profile…</p>';
+    await global.SMTN170Auth?.init?.();
     const row = getProfileRow();
     if (!row) {
-      document.getElementById("profilePage").innerHTML =
-        '<p class="page-intro">Sign in to view your profile.</p>';
+      console.log("SESSION_MISSING_REDIRECT");
+      global.location.href = "login.html";
       return;
     }
+    console.log("PROFILE_LOAD_OK");
     renderForm(row);
   }
+
+  global.addEventListener("smtn170:auth-ready", () => {
+    if (document.getElementById("profilePage") && !document.getElementById("profileForm")) {
+      init();
+    }
+  });
 
   if (document.getElementById("profilePage")) {
     if (document.readyState === "loading") {

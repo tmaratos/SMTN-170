@@ -47,10 +47,13 @@
       return (data || []).map(fromDbRow);
     },
     async upsertPosition(row) {
-      const sb = global.SMTN170Supabase?.getClient?.();
+      const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
       if (!sb) return { ok: false, reason: "not_connected" };
-      const { error } = await sb.from("org_positions").upsert(toDbRow(row));
-      return error ? { ok: false, reason: error.message } : { ok: true };
+      const payload = toDbRow(row);
+      const uid = global.SMTN170Auth?.actorId?.();
+      if (!payload.created_by && uid) payload.created_by = uid;
+      const { data, error } = await sb.from("org_positions").upsert(payload).select().single();
+      return error ? { ok: false, reason: error.message } : { ok: true, data };
     },
     async deletePosition(id) {
       const sb = global.SMTN170Supabase?.getClient?.();
@@ -531,6 +534,14 @@
     const statusOpts = Object.values(STATUS)
       .map((s) => `<option value="${s}" ${p.status === s ? "selected" : ""}>${escapeHtml(STATUS_LABEL[s])}</option>`)
       .join("");
+    const positions = getChartData().positions || [];
+    const parentOpts = `<option value="">— None —</option>${positions
+      .filter((x) => x.id !== p.id)
+      .map(
+        (x) =>
+          `<option value="${escapeHtml(x.id)}" ${p.parent_id === x.id ? "selected" : ""}>${escapeHtml(x.title)} (${escapeHtml(x.department)})</option>`
+      )
+      .join("")}`;
 
     return `
       <div class="org-modal-backdrop" id="orgModalBackdrop" data-action="close-editor"></div>
@@ -547,6 +558,8 @@
           <input id="orgMember" name="assigned_member_name" value="${escapeHtml(p.assigned_member_name)}" placeholder="Rank and name, or leave blank if vacant" />
           <label for="orgDept">Department / section</label>
           <select id="orgDept" name="department">${deptOpts}</select>
+          <label for="orgParent">Reports to (parent position)</label>
+          <select id="orgParent" name="parent_id">${parentOpts}</select>
           <label for="orgStatus">Status</label>
           <select id="orgStatus" name="status">${statusOpts}</select>
           <label for="orgResp">Responsibilities</label>
@@ -593,7 +606,7 @@
   }
 
   function openEditor(id) {
-    const data = load();
+    const data = getChartData();
     const pos = id ? data.positions.find((p) => p.id === id) : null;
     state.editingId = id;
     state.showEditor = true;
@@ -609,20 +622,20 @@
     if (host) host.innerHTML = "";
   }
 
-  function saveFromForm(form) {
-    const data = load();
+  async function saveFromForm(form) {
+    const data = getChartData();
     const fd = new FormData(form);
     const id = (fd.get("id") || "").toString() || uid();
     const existing = data.positions.find((p) => p.id === id);
     const assigned = (fd.get("assigned_member_name") || "").toString().trim();
     let status = (fd.get("status") || STATUS.VACANT).toString();
     if (!assigned && status === STATUS.FILLED) status = STATUS.VACANT;
-
+    const parentVal = (fd.get("parent_id") || "").toString();
     const row = {
       id,
       title: (fd.get("title") || "").toString().trim(),
       department: (fd.get("department") || "Operations").toString(),
-      parent_id: existing?.parent_id ?? null,
+      parent_id: parentVal || existing?.parent_id || null,
       sort_order: existing?.sort_order ?? data.positions.length + 1,
       assigned_member_name: assigned,
       status,
@@ -636,6 +649,11 @@
       updated_by_name: existing?.updated_by_name,
     };
 
+    if (!row.title) {
+      alert("Position title is required.");
+      return;
+    }
+
     touchAudit(row);
     if (existing) {
       Object.assign(existing, row);
@@ -643,22 +661,38 @@
       row.created_by_name = actorName();
       data.positions.push(row);
     }
-    save(data);
-    if (SUPABASE.connected()) SUPABASE.upsertPosition(row);
+
+    if (SUPABASE.connected()) {
+      const result = await SUPABASE.upsertPosition(row);
+      if (!result.ok) {
+        alert("Could not save position: " + result.reason);
+        return;
+      }
+      if (result.data) Object.assign(row, fromDbRow(result.data));
+    }
+
+    setChartData(data);
+    importNotice = "Position saved successfully.";
     closeEditor();
     render();
   }
 
-  function deletePosition(id) {
+  async function deletePosition(id) {
     if (!confirm("Remove this position from the squadron org chart?")) return;
-    const data = load();
+    const data = getChartData();
+    if (SUPABASE.connected()) {
+      const result = await SUPABASE.deletePosition(id);
+      if (!result.ok) {
+        alert("Could not delete position: " + result.reason);
+        return;
+      }
+    }
     data.positions = data.positions.filter((p) => p.id !== id);
     data.positions.forEach((p) => {
       if (p.parent_id === id) p.parent_id = null;
     });
-    touchAudit({ last_worked_at: new Date().toISOString(), last_worked_by_name: actorName() });
-    save(data);
-    if (SUPABASE.connected()) SUPABASE.deletePosition(id);
+    setChartData(data);
+    importNotice = "Position removed.";
     closeEditor();
     render();
   }
@@ -666,10 +700,16 @@
   function render() {
     const root = document.getElementById("orgChartApp");
     if (!root) return;
-    const data = chartData.positions?.length ? chartData : load();
+    const data = getChartData();
     const m = getMetrics(data.positions);
+    const importList = importedFiles.length
+      ? `<ul class="org-import-list">${importedFiles
+          .map((f) => `<li><strong>${escapeHtml(f.name)}</strong> · ${escapeHtml(formatWhen(f.created_at))}</li>`)
+          .join("")}</ul>`
+      : "";
 
     root.innerHTML = `
+      ${importNotice ? `<div class="card-info org-notice" role="status">${escapeHtml(importNotice)}</div>` : ""}
       <header class="org-hero card-info">
         <div class="org-hero-text">
           <p class="org-hero-eyebrow">Squadron staff structure</p>
@@ -678,9 +718,11 @@
         </div>
         <div class="org-hero-actions">
           <button type="button" class="btn-gold btn-lg" data-action="add-position">Add Position</button>
+          <button type="button" class="btn-outline btn-lg" data-action="import-org-chart">Import Existing Org Chart</button>
+          <input type="file" id="orgChartImportInput" accept="image/*,.pdf,application/pdf" hidden />
           <button type="button" class="btn-outline btn-lg" data-action="view-vacancies">View Vacancies (${m.vacant})</button>
           <button type="button" class="btn-outline btn-lg" data-action="export-chart">Export Chart</button>
-          <button type="button" class="btn-outline btn-lg btn-steward-lg" data-steward-ask="Help build the squadron org chart.">Ask Steward</button>
+          <button type="button" class="btn-outline btn-lg btn-steward-lg" data-steward-ask="Help draft organization chart positions from the uploaded org chart.">Ask Steward</button>
         </div>
         <div class="org-hero-stats">
           <span class="org-stat"><strong>${m.filled}</strong> Filled</span>
@@ -715,13 +757,39 @@
         </aside>
         <div class="org-main workspace-col">
           <div id="orgChartDisplay">${renderChart(data.positions)}</div>
+          ${
+            importedFiles.length
+              ? `<section class="card-info org-imports-panel" style="margin-top:20px"><h3>Imported org charts</h3>${importList}
+            <p class="page-intro" style="margin-top:12px">Uploaded. Steward can help draft positions from this file after document parsing is enabled.</p>
+            <button type="button" class="btn-outline" data-steward-ask="Help draft organization chart positions from the uploaded org chart.">Open Steward to draft positions</button></section>`
+              : ""
+          }
         </div>
       </div>
       <div id="orgEditorHost"></div>`;
 
     bindEvents();
+    bindImportInput();
     global.SMTN170Pages?.injectStewardContexts?.();
     global.SMTN170Pages?.bindStewardContextActions?.();
+    global.SMTN170Steward?.rebind?.();
+  }
+
+  function bindImportInput() {
+    const importInput = document.getElementById("orgChartImportInput");
+    if (!importInput || importInput.dataset.bound === "1") return;
+    importInput.dataset.bound = "1";
+    importInput.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      try {
+        await importOrgChartFile(file);
+        render();
+      } catch (err) {
+        alert(err.message || "Import failed");
+      }
+    });
   }
 
   function bindEvents() {
@@ -741,13 +809,14 @@
       if (!btn) return;
       const action = btn.dataset.action;
       if (action === "add-position") openEditor(null);
+      if (action === "import-org-chart") document.getElementById("orgChartImportInput")?.click();
       if (action === "edit-position") openEditor(btn.dataset.orgId);
       if (action === "close-editor") closeEditor();
       if (action === "view-vacancies") {
         state.vacanciesOnly = !state.vacanciesOnly;
         render();
       }
-      if (action === "export-chart") exportChartPrint(load());
+      if (action === "export-chart") exportChartPrint(getChartData());
       if (action === "delete-position") deletePosition(btn.dataset.orgId);
       if (action === "toggle-dept") {
         const dept = btn.dataset.dept;
@@ -769,34 +838,100 @@
       if (e.target.id === "orgSearch") {
         state.searchQuery = e.target.value;
         const display = document.getElementById("orgChartDisplay");
-        if (display) display.innerHTML = renderChart(load().positions);
+        if (display) display.innerHTML = renderChart(getChartData().positions);
       }
     });
 
     document.addEventListener("submit", (e) => {
       if (e.target.id === "orgEditorForm") {
         e.preventDefault();
-        saveFromForm(e.target);
+        saveFromForm(e.target).catch((err) => alert(err.message || "Save failed"));
       }
     });
+
   }
 
   let chartData = { positions: [] };
+  let importNotice = "";
+  let importedFiles = [];
 
-  async function hydrateFromSupabase() {
-    chartData = await loadAsync();
-    if (!chartData.positions.length) {
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch {
-        /* ignore */
-      }
-    }
+  function getChartData() {
+    return chartData.positions?.length ? chartData : load();
+  }
+
+  function setChartData(data) {
+    chartData = { positions: data.positions || [], updatedAt: new Date().toISOString() };
     save(chartData);
   }
 
+  async function fetchImportedOrgCharts() {
+    const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+    if (!sb) return [];
+    const { data, error } = await sb
+      .from("uploaded_files")
+      .select("*")
+      .eq("folder", "org_chart")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (error) {
+      console.warn("[org] imports", error.message);
+      return [];
+    }
+    return data || [];
+  }
+
+  /** Future: OCR / parsing pipeline for uploaded org charts. */
+  function parseOrgChartUpload(fileRecord) {
+    console.log("[org] parseOrgChartUpload (not implemented)", fileRecord?.id);
+    return { ok: false, reason: "parsing_not_implemented" };
+  }
+
+  /** Future: draft org_positions rows from parsed upload. */
+  function draftOrgPositionsFromUpload(fileRecord) {
+    console.log("[org] draftOrgPositionsFromUpload (not implemented)", fileRecord?.id);
+    return { ok: false, reason: "draft_not_implemented" };
+  }
+
+  async function importOrgChartFile(file) {
+    const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+    const uid = global.SMTN170Auth?.actorId?.();
+    if (!sb || !uid) throw new Error("Sign in to import an org chart.");
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storagePath = `org-charts/imports/${uid}/${Date.now()}-${safeName}`;
+    const bucket = global.SMTN170Supabase?.storageBucket?.() || "squadron-files";
+    const { error: upErr } = await sb.storage.from(bucket).upload(storagePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (upErr) throw new Error(upErr.message);
+    const now = new Date().toISOString();
+    const { error: dbErr } = await sb.from("uploaded_files").insert({
+      name: file.name,
+      folder: "org_chart",
+      storage_path: storagePath,
+      mime_type: file.type,
+      size_bytes: file.size,
+      uploaded_by: uid,
+      last_worked_by: uid,
+      last_worked_at: now,
+      updated_at: now,
+    });
+    if (dbErr) throw new Error(dbErr.message);
+    importedFiles = await fetchImportedOrgCharts();
+    importNotice =
+      "Uploaded. Steward can help draft positions from this file after document parsing is enabled.";
+    return storagePath;
+  }
+
+  async function hydrateFromSupabase() {
+    const fromDb = await SUPABASE.fetchPositions();
+    chartData = { positions: fromDb || [], source: fromDb?.length ? "supabase" : "empty" };
+    if (chartData.positions.length) save(chartData);
+    importedFiles = await fetchImportedOrgCharts();
+  }
+
   async function init() {
-    await global.SMTN170Supabase?.whenReady?.();
+    await global.SMTN170Auth?.init?.();
     await hydrateFromSupabase();
     render();
     global.SMTN170Supabase?.subscribeTable?.("org_positions", null, async () => {
@@ -817,11 +952,8 @@
     openEditor,
     exportChartPrint,
     hydrateFromSupabase,
+    parseOrgChartUpload,
+    draftOrgPositionsFromUpload,
+    importOrgChartFile,
   };
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
 })(window);

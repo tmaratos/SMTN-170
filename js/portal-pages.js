@@ -80,7 +80,8 @@
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         const text = btn.dataset.stewardAsk || "";
-        global.SMTN170Steward?.askFromDashboard?.(text);
+        if (typeof global.openSteward === "function") global.openSteward(text);
+        else global.SMTN170Steward?.askFromDashboard?.(text);
       });
     });
   }

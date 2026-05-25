@@ -87,7 +87,7 @@
       profile = null;
       return null;
     }
-    console.log("Session found");
+    console.log("SESSION_FOUND");
     const row = await fetchProfile(user.id);
     profile = row;
     session = mapProfile(row) || {

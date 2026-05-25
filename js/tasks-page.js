@@ -1,5 +1,5 @@
 /**
- * TN-170 portal tasks — portal_tasks table (approved Senior Members).
+ * TN-170 portal tasks — public.portal_tasks
  */
 (function initTasksPage(global) {
   function escapeHtml(t) {
@@ -22,48 +22,83 @@
     return `<span class="status-chip chip--${status === "completed" ? "completed" : status === "due_soon" ? "due-soon" : "muted"}">${escapeHtml(label)}</span>`;
   }
 
+  function getClient() {
+    return global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+  }
+
   async function fetchTasks() {
-    const sb = global.SMTN170Supabase?.getClient?.();
-    if (!sb) return null;
+    const sb = getClient();
+    if (!sb) return { error: "Supabase client not ready", rows: [] };
     const { data, error } = await sb
       .from("portal_tasks")
-      .select("*")
+      .select("id, title, description, status, due_date, priority, category, created_at, updated_at")
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50);
     if (error) {
-      console.warn("[tasks]", error.message);
-      return { error: error.message };
+      console.error("[tasks]", error.message, error);
+      return { error: error.message, rows: [] };
     }
     return { rows: data || [] };
+  }
+
+  async function addTask(title, dueDate) {
+    const sb = getClient();
+    const uid = global.SMTN170Auth?.actorId?.();
+    if (!sb || !uid) throw new Error("Sign in to add tasks.");
+    const now = new Date().toISOString();
+    const { error } = await sb.from("portal_tasks").insert({
+      title: title.trim(),
+      status: "open",
+      due_date: dueDate || null,
+      created_by: uid,
+      updated_by: uid,
+      last_worked_by: uid,
+      last_worked_at: now,
+      updated_at: now,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async function updateTaskStatus(id, status) {
+    const sb = getClient();
+    const uid = global.SMTN170Auth?.actorId?.();
+    if (!sb || !uid) throw new Error("Sign in to update tasks.");
+    const { error } = await sb
+      .from("portal_tasks")
+      .update({
+        status,
+        updated_by: uid,
+        last_worked_by: uid,
+        last_worked_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
   }
 
   async function render() {
     const root = document.getElementById("tasksMain");
     if (!root) return;
 
-    const intro = root.querySelector(".page-intro");
     const res = await fetchTasks();
 
-    if (!global.SMTN170Supabase?.isConfigured?.()) {
-      root.innerHTML = `<p class="page-intro">Sign in with Supabase configured to load squadron tasks.</p>`;
-      return;
-    }
-
-    if (res?.error) {
-      root.innerHTML = `<p class="page-intro">Tasks could not be loaded. Confirm <code>portal_tasks</code> exists in Supabase.</p>
+    if (res.error) {
+      root.innerHTML = `<p class="page-intro">Tasks could not be loaded: ${escapeHtml(res.error)}</p>
+        <p class="page-intro">Confirm <code>portal_tasks</code> exists and RLS allows your account.</p>
         <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
       global.SMTN170Steward?.rebind?.();
       return;
     }
 
-    const open = (res.rows || []).filter((t) => t.status !== "completed");
+    const open = (res.rows || []).filter((t) => t.status !== "completed" && t.status !== "cancelled");
     const done = (res.rows || []).filter((t) => t.status === "completed");
 
     const list = (rows, emptyMsg) =>
       rows.length
         ? `<ul class="dash-due-list">${rows
             .map(
-              (t) => `<li class="dash-due-item">${statusChip(t.status)}<span><strong>${escapeHtml(t.title)}</strong>${t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}</span></li>`
+              (t) => `<li class="dash-due-item">${statusChip(t.status)}<span><strong>${escapeHtml(t.title)}</strong>${t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}</span>
+              ${t.status !== "completed" ? `<button type="button" class="ghost-btn btn-sm" data-task-complete="${escapeHtml(t.id)}">Mark complete</button>` : ""}</li>`
             )
             .join("")}</ul>`
         : `<p class="dash-empty">${escapeHtml(emptyMsg)}</p>`;
@@ -71,14 +106,17 @@
     if (!res.rows.length) {
       root.innerHTML = `
         <p class="page-intro">Squadron tasks and follow-ups for approved Senior Members.</p>
-        <article class="card-info dash-block"><h2>No tasks yet</h2><p>Add your first record with Steward or during staff planning.</p>
-        <button type="button" class="btn-gold" data-steward-open style="margin-top:12px">Open Steward</button></article>`;
+        <article class="card-info dash-block"><h2>No tasks yet</h2><p>No tasks saved yet.</p></article>
+        ${renderAddForm()}
+        <button type="button" class="btn-gold" data-steward-open style="margin-top:12px">Open Steward</button>`;
+      bindTaskEvents(root);
       global.SMTN170Steward?.rebind?.();
       return;
     }
 
     root.innerHTML = `
-      ${intro ? intro.outerHTML : '<p class="page-intro">Squadron tasks for approved Senior Members.</p>'}
+      <p class="page-intro">Squadron tasks for approved Senior Members.</p>
+      ${renderAddForm()}
       <div class="card-warning dash-block">
         <h2 class="card-warning-title">Open (${open.length})</h2>
         ${list(open, "No open tasks.")}
@@ -89,18 +127,53 @@
       </div>
       <button type="button" class="btn-gold" data-steward-open>Create or manage tasks in Steward</button>`;
 
+    bindTaskEvents(root);
     global.SMTN170Steward?.rebind?.();
   }
 
-  function init() {
-    render();
+  function renderAddForm() {
+    return `<form id="taskAddForm" class="card-info" style="margin-bottom:16px">
+      <h3 class="card-info-title">Add task</h3>
+      <label for="taskNewTitle">Title</label>
+      <input id="taskNewTitle" name="title" required />
+      <label for="taskNewDue">Due date (optional)</label>
+      <input id="taskNewDue" name="due_date" type="date" />
+      <button type="submit" class="btn-gold" style="margin-top:12px">Save task</button>
+    </form>`;
+  }
+
+  function bindTaskEvents(root) {
+    root.querySelector("#taskAddForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = e.target.querySelector("#taskNewTitle")?.value || "";
+      const due = e.target.querySelector("#taskNewDue")?.value || "";
+      try {
+        await addTask(title, due);
+        await render();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+    root.querySelectorAll("[data-task-complete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          await updateTaskStatus(btn.dataset.taskComplete, "completed");
+          await render();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+  }
+
+  async function init() {
+    await global.SMTN170Auth?.init?.();
+    await render();
   }
 
   global.SMTN170TasksPage = { init, render };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  global.addEventListener("smtn170:auth-ready", () => {
+    if (document.getElementById("tasksMain")) init();
+  });
 })(window);

@@ -104,10 +104,14 @@
 
   async function renderDashboardV2() {
     const root = document.getElementById("dashboardV2");
-    if (!root || !global.SMTN170Auth?.loadSession?.()) return;
+    if (!root) return;
 
-    const welcome = global.SMTN170Auth?.getWelcomeGreeting?.() || { full: "Welcome back." };
-    const welcomeTitle = welcome.full;
+    const auth = global.SMTN170Auth;
+    const session = auth?.loadSession?.();
+    const welcome = auth?.getWelcomeGreeting?.() || {
+      full: session?.email ? `Welcome back, ${session.email.split("@")[0]}.` : "Welcome back.",
+    };
+    const welcomeTitle = welcome.full || "Welcome back.";
 
     const summary = (await global.SMTN170Dashboard?.fetchSummary?.()) || {
       configured: false,
@@ -123,13 +127,13 @@
     const summaryItems = [
       nextMeeting
         ? `<li><strong>Next meeting:</strong> ${escapeHtml(nextMeeting.title)} · ${escapeHtml(formatDateFriendly(nextMeeting.date))}</li>`
-        : `<li><strong>Next meeting:</strong> No meetings scheduled yet</li>`,
+        : `<li><strong>Next meeting:</strong> No meetings saved yet.</li>`,
       summary.attention.length
         ? `<li><strong>Needs attention:</strong> ${summary.attention.length} open task${summary.attention.length === 1 ? "" : "s"}</li>`
-        : `<li><strong>Needs attention:</strong> No urgent tasks</li>`,
+        : `<li><strong>Needs attention:</strong> No tasks saved yet.</li>`,
       fr.total
         ? `<li><strong>Flight reviews:</strong> ${fr.current} on track · ${fr.dueSoon} due soon${fr.overdue ? ` · ${fr.overdue} overdue` : ""}</li>`
-        : `<li><strong>Flight reviews:</strong> No records yet</li>`,
+        : `<li><strong>Flight reviews:</strong> No flight review records saved yet.</li>`,
     ].join("");
 
     const meetingsHtml = summary.meetings.length
@@ -147,7 +151,7 @@
           </li>`
           )
           .join("")
-      : emptyList("No meetings have been saved yet.", { href: "schedule.html", label: "Create a meeting schedule" });
+      : emptyList("No meetings saved yet.", { href: "schedule.html", label: "Create a meeting schedule" });
 
     const attentionHtml = summary.attention.length
       ? `<ul class="dash-due-list">${summary.attention
@@ -160,7 +164,7 @@
           )
           .join("")}</ul>
         <a class="card-link card-link--light" href="tasks.html">Review tasks →</a>`
-      : `<p class="dash-caught-up">No urgent tasks. You are caught up.</p>`;
+      : `<p class="dash-caught-up">No tasks saved yet.</p>`;
 
     root.innerHTML = `
       <div class="dash-workspace">
@@ -179,7 +183,7 @@
         <section class="card-assistant steward-launch-card" aria-label="Steward for CAP">
           <h2>Steward for CAP</h2>
           <p>Ask Steward for help with meetings, files, flight reviews, inspection prep, org charts, and CAP references.</p>
-          <button type="button" class="btn-gold" data-steward-open>Open Steward</button>
+          <button type="button" class="btn-gold" onclick="openSteward()">Open Steward</button>
         </section>
 
         <div class="dash-columns">
@@ -290,7 +294,7 @@
     });
   }
 
-  global.SMTN170Shell = { renderChip, statusClass, statusLabel, init };
+  global.SMTN170Shell = { renderChip, statusClass, statusLabel, init, renderDashboardV2 };
 
   function onProfileChange() {
     renderDashboardV2().catch((e) => console.warn("[TN-170] dashboard", e));
@@ -299,6 +303,7 @@
 
   global.addEventListener("smtn170:auth-changed", onProfileChange);
   global.addEventListener("smtn170:profile-updated", onProfileChange);
+  global.addEventListener("smtn170:auth-ready", onProfileChange);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

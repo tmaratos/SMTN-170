@@ -1,5 +1,5 @@
 /**
- * TN-170 Inspection Prep — inspection_items from Supabase.
+ * TN-170 Inspection Prep — public.inspection_items
  */
 (function initSuiReadiness(global) {
   function escapeHtml(t) {
@@ -11,7 +11,6 @@
   function statusClass(status) {
     if (status === "completed") return "fr-status--current";
     if (status === "due_soon" || status === "needs_review") return "fr-status--due-soon";
-    if (status === "overdue") return "fr-status--overdue";
     return "fr-status--scheduled";
   }
 
@@ -21,20 +20,59 @@
       due_soon: "Due soon",
       needs_review: "Needs review",
       completed: "Completed",
-      overdue: "Overdue",
     };
     return map[status] || status || "Open";
   }
 
+  function getClient() {
+    return global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+  }
+
   async function fetchItems() {
-    const sb = global.SMTN170Supabase?.getClient?.();
-    if (!sb) return { rows: [], error: null, configured: false };
+    const sb = getClient();
+    if (!sb) return { rows: [], error: "Supabase client not ready", configured: false };
     const { data, error } = await sb
       .from("inspection_items")
-      .select("*")
+      .select("id, title, work_unit, status, due_date, notes, created_at, updated_at")
       .order("due_date", { ascending: true, nullsFirst: false });
-    if (error) return { rows: [], error: error.message, configured: true };
+    if (error) {
+      console.error("[inspection]", error.message, error);
+      return { rows: [], error: error.message, configured: true };
+    }
     return { rows: data || [], configured: true };
+  }
+
+  async function addItem(title, workUnit, dueDate) {
+    const sb = getClient();
+    const uid = global.SMTN170Auth?.actorId?.();
+    if (!sb || !uid) throw new Error("Sign in to add inspection items.");
+    const now = new Date().toISOString();
+    const { error } = await sb.from("inspection_items").insert({
+      title: title.trim(),
+      work_unit: workUnit || "General",
+      status: "open",
+      due_date: dueDate || null,
+      created_by: uid,
+      last_worked_by: uid,
+      last_worked_at: now,
+      updated_at: now,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async function updateItemStatus(id, status) {
+    const sb = getClient();
+    const uid = global.SMTN170Auth?.actorId?.();
+    if (!sb || !uid) throw new Error("Sign in to update inspection items.");
+    const patch = {
+      status,
+      last_worked_by: uid,
+      last_worked_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    if (status === "completed") patch.completed_at = new Date().toISOString();
+    const { error } = await sb.from("inspection_items").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
   }
 
   function groupByWorkUnit(rows) {
@@ -45,6 +83,44 @@
       map.get(unit).push(r);
     });
     return map;
+  }
+
+  function renderAddForm() {
+    return `<form id="inspAddForm" class="card-info" style="margin-bottom:16px">
+      <h3 class="card-info-title">Add inspection item</h3>
+      <label for="inspNewTitle">Title</label>
+      <input id="inspNewTitle" name="title" required />
+      <label for="inspNewUnit">Work unit</label>
+      <input id="inspNewUnit" name="work_unit" placeholder="General" />
+      <label for="inspNewDue">Due date (optional)</label>
+      <input id="inspNewDue" name="due_date" type="date" />
+      <button type="submit" class="btn-gold" style="margin-top:12px">Save item</button>
+    </form>`;
+  }
+
+  function bindInspEvents(root) {
+    root.querySelector("#inspAddForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = e.target.querySelector("#inspNewTitle")?.value || "";
+      const unit = e.target.querySelector("#inspNewUnit")?.value || "General";
+      const due = e.target.querySelector("#inspNewDue")?.value || "";
+      try {
+        await addItem(title, unit, due);
+        await render();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+    root.querySelectorAll("[data-insp-complete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          await updateItemStatus(btn.dataset.inspComplete, "completed");
+          await render();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
   }
 
   async function render() {
@@ -80,12 +156,13 @@
     if (!root) return;
 
     if (!res.configured) {
-      root.innerHTML = `<p class="page-intro">Sign in with Supabase configured to load inspection prep records.</p>`;
+      root.innerHTML = `<p class="page-intro">Loading inspection prep…</p>`;
       return;
     }
 
     if (res.error) {
-      root.innerHTML = `<p class="page-intro">Inspection items could not be loaded. Confirm <code>inspection_items</code> exists in Supabase (see steward-phase2-tables.sql).</p>
+      root.innerHTML = `<p class="page-intro">Inspection items could not be loaded: ${escapeHtml(res.error)}</p>
+        <p class="page-intro">Confirm <code>inspection_items</code> exists and RLS allows your account.</p>
         <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
       global.SMTN170Steward?.rebind?.();
       return;
@@ -96,9 +173,10 @@
         <article class="panel sui-hero card-info">
           <h2>Inspection Prep</h2>
           <p>No inspection checklist items have been created yet.</p>
-          <p>Add your first item with Steward or during squadron staff planning.</p>
-          <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>
-        </article>`;
+        </article>
+        ${renderAddForm()}
+        <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
+      bindInspEvents(root);
       global.SMTN170Steward?.rebind?.();
       return;
     }
@@ -119,7 +197,8 @@
     const checklist = res.rows
       .map(
         (c) =>
-          `<li class="${c.status === "completed" ? "sui-check--done" : ""}">${c.status === "completed" ? "☑" : "☐"} ${escapeHtml(c.title)}${c.due_date ? ` <small>· due ${escapeHtml(c.due_date)}</small>` : ""}</li>`
+          `<li class="${c.status === "completed" ? "sui-check--done" : ""}">${c.status === "completed" ? "☑" : "☐"} ${escapeHtml(c.title)}${c.due_date ? ` <small>· due ${escapeHtml(c.due_date)}</small>` : ""}
+          ${c.status !== "completed" ? `<button type="button" class="ghost-btn btn-sm" data-insp-complete="${escapeHtml(c.id)}">Mark complete</button>` : ""}</li>`
       )
       .join("");
 
@@ -130,6 +209,7 @@
         <p>Track inspection prep by work unit — command, operations, emergency services, aerospace education, and safety.</p>
         <p class="sui-meta"><strong>${open.length}</strong> open · <strong>${percent}%</strong> complete</p>
       </article>
+      ${renderAddForm()}
       <div class="sui-grid">${unitCards}</div>
       <article class="panel">
         <h2>Checklist</h2>
@@ -138,14 +218,26 @@
       <p class="page-intro">Supporting documents belong in <a href="documents.html">Files and forms</a>.</p>
       <button type="button" class="btn-gold" data-steward-open>Manage items in Steward</button>`;
 
+    bindInspEvents(root);
     global.SMTN170Steward?.rebind?.();
   }
 
-  global.SMTN170SuiReadiness = { fetchItems, render };
+  async function init() {
+    await global.SMTN170Auth?.init?.();
+    await render();
+  }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", render);
-  } else {
-    render();
+  global.SMTN170SuiReadiness = { fetchItems, render, init };
+
+  global.addEventListener("smtn170:auth-ready", () => {
+    if (document.getElementById("suiMain")) init();
+  });
+
+  if (document.getElementById("suiMain")) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
   }
 })(window);

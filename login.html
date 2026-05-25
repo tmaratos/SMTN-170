@@ -1,99 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
-  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
-  <link rel="manifest" href="./assets/site.webmanifest" />
-  <meta name="theme-color" content="#030914" />
-  <title>Sign in | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
-  <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=6" />
-</head>
-<body class="login-v2">
-  <main class="login-card-v2">
-    <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170 Oak Ridge Composite Squadron" class="login-patch" />
-    <p class="login-motto">Not Without Effort.</p>
-    <h1>Senior Member Portal</h1>
-    <p class="login-unit">TN-170 Oak Ridge Composite Squadron</p>
-    <p class="login-unit login-lead">Private Senior Member operations workspace for TN-170. Approved Senior Members only.</p>
-
-    <form class="login-form-v2" id="loginForm">
-      <label for="loginEmail">Email</label>
-      <input id="loginEmail" name="email" type="email" placeholder="your.email@example.com" autocomplete="username" required />
-
-      <label for="loginPassword">Password</label>
-      <input id="loginPassword" name="password" type="password" placeholder="Your portal password" autocomplete="current-password" required />
-
-      <p id="loginNotice" class="login-notice" hidden role="status"></p>
-      <p id="loginError" class="login-error" hidden role="alert"></p>
-
-      <button type="submit" class="btn-gold btn-lg" id="loginSubmit">Sign in</button>
-    </form>
-
-    <p class="login-hint">First time? Ask Commander or Command Staff to approve your account after you register.</p>
-    <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/auth-guard.js?v=6"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", async function () {
-      const form = document.getElementById("loginForm");
-      const errEl = document.getElementById("loginError");
-      const btn = document.getElementById("loginSubmit");
-
-      function showError(msg) {
-        errEl.textContent = msg;
-        errEl.hidden = false;
-        console.log("LOGIN_ERROR", msg);
-      }
-
-      await window.TN170AuthGuard.runLoginPage();
-
-      const supabaseClient = window.TN170AuthGuard.getSupabase();
-      if (!supabaseClient) {
-        showError("Supabase failed to load. Refresh the page.");
-        btn.disabled = true;
-        return;
-      }
-
-      form.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        errEl.hidden = true;
-        btn.disabled = true;
-        btn.textContent = "Signing in…";
-        console.log("LOGIN_SUBMIT_START");
-
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value;
-
-        try {
-          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-          if (error) {
-            showError(error.message);
-            return;
-          }
-
-          if (data && data.session) {
-            console.log("LOGIN_SUCCESS_SESSION_FOUND");
-            window.location.href = "dashboard.html";
-          } else {
-            showError("Sign in did not return a session. Try again.");
-          }
-        } catch (err) {
-          showError(err && err.message ? err.message : "Could not sign in. Check email and password.");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "Sign in";
-        }
-      });
-    });
-  </script>
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
+  <link rel="manifest" href="./assets/site.webmanifest" />
+  <meta name="theme-color" content="#030914" />
+  <title>Sign in | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
+  <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=6" />
+</head>
+<body class="login-v2">
+  <main class="login-card-v2">
+    <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170 Oak Ridge Composite Squadron" class="login-patch" />
+    <p class="login-motto">Not Without Effort.</p>
+    <h1>Senior Member Portal</h1>
+    <p class="login-unit">TN-170 Oak Ridge Composite Squadron</p>
+    <p class="login-unit login-lead">Private Senior Member operations workspace for TN-170. Approved Senior Members only.</p>
+
+    <form class="login-form-v2" id="loginForm">
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" name="email" type="email" placeholder="your.email@example.com" autocomplete="username" required />
+
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" name="password" type="password" placeholder="Your portal password" autocomplete="current-password" required />
+
+      <p id="loginNotice" class="login-notice" hidden role="status"></p>
+      <p id="loginError" class="login-error" hidden role="alert"></p>
+
+      <button type="submit" class="btn-gold btn-lg" id="loginSubmit">Sign in</button>
+    </form>
+
+    <p class="login-hint">First time? Ask Commander or Command Staff to approve your account after you register.</p>
+    <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/auth-guard.js?v=7"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      const form = document.getElementById("loginForm");
+      const errEl = document.getElementById("loginError");
+      const btn = document.getElementById("loginSubmit");
+
+      function showError(msg) {
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        console.log("LOGIN_ERROR", msg);
+      }
+
+      await window.TN170AuthGuard.runLoginPage();
+
+      const supabaseClient = window.TN170AuthGuard.getSupabase();
+      if (!supabaseClient) {
+        showError("Supabase failed to load. Refresh the page.");
+        btn.disabled = true;
+        return;
+      }
+
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        errEl.hidden = true;
+        btn.disabled = true;
+        btn.textContent = "Signing in…";
+        console.log("LOGIN_SUBMIT_START");
+
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
+
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+          if (error) {
+            showError(error.message);
+            return;
+          }
+
+          if (data && data.session) {
+            console.log("LOGIN_SUCCESS_SESSION_FOUND");
+            window.location.href = "dashboard.html";
+          } else {
+            showError("Sign in did not return a session. Try again.");
+          }
+        } catch (err) {
+          showError(err && err.message ? err.message : "Could not sign in. Check email and password.");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Sign in";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

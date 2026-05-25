@@ -226,7 +226,6 @@
       <button type="button" class="steward-cap-btn steward-cap-btn--secondary" data-cap-open-tab="${safeUrl}">Open in new tab</button>
     </div>`;
   }
-  }
 
   async function ensureActiveConversation() {
     if (!isOnline()) {
@@ -509,6 +508,7 @@
         message: trimmed,
         conversation_id: convId,
         active_mode: activeMode,
+        context_area: activeMode,
       });
 
       if (result.conversation_id) state.conversationId = result.conversation_id;
@@ -534,8 +534,13 @@
     } catch (err) {
       console.error("[Steward] send", err);
       state.messages = state.messages.filter((m) => m.id !== optimisticId);
+      state.messages.push({
+        id: "err-" + Date.now(),
+        role: "steward",
+        text: err.message || "Steward could not respond. Check your connection and Edge Function deployment.",
+        at: new Date().toISOString(),
+      });
       renderMessages();
-      alert(err.message || "Steward could not respond. Check your connection and Edge Function deployment.");
     } finally {
       setThinking(false);
     }
@@ -753,7 +758,7 @@
       el.dataset.stewardBound = "1";
       el.addEventListener("click", (e) => {
         e.preventDefault();
-        openPanel();
+        openSteward();
       });
     });
   }
@@ -860,14 +865,27 @@
   }
 
   function askFromDashboard(text) {
+    openSteward(text);
+  }
+
+  function openSteward(promptText) {
+    if (!document.getElementById("stewardRoot")) {
+      injectWidget();
+    } else {
+      bindPanelEvents();
+      bindOpenTriggers();
+    }
     openPanel();
-    if ((text || "").trim()) {
-      setTimeout(() => sendMessage(text), 200);
+    if ((promptText || "").trim()) {
+      setTimeout(() => sendMessage(String(promptText).trim()), 280);
     }
   }
 
+  global.openSteward = openSteward;
+
   global.SMTN170Steward = {
     openPanel,
+    openSteward,
     closePanel,
     sendMessage,
     askFromDashboard,

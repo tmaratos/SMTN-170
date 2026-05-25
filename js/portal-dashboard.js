@@ -58,7 +58,7 @@
 
     const meetings = (meetingsRes.data || []).map(mapMeeting);
     const attention = (tasksRes.data || [])
-      .filter((t) => ["open", "due_soon", "needs_review", "overdue"].includes(t.status))
+      .filter((t) => ["open", "due_soon"].includes(t.status))
       .map(mapTaskAttention);
 
     const frRows = frRes.data || [];
