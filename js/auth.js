@@ -114,12 +114,9 @@
     if (!sb || !uid) throw new Error("You must be signed in to update your profile.");
 
     const patch = Profile()?.pickEditablePayload?.(formData) || {};
-    const merged = { ...profile, ...patch, email: profile?.email || session?.email };
-    patch.display_name = Profile()?.computeDisplayName?.(merged) || merged.email;
-    patch.updated_at = new Date().toISOString();
 
     const { error } = await sb.from("profiles").update(patch).eq("id", uid);
-    if (error) throw error;
+    if (error) throw new Error(error.message || "Could not save profile.");
 
     await syncSessionFromSupabase();
     global.dispatchEvent(new CustomEvent("smtn170:profile-updated", { detail: { profile } }));

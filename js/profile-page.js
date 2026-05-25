@@ -37,22 +37,44 @@
       duty_position: session.dutyPosition || "",
       profile_photo_url: session.profilePhotoUrl || "",
       role: session.role,
+      status: session.status,
       account_status: session.accountStatus,
       updated_at: session.updatedAt || null,
     };
   }
 
-  function renderForm(row, message) {
+  function getAccessStatusLabel(row) {
+    const auth = global.SMTN170Auth;
+    const rawStatus = (row?.status || "").toString().toLowerCase();
+    if (rawStatus === "active") return "Active";
+    if (row?.account_status === auth?.ACCOUNT_STATUS?.APPROVED || row?.account_status === "approved") {
+      return "Active";
+    }
+    if (
+      row?.account_status === auth?.ACCOUNT_STATUS?.AWAITING ||
+      row?.account_status === "awaiting_verification"
+    ) {
+      return "Awaiting approval";
+    }
+    return row?.account_status || row?.status || "—";
+  }
+
+  function renderForm(row, message, messageType) {
     const root = document.getElementById("profilePage");
     if (!root) return;
 
     const auth = global.SMTN170Auth;
     const roleLabel = auth?.getRoleLabel?.(row?.role) || row?.role || "—";
-    const statusLabel =
-      row?.account_status === auth?.ACCOUNT_STATUS?.APPROVED ? "Approved" : "Awaiting approval";
+    const statusLabel = getAccessStatusLabel(row);
+    const alertClass =
+      messageType === "error"
+        ? "profile-alert profile-alert--error card-warning"
+        : messageType === "success"
+          ? "profile-alert profile-alert--success card-info"
+          : "profile-alert card-warning";
 
     root.innerHTML = `
-      ${message ? `<div class="profile-alert card-warning" role="status">${escapeHtml(message)}</div>` : ""}
+      ${message ? `<div class="${alertClass}" role="alert">${escapeHtml(message)}</div>` : ""}
       <form id="profileForm" class="profile-form card-info">
         <h2 class="profile-form-title">Your information</h2>
         <p class="page-intro">Update how your name appears in the portal. Your login email does not change here.</p>
@@ -126,21 +148,25 @@
     const btn = document.getElementById("profileSaveBtn");
     const form = e.target;
     const fd = new FormData(form);
-    const payload = {};
-    global.SMTN170Profile.EDITABLE_FIELDS.forEach((key) => {
-      payload[key] = fd.get(key);
-    });
+    const payload = global.SMTN170Profile?.pickEditablePayload
+      ? global.SMTN170Profile.pickEditablePayload(Object.fromEntries(fd.entries()))
+      : Object.fromEntries(
+          global.SMTN170Profile.EDITABLE_FIELDS.map((key) => [key, fd.get(key)])
+        );
 
     btn.disabled = true;
     btn.textContent = "Saving…";
 
     try {
       await global.SMTN170Auth.updateOwnProfile(payload);
+      await global.SMTN170Auth?.syncSessionFromSupabase?.();
       const row = getProfileRow();
-      renderForm(row, "Your profile was saved.");
+      renderForm(row, "Your profile was saved.", "success");
       global.SMTN170ProfileBanner?.refresh?.();
+      global.SMTN170PortalNav?.init?.();
     } catch (err) {
-      alert(err.message || "Could not save profile. Please try again.");
+      const msg = err?.message || err?.details || String(err) || "Could not save profile.";
+      renderForm(getProfileRow(), msg, "error");
     } finally {
       btn.disabled = false;
       btn.textContent = "Save profile";
