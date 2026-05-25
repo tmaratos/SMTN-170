@@ -55,7 +55,7 @@
   async function fetchFiles() {
     const sb = global.SMTN170Supabase?.getClient?.();
     if (!sb) return [];
-    const { data, error } = await sb.from("uploaded_files").select("*").order("updated_at", { ascending: false });
+    const { data, error } = await sb.from("uploaded_files").select("*").order("created_at", { ascending: false });
     if (error) {
       console.warn("[files]", error.message);
       return [];
@@ -64,19 +64,51 @@
   }
 
   function mapRow(row) {
+    const uid = global.SMTN170Auth?.actorId?.();
+    const fileName = row.file_name || row.name;
+    const filePath = row.file_path || row.storage_path;
+    const categoryKey =
+      row.file_category ||
+      FOLDER_TO_CATEGORY[row.folder] ||
+      (row.folder && !CATEGORY_TO_FOLDER[row.folder] ? row.folder : "general");
+    const displayFolder = CATEGORY_TO_FOLDER[categoryKey] || row.folder || "General";
+    const ownerName =
+      row.uploaded_by_name ||
+      row.owner_name ||
+      (row.owner_id && row.owner_id === uid ? global.SMTN170Auth?.actorDisplay?.() : null);
     return {
       id: row.id,
-      name: row.name,
-      folder: row.folder || "General",
-      storage_path: row.storage_path,
-      mime_type: row.mime_type,
+      name: fileName,
+      file_name: fileName,
+      folder: displayFolder,
+      file_category: categoryKey,
+      storage_path: filePath,
+      file_path: filePath,
+      mime_type: row.mime_type || row.file_type,
       size_bytes: row.size_bytes,
       created_at: row.created_at,
       updated_at: row.updated_at,
       last_worked_at: row.last_worked_at,
-      uploaded_by_name: row.uploaded_by_name || global.SMTN170Auth?.actorDisplay?.() || "Squadron member",
+      owner_id: row.owner_id,
+      visibility: row.visibility,
+      steward_suggested_category: row.steward_suggested_category,
+      uploaded_by_name: ownerName || "Squadron member",
       last_worked_by_name: row.last_worked_by_name || null,
     };
+  }
+
+  function showUploadError(message) {
+    const el = document.getElementById("flIngestNotice");
+    if (!el) return;
+    el.hidden = false;
+    el.innerHTML = `<p class="import-error">${escapeHtml(message)}</p>`;
+  }
+
+  function clearUploadNotice() {
+    const el = document.getElementById("flIngestNotice");
+    if (!el) return;
+    el.hidden = true;
+    el.innerHTML = "";
   }
 
   function subscribeRealtime() {
@@ -88,64 +120,88 @@
 
   async function uploadFile(file) {
     const sb = global.SMTN170Supabase?.getClient?.();
-    const auth = global.SMTN170Auth;
-    if (!sb || !auth?.loadSession?.()) throw new Error("Sign in to upload files");
+    if (!sb) {
+      showUploadError("Sign in to upload files.");
+      return;
+    }
 
     const e = ext(file.name);
-    if (e && !ALLOWED_EXT.includes(e)) throw new Error("File type not allowed for squadron library");
+    if (e && !ALLOWED_EXT.includes(e)) {
+      showUploadError("File type not allowed for squadron library.");
+      return;
+    }
 
-    const uid = auth.actorId();
+    const { data: userData, error: userErr } = await sb.auth.getUser();
+    const uid = userData?.user?.id;
+    if (userErr || !uid) {
+      showUploadError("Sign in to upload files.");
+      return;
+    }
+
     const path = `${uid}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const bucket = global.SMTN170Supabase.storageBucket();
 
     const item = { id: "up-" + Date.now(), name: file.name, progress: 0 };
     state.uploading.push(item);
+    clearUploadNotice();
     renderList();
 
-    const { error: upErr } = await sb.storage.from(bucket).upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-    if (upErr) throw upErr;
+    let storageOk = false;
+    try {
+      const { error: upErr } = await sb.storage.from(bucket).upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (upErr) {
+        showUploadError(`Storage upload failed: ${upErr.message}`);
+        return;
+      }
+      storageOk = true;
 
-    item.progress = 80;
-    renderList();
+      item.progress = 80;
+      renderList();
 
-    const now = new Date().toISOString();
-    const { data: row, error: dbErr } = await sb
-      .from("uploaded_files")
-      .insert({
-        name: file.name,
-        folder: state.folder,
-        storage_path: path,
-        mime_type: file.type,
-        size_bytes: file.size,
-        uploaded_by: uid,
-        last_worked_by: uid,
-        last_worked_at: now,
-        updated_at: now,
-      })
-      .select()
-      .single();
+      const folderKey = FOLDER_TO_CATEGORY[state.folder] || "general";
+      const { data: row, error: dbErr } = await sb
+        .from("uploaded_files")
+        .insert({
+          owner_id: uid,
+          file_name: file.name,
+          file_path: path,
+          file_category: folderKey,
+          steward_suggested_category: folderKey,
+          visibility: "squadron",
+        })
+        .select()
+        .single();
 
-    if (dbErr) throw dbErr;
+      if (dbErr) {
+        await sb.storage.from(bucket).remove([path]).catch(() => {});
+        showUploadError(`File index save failed: ${dbErr.message}`);
+        return;
+      }
 
-    state.uploading = state.uploading.filter((u) => u.id !== item.id);
-    const mapped = mapRow(row);
-    state.files.unshift(mapped);
-    renderList();
+      state.uploading = state.uploading.filter((u) => u.id !== item.id);
+      const mapped = mapRow(row);
+      state.files.unshift(mapped);
+      renderList();
 
-    if (global.SMTN170FileIngestion?.ingestUploadedFile) {
-      try {
-        const folderKey = FOLDER_TO_CATEGORY[state.folder] || state.folder;
-        const ingestResult = await global.SMTN170FileIngestion.ingestUploadedFile({
-          ...row,
-          folder: folderKey,
-        });
-        showIngestNotice(ingestResult);
-        global.SMTN170ImportCenter?.setPending?.(ingestResult);
-      } catch (err) {
-        showIngestNotice({ message: err.message, ok: false });
+      if (global.SMTN170FileIngestion?.ingestUploadedFile) {
+        try {
+          const folderKey = FOLDER_TO_CATEGORY[state.folder] || state.folder;
+          const ingestResult = await global.SMTN170FileIngestion.ingestUploadedFile(mapped, {
+            detectedType: folderKey === "meeting_schedule" ? "meeting_schedule" : undefined,
+          });
+          showIngestNotice(ingestResult);
+          global.SMTN170ImportCenter?.setPending?.(ingestResult);
+        } catch (err) {
+          showIngestNotice({ message: err.message, ok: false });
+        }
+      }
+    } finally {
+      if (!storageOk || state.uploading.some((u) => u.id === item.id)) {
+        state.uploading = state.uploading.filter((u) => u.id !== item.id);
+        renderList();
       }
     }
   }
@@ -164,52 +220,39 @@
     Forms: "forms",
   };
 
+  const CATEGORY_TO_FOLDER = Object.fromEntries(
+    Object.entries(FOLDER_TO_CATEGORY).map(([label, key]) => [key, label])
+  );
+
   function showIngestNotice(result) {
     const el = document.getElementById("flIngestNotice");
     if (!el) return;
     el.hidden = false;
     const conf = result?.confidence != null ? ` · confidence ${Math.round(result.confidence * 100)}%` : "";
     const detected = result?.importMeta?.label || result?.detectedType || "";
-    el.innerHTML = `<p><strong>Smart import:</strong> ${escapeHtml(result?.message || "Upload complete.")}${detected ? ` <em>(${escapeHtml(detected)}${conf})</em>` : ""}</p>`;
+    const warn =
+      result?.warnings?.length && !result.message?.includes("not installed")
+        ? `<p class="page-intro" style="margin-top:8px">${escapeHtml(result.warnings.join(" "))}</p>`
+        : "";
+    el.innerHTML = `<p><strong>Smart import:</strong> ${escapeHtml(result?.message || "Upload complete.")}${detected ? ` <em>(${escapeHtml(detected)}${conf})</em>` : ""}</p>${warn}`;
     if (result?.needsReview) {
       el.innerHTML += `<p class="page-intro" style="margin-top:8px">Review extracted records in the <strong>Import Center</strong> section above before confirming.</p>`;
-    }
-    if (result?.needsReview && result.drafts?.length) {
-      el.innerHTML += `<button type="button" class="btn-gold btn-sm" id="flCommitDrafts" style="margin-top:10px">Confirm ${result.drafts.length} record(s) here</button>`;
-      document.getElementById("flCommitDrafts")?.addEventListener("click", async () => {
-        try {
-          const out = await global.SMTN170FileIngestion.confirmImport(result);
-          el.innerHTML = `<p>${escapeHtml(out.message || `${result.drafts.length} record(s) imported.`)}</p>`;
-          global.SMTN170Shell?.renderDashboardV2?.();
-        } catch (e) {
-          el.innerHTML = `<p class="import-error">${escapeHtml(e.message)}</p>`;
-        }
-      });
     }
   }
 
   async function moveFile(id, folder) {
     const sb = global.SMTN170Supabase?.getClient?.();
-    const uid = global.SMTN170Auth?.actorId?.();
     if (!sb) return;
-    const now = new Date().toISOString();
-    await sb
-      .from("uploaded_files")
-      .update({ folder, last_worked_by: uid, last_worked_at: now, updated_at: now })
-      .eq("id", id);
+    const fileCategory = FOLDER_TO_CATEGORY[folder] || folder;
+    await sb.from("uploaded_files").update({ file_category: fileCategory }).eq("id", id);
     state.files = await fetchFiles();
     renderList();
   }
 
   async function renameFile(id, name) {
     const sb = global.SMTN170Supabase?.getClient?.();
-    const uid = global.SMTN170Auth?.actorId?.();
     if (!sb || !name?.trim()) return;
-    const now = new Date().toISOString();
-    await sb
-      .from("uploaded_files")
-      .update({ name: name.trim(), last_worked_by: uid, last_worked_at: now, updated_at: now })
-      .eq("id", id);
+    await sb.from("uploaded_files").update({ file_name: name.trim() }).eq("id", id);
     state.files = await fetchFiles();
     renderList();
   }
@@ -235,6 +278,10 @@
   }
 
   async function previewFile(file) {
+    if (global.SMTN170DocViewer?.open) {
+      global.SMTN170DocViewer.open(file);
+      return;
+    }
     const sb = global.SMTN170Supabase?.getClient?.();
     if (!sb) return;
     const { data, error } = await sb.storage
@@ -283,7 +330,7 @@
             ${audit || ""}
           </div>
           <div class="fl-file-actions">
-            <button type="button" class="ghost-btn" data-fl-action="preview" data-id="${escapeHtml(f.id)}">Open</button>
+            <button type="button" class="ghost-btn" data-fl-action="preview" data-id="${escapeHtml(f.id)}">View</button>
             <button type="button" class="ghost-btn" data-fl-action="rename" data-id="${escapeHtml(f.id)}">Rename</button>
             <button type="button" class="ghost-btn" data-fl-action="move" data-id="${escapeHtml(f.id)}">Move</button>
             <button type="button" class="ghost-btn" data-fl-action="delete" data-id="${escapeHtml(f.id)}" data-path="${escapeHtml(f.storage_path)}">Delete</button>
@@ -307,7 +354,7 @@
 
     root.innerHTML = `
       <div class="fl-root">
-        <p class="page-intro">Shared squadron drive — drop files here, sort into folders, open PDFs and forms. All approved members can upload and organize.</p>
+        <p class="page-intro">Upload squadron files here — stored securely in Supabase. Smart import extracts meeting schedules and org chart data for review, then writes to the portal database. Open PDFs, Word, Excel, images, and text in the built-in viewer.</p>
         <div data-steward-context="files"></div>
         <div class="fl-toolbar">
           <div class="fl-folders" role="group" aria-label="Folders">${folderBtns}</div>
@@ -328,7 +375,7 @@
     const input = document.getElementById("flFileInput");
     dz?.addEventListener("click", () => input?.click());
     input?.addEventListener("change", () => {
-      Array.from(input.files || []).forEach((f) => uploadFile(f).catch((e) => alert(e.message)));
+      Array.from(input.files || []).forEach((f) => uploadFile(f));
       input.value = "";
     });
     ["dragenter", "dragover"].forEach((ev) => {
@@ -341,7 +388,7 @@
     dz?.addEventListener("drop", (e) => {
       e.preventDefault();
       dz.classList.remove("fl-dropzone--over");
-      Array.from(e.dataTransfer?.files || []).forEach((f) => uploadFile(f).catch((err) => alert(err.message)));
+      Array.from(e.dataTransfer?.files || []).forEach((f) => uploadFile(f));
     });
 
     root.addEventListener("click", async (e) => {

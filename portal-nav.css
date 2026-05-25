@@ -69,6 +69,17 @@
   color: var(--gold);
 }
 
+.portal-nav-link--featured {
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  background: rgba(201, 162, 39, 0.08);
+}
+
+.portal-nav-link--featured:hover,
+.portal-nav-link--featured.active {
+  background: rgba(201, 162, 39, 0.18);
+  color: var(--gold);
+}
+
 .portal-nav-account-card {
   margin-bottom: 16px;
   padding: 14px;

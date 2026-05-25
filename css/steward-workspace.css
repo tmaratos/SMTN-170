@@ -1,24 +1,22 @@
 /**
- * Steward for CAP — operational mission support workspace (v2)
- * Overrides legacy narrow chat drawer in portal-v2.css
+ * Steward for CAP — ChatGPT-style mission support UI
  */
 
-/* —— FAB —— */
 .steward-fab {
-  min-height: 48px;
-  padding: 0 16px 0 14px;
-  background: rgba(12, 24, 48, 0.94);
-  border: 2px solid rgba(201, 162, 39, 0.55);
-  color: var(--tn-gold, #c9a227);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  font-weight: 700;
-  font-size: 0.88rem;
+  min-height: 44px;
+  padding: 0 14px;
+  background: #1a2332;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ececf1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  font-weight: 600;
+  font-size: 0.85rem;
   z-index: 400;
+  border-radius: 22px;
 }
 
 .steward-fab:hover {
-  background: rgba(18, 63, 145, 0.95);
-  border-color: var(--tn-gold, #c9a227);
+  background: #2a3441;
   color: #fff;
 }
 
@@ -27,640 +25,591 @@ body.steward-open .steward-fab {
   pointer-events: none;
 }
 
-/* —— Backdrop —— */
 .steward-backdrop {
-  background: rgba(3, 9, 20, 0.78) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(4px);
 }
 
-/* —— Main workspace panel —— */
 #stewardPanel.steward-panel {
   position: fixed !important;
-  top: 16px !important;
-  right: 16px !important;
-  left: auto !important;
-  bottom: 16px !important;
-  width: min(1180px, calc(100vw - 32px)) !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
   min-width: 0 !important;
-  max-width: calc(100vw - 32px) !important;
-  height: auto !important;
-  max-height: calc(100dvh - 32px) !important;
-  border-radius: 18px !important;
-  border: 1px solid rgba(201, 162, 39, 0.32) !important;
-  border-left: 1px solid rgba(201, 162, 39, 0.32) !important;
-  transform: translateX(12px) scale(0.98) !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  transform: none !important;
   opacity: 0;
   pointer-events: none;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease !important;
+  background: #212121 !important;
+  box-shadow: none !important;
+  transition: opacity 0.2s ease !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  background: linear-gradient(165deg, #142a4a 0%, #0a1428 42%, #060d1c 100%) !important;
+  z-index: 500 !important;
 }
 
 #stewardPanel.steward-panel.open {
-  transform: translateX(0) scale(1) !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 
-/* —— Header —— */
-#stewardPanel .steward-panel-head {
+/* —— Top bar —— */
+#stewardPanel .steward-gpt-head {
   flex-shrink: 0;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.18);
-}
-
-#stewardPanel .steward-head-brand {
-  flex: 1;
-  min-width: 0;
-}
-
-#stewardPanel .steward-head-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 12px 20px;
-  margin-top: 4px;
-}
-
-#stewardPanel .steward-panel-head h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #f4f7fc;
-  letter-spacing: 0.01em;
-}
-
-#stewardPanel .steward-kicker {
-  margin: 0;
-  font-size: 0.72rem;
-  color: rgba(201, 162, 39, 0.95);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-#stewardPanel .steward-status {
-  margin: 0;
-  font-size: 0.82rem;
-  color: #a8b8d0;
-  font-weight: 600;
-}
-
-#stewardPanel .steward-head-toolbar {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin-top: 14px;
-}
-
-#stewardPanel .steward-op-title {
-  flex: 1;
-  min-width: 160px;
-  font-size: 0.9rem;
   padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #212121;
 }
 
-#stewardPanel .steward-head-btn {
-  min-height: 40px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
-  color: #c5d0e0;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-#stewardPanel .steward-head-btn:hover {
-  border-color: rgba(201, 162, 39, 0.45);
-  color: #fff;
-}
-
-#stewardPanel .steward-close {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  font-size: 1.25rem;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e8eef8;
-  flex-shrink: 0;
-}
-
-#stewardPanel .steward-close:hover {
-  background: rgba(196, 30, 58, 0.35);
-}
-
-#stewardPanel .steward-status-dot--live,
-#stewardPanel .steward-status--live .steward-status-dot {
-  background: #5cb87a;
-  box-shadow: 0 0 8px rgba(92, 184, 122, 0.6);
-}
-
-#stewardPanel .steward-status--live {
-  color: #9fd4b0;
-}
-
-/* —— Mode bar —— */
-#stewardPanel .steward-mode-bar {
-  flex-shrink: 0;
-  padding: 0 24px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.1);
-}
-
-#stewardPanel .steward-mode-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 0 0;
+.steward-gpt-menu,
+.steward-gpt-close {
+  width: 40px;
+  height: 40px;
   border: none;
+  border-radius: 8px;
   background: transparent;
+  color: #ececf1;
+  cursor: pointer;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
-#stewardPanel .steward-mode-tab {
+.steward-gpt-menu:hover,
+.steward-gpt-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.steward-gpt-title-wrap {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.steward-gpt-title-wrap h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ececf1;
+}
+
+.steward-gpt-status {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: #8e8ea0;
+}
+
+.steward-status-dot--live {
+  background: #10a37f !important;
+}
+
+.steward-upload-btn {
+  flex-shrink: 0;
   padding: 8px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: #b8c5d9;
-  font-size: 0.84rem;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 36px;
+  background: rgba(201, 162, 39, 0.15);
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  color: #e8c547;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-#stewardPanel .steward-mode-tab:hover,
-#stewardPanel .steward-mode-tab.active {
-  border-color: rgba(201, 162, 39, 0.5);
-  background: rgba(201, 162, 39, 0.12);
+.steward-upload-btn:hover {
+  background: rgba(201, 162, 39, 0.28);
   color: #fff;
 }
 
-#stewardPanel .steward-mode-hint {
-  margin: 8px 0 0;
-  padding: 0;
-  font-size: 0.8rem;
-  color: #8fa3bf;
-}
-
-/* —— Body layout —— */
-#stewardPanel .steward-workspace-layout {
-  display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+/* —— Body: drawer + main —— */
+.steward-gpt-body {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-}
-
-/* —— Operations rail (replaces conversation sidebar) —— */
-#stewardPanel .steward-ops-rail {
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.14);
-  overflow: hidden;
   display: flex;
-  flex-direction: column;
+  position: relative;
 }
 
-#stewardPanel .steward-ops-rail-inner {
-  flex: 1;
+.steward-ctx-drawer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: min(300px, 88vw);
+  z-index: 2;
+  background: #171717;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   overflow-y: auto;
-  overflow-x: hidden;
-  padding: 16px 14px 20px;
-  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+  transform: translateX(-100%);
+  transition: transform 0.22s ease;
 }
 
-#stewardPanel .steward-ctx-block {
+body.steward-ctx-open .steward-ctx-drawer {
+  transform: translateX(0);
+}
+
+body.steward-ctx-open .steward-ctx-scrim {
+  display: block;
+}
+
+.steward-ctx-scrim {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.steward-ctx-block {
   margin-bottom: 18px;
 }
 
-#stewardPanel .steward-ctx-head {
+.steward-ctx-head {
   margin: 0 0 8px;
-  font-size: 0.68rem;
-  font-weight: 800;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(201, 162, 39, 0.9);
+  letter-spacing: 0.06em;
+  color: #8e8ea0;
 }
 
-#stewardPanel .steward-ctx-list {
+.steward-ctx-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-#stewardPanel .steward-ctx-list li {
-  margin-bottom: 4px;
-}
-
-#stewardPanel .steward-ctx-link {
+.steward-ctx-link {
   display: block;
   width: 100%;
   text-align: left;
   padding: 8px 10px;
-  border-radius: 8px;
   border: none;
+  border-radius: 8px;
   background: transparent;
-  color: #d8e2ef;
-  font-size: 0.84rem;
-  font-weight: 600;
-  line-height: 1.35;
-  text-decoration: none;
+  color: #ececf1;
+  font-size: 0.85rem;
   cursor: pointer;
+  text-decoration: none;
 }
 
-#stewardPanel .steward-ctx-link:hover {
-  background: rgba(18, 63, 145, 0.35);
-  color: #fff;
+.steward-ctx-link:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
-#stewardPanel .steward-ctx-empty {
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  color: #7a8da8;
-  font-style: italic;
-}
-
-#stewardPanel .steward-ctx-action {
+.steward-ctx-action {
   margin-top: 8px;
   width: 100%;
-  min-height: 38px;
-  padding: 8px 12px;
+  padding: 10px;
   border-radius: 8px;
-  border: 1px dashed rgba(201, 162, 39, 0.4);
-  background: rgba(201, 162, 39, 0.08);
-  color: #e8d9a8;
-  font-size: 0.82rem;
-  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #ececf1;
   cursor: pointer;
-}
-
-#stewardPanel .steward-ctx-action:hover {
-  background: rgba(201, 162, 39, 0.18);
-  color: #fff;
-}
-
-#stewardPanel .steward-ctx-loading {
   font-size: 0.85rem;
-  color: #8fa3bf;
-  margin: 0;
 }
 
-/* —— Main column —— */
-#stewardPanel .steward-main-col {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
+.steward-ctx-empty {
+  padding: 6px 10px;
+  color: #6b6b7b;
+  font-size: 0.82rem;
 }
 
-#stewardPanel .steward-conversation-pane {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 20px 24px 12px;
+.steward-op-title-row {
+  padding: 8px 12px 0;
 }
 
-#stewardPanel .steward-messages {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 4px 4px 16px 0;
-  min-height: 120px;
-  -webkit-overflow-scrolling: touch;
-}
-
-#stewardPanel .steward-welcome {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-  padding: 8px 4px 24px;
-  max-width: 62ch;
-}
-
-#stewardPanel .steward-welcome-avatar {
-  width: 52px;
-  height: 52px;
-  font-size: 1.3rem;
-  border-radius: 14px;
-  background: linear-gradient(145deg, rgba(201, 162, 39, 0.35), rgba(18, 63, 145, 0.5));
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  font-weight: 800;
-  color: #fff;
-}
-
-#stewardPanel .steward-welcome-copy p {
-  margin: 0 0 10px;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #d8e2ef;
-}
-
-#stewardPanel .steward-welcome-copy p strong {
-  color: #fff;
-  font-size: 1.08rem;
-}
-
-#stewardPanel .steward-welcome-hint {
-  font-size: 0.88rem !important;
-  color: #8fa3bf !important;
-}
-
-#stewardPanel .steward-msg {
-  max-width: min(78%, 640px);
-}
-
-#stewardPanel .steward-msg--user {
-  margin-left: auto;
-}
-
-#stewardPanel .steward-msg--steward {
-  margin-right: auto;
-}
-
-#stewardPanel .steward-msg-bubble {
-  font-size: 0.98rem;
-  line-height: 1.55;
-  padding: 14px 18px;
-  border-radius: 14px;
-}
-
-#stewardPanel .steward-msg--user .steward-msg-bubble {
-  background: rgba(18, 63, 145, 0.5);
-  border: 1px solid rgba(88, 140, 220, 0.35);
-}
-
-#stewardPanel .steward-msg--steward .steward-msg-bubble {
-  background: rgba(22, 32, 48, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-#stewardPanel .steward-typing {
-  flex-shrink: 0;
-}
-
-/* —— Command deck (workflows + input) —— */
-#stewardPanel .steward-command-deck {
-  flex-shrink: 0;
-  padding: 16px 24px 20px;
-  background: rgba(0, 0, 0, 0.22);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-#stewardPanel .steward-section-label {
-  margin: 0 0 12px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(201, 162, 39, 0.85);
-}
-
-#stewardPanel .steward-workflow-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-#stewardPanel .steward-workflow-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  text-align: left;
-  padding: 14px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: #e8eef8;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.12s;
-  min-height: 72px;
-}
-
-#stewardPanel .steward-workflow-card:hover:not(:disabled) {
-  border-color: rgba(201, 162, 39, 0.45);
-  background: rgba(18, 63, 145, 0.28);
-  transform: translateY(-1px);
-}
-
-#stewardPanel .steward-workflow-card:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-#stewardPanel .steward-workflow-icon {
-  font-size: 1.35rem;
-  line-height: 1;
-  flex-shrink: 0;
-  width: 32px;
-  text-align: center;
-}
-
-#stewardPanel .steward-workflow-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-#stewardPanel .steward-workflow-text strong {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.25;
-}
-
-#stewardPanel .steward-workflow-text span {
-  font-size: 0.78rem;
-  color: #9ab0c8;
-  line-height: 1.35;
-}
-
-#stewardPanel .steward-command-bar {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  margin: 0;
-}
-
-#stewardPanel .steward-command-input-wrap {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-}
-
-#stewardPanel #stewardInput {
+.steward-op-title {
   width: 100%;
-  min-height: 48px;
-  max-height: 160px;
-  resize: none;
-  overflow-y: auto;
-  font-size: 1rem;
-  line-height: 1.45;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #fff;
-  font-family: inherit;
-  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #2f2f2f;
+  color: #ececf1;
+  font-size: 0.85rem;
 }
 
-#stewardPanel #stewardInput:focus {
-  outline: none;
-  border-color: rgba(201, 162, 39, 0.55);
-  box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.15);
+/* —— Main chat column —— */
+.steward-gpt-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-#stewardPanel #stewardInput::placeholder {
-  color: #7a8da8;
-}
-
-#stewardPanel .steward-send {
+.steward-mode-pills {
   flex-shrink: 0;
-  min-height: 48px;
-  min-width: 72px;
-  max-width: 88px;
-  padding: 0 18px;
-  font-size: 0.92rem;
-  font-weight: 800;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #b8922a, #c9a227);
-  color: #0a1428;
-  border: none;
-  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  justify-content: center;
+  scrollbar-width: none;
 }
 
-#stewardPanel .steward-send:hover:not(:disabled) {
-  filter: brightness(1.06);
-}
-
-#stewardPanel .steward-command-foot {
-  margin: 12px 0 0;
-  font-size: 0.72rem;
-  color: #7a8da8;
-  line-height: 1.45;
-}
-
-/* —— Confirm / CAP / misc —— */
-#stewardPanel .steward-confirm-bar {
-  margin: 12px 0;
-  padding: 16px 18px;
-  border-radius: 12px;
-  background: rgba(201, 162, 39, 0.1);
-  border: 1px solid rgba(201, 162, 39, 0.35);
-}
-
-#stewardPanel .steward-cap-actions {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(201, 162, 39, 0.2);
-}
-
-#stewardPanel .steward-msg-source {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.78rem;
-  color: rgba(201, 162, 39, 0.95);
-  font-weight: 700;
-}
-
-/* Hide legacy elements if present */
-#stewardPanel .steward-continuity,
-#stewardPanel .steward-disclaimer,
-#stewardPanel .steward-side-col,
-#stewardPanel .steward-chat-footer,
-#stewardPanel .steward-chat-body,
-#stewardPanel .steward-prompts-label,
-#stewardPanel .steward-prompt-chip {
+.steward-mode-pills::-webkit-scrollbar {
   display: none;
 }
 
-/* —— Mobile —— */
-@media (max-width: 900px) {
-  #stewardPanel.steward-panel {
-    top: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    border-radius: 0 !important;
-    transform: translateY(100%) !important;
-  }
+.steward-mode-tab {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #8e8ea0;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
 
-  #stewardPanel.steward-panel.open {
-    transform: translateY(0) !important;
-  }
+.steward-mode-tab.active {
+  background: rgba(201, 162, 39, 0.2);
+  border-color: rgba(201, 162, 39, 0.5);
+  color: #e8c547;
+}
 
-  #stewardPanel .steward-workspace-layout {
-    grid-template-columns: 1fr;
-  }
+.steward-conversation-pane {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
 
-  #stewardPanel .steward-ops-rail {
-    max-height: 200px;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
+.steward-messages {
+  flex: 1;
+  width: 100%;
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 24px 20px 12px;
+  box-sizing: border-box;
+}
 
-  #stewardPanel .steward-ops-rail-inner {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 12px;
-  }
+/* —— Welcome —— */
+.steward-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 16px 24px;
+  gap: 16px;
+}
 
-  #stewardPanel .steward-ctx-block {
-    margin-bottom: 0;
-  }
+.steward-welcome-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a227, #8b6914);
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.2rem;
+}
 
-  #stewardPanel .steward-workflow-grid {
-    grid-template-columns: 1fr;
-  }
+.steward-welcome-copy p {
+  margin: 0 0 8px;
+  color: #ececf1;
+  line-height: 1.5;
+}
 
-  #stewardPanel .steward-msg {
-    max-width: 92%;
+.steward-welcome-hint {
+  color: #8e8ea0 !important;
+  font-size: 0.9rem;
+}
+
+/* —— Messages —— */
+.steward-msg {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.steward-msg--user {
+  align-items: flex-end;
+}
+
+.steward-msg--user .steward-msg-meta {
+  flex-direction: row-reverse;
+}
+
+.steward-msg-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #8e8ea0;
+}
+
+.steward-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: #2f2f2f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.steward-msg--steward .steward-msg-avatar {
+  background: linear-gradient(135deg, #c9a227, #6b5510);
+  color: #111;
+}
+
+.steward-msg-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  line-height: 1.55;
+  font-size: 0.95rem;
+  color: #ececf1;
+}
+
+.steward-msg--user .steward-msg-bubble {
+  background: #2f2f2f;
+  border-bottom-right-radius: 4px;
+}
+
+.steward-msg--steward .steward-msg-bubble {
+  background: transparent;
+  padding-left: 0;
+  max-width: 100%;
+}
+
+.steward-msg-source {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: #8e8ea0;
+}
+
+.steward-cap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.steward-cap-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.steward-cap-btn--primary {
+  background: #c9a227;
+  color: #111;
+  border: none;
+}
+
+.steward-confirm-bar {
+  max-width: 768px;
+  margin: 0 auto 16px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #2f2f2f;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+}
+
+.steward-typing {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 0 20px 8px;
+}
+
+.steward-typing-dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-radius: 50%;
+  background: #8e8ea0;
+  animation: steward-dot 1.2s infinite;
+}
+
+@keyframes steward-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
   }
 }
 
-@media (max-width: 520px) {
-  #stewardPanel .steward-ops-rail-inner {
-    grid-template-columns: 1fr;
+/* —— Composer —— */
+.steward-gpt-composer {
+  flex-shrink: 0;
+  padding: 12px 16px 20px;
+  background: linear-gradient(180deg, transparent, #212121 24%);
+}
+
+.steward-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 768px;
+  margin: 0 auto 12px;
+}
+
+.steward-chip {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #2f2f2f;
+  color: #ececf1;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.steward-chip:hover {
+  background: #3a3a3a;
+}
+
+.steward-chip--link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #e8c547;
+  border-color: rgba(201, 162, 39, 0.4);
+}
+
+.steward-composer-box {
+  max-width: 768px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 24px;
+  background: #2f2f2f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.steward-composer-box:focus-within {
+  border-color: rgba(201, 162, 39, 0.45);
+}
+
+.steward-attach-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #8e8ea0;
+  cursor: pointer;
+  font-size: 1.1rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.steward-attach-btn:hover {
+  color: #ececf1;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#stewardInput {
+  flex: 1;
+  min-height: 24px;
+  max-height: 200px;
+  border: none;
+  background: transparent;
+  color: #ececf1;
+  font-size: 1rem;
+  line-height: 1.45;
+  resize: none;
+  padding: 6px 0;
+  font-family: inherit;
+}
+
+#stewardInput:focus {
+  outline: none;
+}
+
+.steward-send-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #ececf1;
+  color: #212121;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.steward-send-icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.steward-send-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.steward-composer-foot {
+  max-width: 768px;
+  margin: 10px auto 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #6b6b7b;
+  line-height: 1.4;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (min-width: 900px) {
+  .steward-ctx-drawer {
+    position: relative;
+    transform: none;
+    flex-shrink: 0;
   }
 
-  #stewardPanel .steward-panel-head {
-    padding: 16px;
+  body:not(.steward-ctx-open) .steward-ctx-drawer {
+    width: 0;
+    padding: 0;
+    border: none;
+    overflow: hidden;
   }
 
-  #stewardPanel .steward-conversation-pane,
-  #stewardPanel .steward-command-deck {
-    padding-left: 16px;
-    padding-right: 16px;
+  body.steward-ctx-open .steward-ctx-drawer {
+    width: 280px;
+    padding: 12px;
+  }
+
+  body.steward-ctx-open .steward-ctx-scrim {
+    display: none;
   }
 }

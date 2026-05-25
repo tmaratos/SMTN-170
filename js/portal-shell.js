@@ -184,8 +184,11 @@
 
         <section class="card-assistant steward-launch-card" aria-label="Steward for CAP">
           <h2>Steward for CAP</h2>
-          <p>Ask Steward for help with meetings, files, flight reviews, inspection prep, org charts, and CAP references.</p>
-          <button type="button" class="btn-gold" onclick="openSteward()">Open Steward</button>
+          <p>Chat-style assistant for meetings, readiness, org chart, and CAP references. Upload squadron files from Upload &amp; Files.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
+            <button type="button" class="btn-gold" onclick="openSteward()">Open Steward</button>
+            <a class="btn-secondary" href="documents.html" style="display:inline-flex;align-items:center;text-decoration:none">Upload files</a>
+          </div>
         </section>
 
         <div class="dash-columns">
@@ -200,7 +203,7 @@
               <h3 id="dashOps" class="card-info-title">Squadron operations</h3>
               <ul class="dash-bullet-list">
                 <li>Private Senior Member operations workspace — approved Senior Members only.</li>
-                <li>Use <a href="schedule.html">Meeting planning</a>, <a href="documents.html">Files and forms</a>, and <a href="orgchart.html">Organization chart</a> for day-to-day work.</li>
+                <li>Use <a href="schedule.html">Meeting planning</a>, <a href="documents.html">Upload &amp; Files</a>, and <a href="orgchart.html">Organization chart</a> for day-to-day work.</li>
                 <li>Ask <strong>Steward for CAP</strong> for meetings, flight reviews, inspection prep, and CAP references.</li>
               </ul>
             </section>

@@ -35,10 +35,16 @@
         .join("")}</ul>`;
     }
     if (type === "meetings") {
-      return `<ul class="import-draft-list">${drafts
+      return `<ul class="import-draft-list import-meeting-draft-list">${drafts
         .map(
-          (d) =>
-            `<li><strong>${escapeHtml(d.title)}</strong> · ${escapeHtml(d.meeting_date || "date TBD")} ${escapeHtml(d.meeting_time || "")} · ${escapeHtml(d.location || "")}</li>`
+          (d, i) =>
+            `<li class="import-meeting-draft" data-draft-idx="${i}">
+              <strong>${escapeHtml(d.title)}</strong>
+              · ${escapeHtml(d.meeting_date || "date TBD")}
+              · ${escapeHtml(d.start_time || d.meeting_time || "1900")}–${escapeHtml(d.end_time || "2100")}
+              · Uniform: ${escapeHtml(d.uniform || "—")}
+              ${d.opening ? `<br><small>Opening: ${escapeHtml(d.opening)}</small>` : ""}
+            </li>`
         )
         .join("")}</ul>`;
     }
@@ -72,6 +78,7 @@
     const r = state.pending;
     if (!r) return "";
     const meta = r.importMeta || global.SMTN170FileIngestion?.IMPORT_TYPES?.[r.detectedType];
+    const isMeetingSchedule = r.detectedType === "meeting_schedule" && r.drafts?.length;
     const typeOpts = global.SMTN170FileIngestion?.getTypeOptions?.() || [];
     const opts = typeOpts
       .map(
@@ -84,25 +91,51 @@
       ? `<details class="import-extract-details"><summary>Extracted text (preview)</summary><pre class="import-extract-preview">${escapeHtml(r.extractedText.slice(0, 4000))}${r.extractedText.length > 4000 ? "\n…" : ""}</pre></details>`
       : "";
 
+    const title = isMeetingSchedule ? "Review imported meeting schedule" : "Smart import preview";
+    const actions = isMeetingSchedule
+      ? `<div class="import-preview-actions">
+          <button type="button" class="btn-gold" id="importApproveAllBtn" ${state.busy ? "disabled" : ""}>Approve all</button>
+          <button type="button" class="btn-outline" id="importEditBtn">Edit</button>
+          <button type="button" class="btn-outline" id="importDiscardBtn">Discard</button>
+        </div>`
+      : `<div class="import-preview-actions">
+          <button type="button" class="btn-gold" id="importConfirmBtn" ${state.busy ? "disabled" : ""}>Confirm import</button>
+          <button type="button" class="btn-outline" id="importDismissBtn">Dismiss preview</button>
+        </div>`;
+
+    const editPanel = isMeetingSchedule
+      ? `<div id="importMeetingEditPanel" class="import-meeting-edit-panel" hidden>
+          <p class="page-intro">Adjust draft titles, dates, or uniforms before approving.</p>
+          ${(r.drafts || [])
+            .map(
+              (d, i) => `<div class="import-meeting-edit-row" data-edit-idx="${i}">
+                <label>Title <input type="text" data-edit-field="title" data-edit-idx="${i}" value="${escapeHtml(d.title)}" /></label>
+                <label>Date <input type="date" data-edit-field="meeting_date" data-edit-idx="${i}" value="${escapeHtml(d.meeting_date || "")}" /></label>
+                <label>Uniform <input type="text" data-edit-field="uniform" data-edit-idx="${i}" value="${escapeHtml(d.uniform || "")}" /></label>
+              </div>`
+            )
+            .join("")}
+          <button type="button" class="btn-outline btn-sm" id="importEditDoneBtn">Done editing</button>
+        </div>`
+      : "";
+
     return `
       <section class="ingest-review-panel import-preview-panel card-info" id="importPreviewPanel">
-        <h3 class="card-info-title">Smart import preview</h3>
+        <h3 class="card-info-title">${escapeHtml(title)}</h3>
         <p class="page-intro">${escapeHtml(r.message || "")}</p>
         <dl class="import-meta-grid">
-          <div><dt>Source file</dt><dd>${escapeHtml(r.fileRecord?.name || "—")}</dd></div>
+          <div><dt>Source file</dt><dd>${escapeHtml(r.fileRecord?.file_name || r.fileRecord?.name || "—")}</dd></div>
           <div><dt>Detected type</dt><dd>${escapeHtml(meta?.label || r.detectedType)}</dd></div>
           <div><dt>Confidence</dt><dd>${pct(r.confidence)} ${r.lowConfidence ? "(low — needs review)" : ""}</dd></div>
           <div><dt>Target</dt><dd>${escapeHtml(meta?.target || "—")}</dd></div>
           <div><dt>Records found</dt><dd>${r.drafts?.length || 0}</dd></div>
         </dl>
-        <label for="importTypeOverride">Change destination if detection looks wrong</label>
-        <select id="importTypeOverride" class="import-type-select">${opts}</select>
+        ${isMeetingSchedule ? "" : `<label for="importTypeOverride">Change destination if detection looks wrong</label>
+        <select id="importTypeOverride" class="import-type-select">${opts}</select>`}
         ${renderDraftRows(r.drafts, r.type)}
+        ${editPanel}
         ${extractSnippet}
-        <div class="import-preview-actions">
-          <button type="button" class="btn-gold" id="importConfirmBtn" ${state.busy ? "disabled" : ""}>Confirm import</button>
-          <button type="button" class="btn-outline" id="importDismissBtn">Dismiss preview</button>
-        </div>
+        ${actions}
         <p id="importPreviewError" class="import-error" hidden role="alert"></p>
       </section>`;
   }
@@ -115,7 +148,7 @@
       <thead><tr><th>File</th><th>Detected</th><th>Confidence</th><th>Status</th><th>When</th></tr></thead>
       <tbody>${state.jobs
         .map((j) => {
-          const name = j.uploaded_files?.name || "—";
+          const name = j.uploaded_files?.file_name || j.uploaded_files?.name || "—";
           const label = global.SMTN170FileIngestion?.IMPORT_TYPES?.[j.detected_type]?.label || j.detected_type;
           return `<tr>
             <td>${escapeHtml(name)}</td>
@@ -176,9 +209,31 @@
     });
 
     document.getElementById("importConfirmBtn")?.addEventListener("click", handleConfirm);
+    document.getElementById("importApproveAllBtn")?.addEventListener("click", handleConfirm);
     document.getElementById("importDismissBtn")?.addEventListener("click", () => {
       state.pending = null;
       render();
+    });
+    document.getElementById("importDiscardBtn")?.addEventListener("click", () => {
+      state.pending = null;
+      render();
+    });
+    document.getElementById("importEditBtn")?.addEventListener("click", () => {
+      const panel = document.getElementById("importMeetingEditPanel");
+      if (panel) panel.hidden = !panel.hidden;
+    });
+    document.getElementById("importEditDoneBtn")?.addEventListener("click", () => {
+      const panel = document.getElementById("importMeetingEditPanel");
+      if (panel) panel.hidden = true;
+    });
+    document.getElementById("importPreviewPanel")?.addEventListener("input", (e) => {
+      const input = e.target.closest("[data-edit-field]");
+      if (!input || !state.pending?.drafts) return;
+      const idx = parseInt(input.dataset.editIdx, 10);
+      const field = input.dataset.editField;
+      if (state.pending.drafts[idx] && field) {
+        state.pending.drafts[idx][field] = input.value;
+      }
     });
     document.getElementById("importTypeOverride")?.addEventListener("change", handleTypeChange);
   }

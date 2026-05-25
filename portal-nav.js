@@ -16,7 +16,7 @@
         { key: "home", href: "dashboard.html", label: "Home" },
         { key: "calendar", href: "calendar.html", label: "Calendar" },
         { key: "schedule", href: "schedule.html", label: "Meetings" },
-        { key: "files", href: "documents.html", label: "Files" },
+        { key: "files", href: "documents.html", label: "Upload & Files", highlight: true },
         { key: "orgchart", href: "orgchart.html", label: "Organization Chart" },
       ],
     },
@@ -114,7 +114,8 @@
     if (n.stewardOpen) {
       return `<button type="button" class="portal-nav-link portal-nav-link--steward ${active === n.key ? "active" : ""}" data-steward-open>${escapeHtml(n.label)}</button>`;
     }
-    return `<a href="${n.href}" class="portal-nav-link ${active === n.key ? "active" : ""}"${n.requireAdmin ? ' data-require-admin="true"' : ""}>${escapeHtml(n.label)}</a>`;
+    const featured = n.highlight ? " portal-nav-link--featured" : "";
+    return `<a href="${n.href}" class="portal-nav-link${featured} ${active === n.key ? "active" : ""}"${n.requireAdmin ? ' data-require-admin="true"' : ""}>${escapeHtml(n.label)}</a>`;
   }
 
   function renderNav(active) {

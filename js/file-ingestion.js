@@ -2,12 +2,12 @@
  * TN-170 Smart Import — upload, classify, extract, preview, confirm, save.
  */
 (function initFileIngestion(global) {
-  const PARSER_VERSION = "1.1";
+  const PARSER_VERSION = "1.2";
 
   const IMPORT_TYPES = {
     meeting_schedule: {
       label: "Meeting schedule",
-      target: "Meetings / Calendar",
+      target: "Calendar & Meetings",
       table: "meetings",
       href: "schedule.html",
     },
@@ -116,6 +116,22 @@
 
   let lastResult = null;
   let xlsxLoading = null;
+  let mammothLoading = null;
+
+  const MONTH_NAMES = {
+    january: 1,
+    february: 2,
+    march: 3,
+    april: 4,
+    may: 5,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    october: 10,
+    november: 11,
+    december: 12,
+  };
 
   function getClient() {
     return global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
@@ -145,6 +161,205 @@
     return xlsxLoading;
   }
 
+  function loadMammothOnce() {
+    if (global.mammoth) return Promise.resolve();
+    if (mammothLoading) return mammothLoading;
+    mammothLoading = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Could not load DOCX reader."));
+      document.head.appendChild(s);
+    });
+    return mammothLoading;
+  }
+
+  function htmlTableToText(html) {
+    if (!html || typeof DOMParser === "undefined") return "";
+    try {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const rows = [];
+      doc.querySelectorAll("table tr").forEach((tr) => {
+        const cells = [...tr.querySelectorAll("td, th")].map((c) =>
+          c.textContent.replace(/\s+/g, " ").trim()
+        );
+        if (cells.some(Boolean)) rows.push(cells.join("\t"));
+      });
+      return rows.join("\n");
+    } catch {
+      return "";
+    }
+  }
+
+  async function extractDocxText(blob) {
+    await loadMammothOnce();
+    const buf = await blob.arrayBuffer();
+    const raw = await global.mammoth.extractRawText({ arrayBuffer: buf });
+    const html = await global.mammoth.convertToHtml({ arrayBuffer: buf });
+    const tableText = htmlTableToText(html.value);
+    const parts = [raw?.value, tableText].filter(Boolean);
+    return parts.join("\n\n").trim() || null;
+  }
+
+  function normalizeFileRecord(row) {
+    if (!row) return null;
+    return {
+      ...row,
+      id: row.id,
+      name: row.file_name || row.name,
+      file_name: row.file_name || row.name,
+      storage_path: row.file_path || row.storage_path,
+      file_path: row.file_path || row.storage_path,
+      folder: row.file_category || row.folder || row.upload_area,
+      file_category: row.file_category || row.folder || row.upload_area,
+      mime_type: row.mime_type || row.file_type,
+      owner_id: row.owner_id,
+      visibility: row.visibility,
+      steward_suggested_category: row.steward_suggested_category,
+    };
+  }
+
+  function inferScheduleYear(text, fileName) {
+    const contentYear = (text || "").match(
+      /\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})\b/i
+    );
+    if (contentYear) return parseInt(contentYear[1], 10);
+    const fileYear = (fileName || "").match(/\b(20\d{2})\b/);
+    if (fileYear) return parseInt(fileYear[1], 10);
+    return new Date().getFullYear();
+  }
+
+  function inferContentMonth(text) {
+    const m = (text || "").match(
+      /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\b/i
+    );
+    return m ? MONTH_NAMES[m[1].toLowerCase()] : null;
+  }
+
+  function toIsoDate(year, month, day) {
+    const d = new Date(year, month - 1, day);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
+
+  function summarizeBlockText(raw) {
+    return (raw || "")
+      .replace(/\d{4}\s*[-–—]\s*\d{4}/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isBctScheduleContent(text) {
+    const t = (text || "").toLowerCase();
+    if (!t) return false;
+    const hasWeeks = /week\s*\d\s*[-–—]\s*\d{1,2}\/\d{1,2}/i.test(text);
+    const markers = ["uniform", "opening", "emphasis", "block", "closing"];
+    const hits = markers.filter((m) => t.includes(m)).length;
+    return hasWeeks && hits >= 4;
+  }
+
+  function parseBctMeetingScheduleText(text, options) {
+    if (!isBctScheduleContent(text)) return null;
+
+    const opts = options || {};
+    const year = inferScheduleYear(text, opts.fileName);
+    const contentMonth = inferContentMonth(text);
+    const weekRe = /week\s*(\d)\s*[-–—]\s*(\d{1,2})\/(\d{1,2})/gi;
+    const weeks = [];
+    let match;
+    while ((match = weekRe.exec(text)) !== null) {
+      weeks.push({
+        weekNum: parseInt(match[1], 10),
+        month: parseInt(match[2], 10),
+        day: parseInt(match[3], 10),
+      });
+    }
+    if (weeks.length < 2) return null;
+
+    const rowPatterns = [
+      ["uniform", /^uniform\b/i],
+      ["opening", /^opening\b/i],
+      ["emphasis", /^emphasis\b/i],
+      ["block1", /^block\s*#?\s*1\b/i],
+      ["block2", /^block\s*#?\s*2\b/i],
+      ["closing", /^closing\b/i],
+    ];
+    const rowValues = {};
+    const lines = (text || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+    lines.forEach((line) => {
+      for (const [key, re] of rowPatterns) {
+        if (!re.test(line)) continue;
+        let parts = line.includes("\t")
+          ? line.split("\t").map((c) => c.trim()).filter(Boolean)
+          : line.split(/\s{2,}/).map((c) => c.trim()).filter(Boolean);
+        if (parts[0] && re.test(parts[0])) parts = parts.slice(1);
+        else if (/^uniform$|^opening$|^emphasis$|^closing$/i.test(parts[0])) parts = parts.slice(1);
+        else if (/^block\s*#?\s*\d+$/i.test(parts[0])) parts = parts.slice(1);
+        if (parts.length >= weeks.length) {
+          rowValues[key] = parts.slice(0, weeks.length);
+        } else if (parts.length > 0 && !rowValues[key]) {
+          rowValues[key] = parts;
+        }
+        break;
+      }
+    });
+
+    if (!rowValues.uniform && !rowValues.opening) return null;
+
+    const isBctTitle = /\bbct\b/i.test(text);
+    const defaultTitle = isBctTitle ? "BCT Meeting Schedule" : "Weekly Squadron Meeting";
+    const sourceNote = opts.sourceFileId
+      ? `Source file id: ${opts.sourceFileId}`
+      : opts.sourceFileName
+        ? `Source file: ${opts.sourceFileName}`
+        : "";
+
+    const drafts = weeks.map((wk, i) => {
+      const month = contentMonth || wk.month;
+      const meeting_date = toIsoDate(year, month, wk.day);
+      const uniform = (rowValues.uniform?.[i] || "").trim();
+      const opening = summarizeBlockText(rowValues.opening?.[i]);
+      const emphasis = summarizeBlockText(rowValues.emphasis?.[i]);
+      const block1 = summarizeBlockText(rowValues.block1?.[i]);
+      const block2 = summarizeBlockText(rowValues.block2?.[i]);
+      const closing = summarizeBlockText(rowValues.closing?.[i]);
+      const notes = [
+        opening ? `Opening: ${opening}` : "",
+        emphasis ? `Emphasis: ${emphasis}` : "",
+        block1 ? `Block #1: ${block1}` : "",
+        block2 ? `Block #2: ${block2}` : "",
+        closing ? `Closing: ${closing}` : "",
+        sourceNote,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      return {
+        draft: true,
+        confidence: meeting_date ? 0.92 : 0.55,
+        title: defaultTitle,
+        meeting_date,
+        start_time: "1900",
+        end_time: "2100",
+        meeting_time: "1900",
+        uniform: uniform || null,
+        opening,
+        emphasis,
+        block1,
+        block2,
+        closing,
+        location: null,
+        status: "draft",
+        notes: notes || "Smart import — source document",
+        source_file_id: opts.sourceFileId || null,
+        source_file_name: opts.sourceFileName || null,
+      };
+    });
+
+    return drafts.filter((d) => d.meeting_date);
+  }
+
   async function extractTextFromBlob(blob, fileName, mimeType) {
     const e = ext(fileName);
     if (TEXT_EXT.includes(e) || (mimeType || "").includes("text") || e === "csv") {
@@ -165,6 +380,14 @@
         return null;
       }
     }
+    if (e === "docx" || e === "doc" || (mimeType || "").includes("wordprocessingml")) {
+      try {
+        return await extractDocxText(blob);
+      } catch (err) {
+        console.warn("[import] docx", err);
+        return null;
+      }
+    }
     return null;
   }
 
@@ -175,18 +398,30 @@
 
   async function downloadFileText(fileRecord) {
     const sb = getClient();
-    if (!sb || !fileRecord?.storage_path) return null;
+    const rec = normalizeFileRecord(fileRecord);
+    const storagePath = rec?.file_path || rec?.storage_path;
+    if (!sb || !storagePath) return null;
     const bucket = global.SMTN170Supabase?.storageBucket?.() || "squadron-files";
-    const { data, error } = await sb.storage.from(bucket).download(fileRecord.storage_path);
+    const { data, error } = await sb.storage.from(bucket).download(storagePath);
     if (error) {
       console.warn("[import] download", error.message);
       return null;
     }
-    return extractTextFromBlob(data, fileRecord.name || fileRecord.file_name, fileRecord.mime_type || fileRecord.file_type);
+    return extractTextFromBlob(data, rec.file_name || rec.name, rec.mime_type || rec.file_type);
   }
 
   function scoreClassification(text, fileName) {
-    const t = `${fileName}\n${text || ""}`.toLowerCase();
+    const content = text || "";
+
+    if (isBctScheduleContent(content)) {
+      return {
+        detectedType: "meeting_schedule",
+        confidence: 0.92,
+        scores: { meeting_schedule: 8 },
+      };
+    }
+
+    const t = `${fileName}\n${content}`.toLowerCase();
     const scores = {
       org_chart: 0,
       duty_assignments: 0,
@@ -300,7 +535,10 @@
     return drafts;
   }
 
-  function parseMeetingScheduleText(text) {
+  function parseMeetingScheduleText(text, options) {
+    const bct = parseBctMeetingScheduleText(text, options);
+    if (bct?.length) return bct;
+
     const lines = parseCsvLines(text);
     const drafts = [];
     lines.forEach((line) => {
@@ -417,13 +655,24 @@
   async function createRecordsFromExtractedText(fileRecord, extractedText, detectedType) {
     if (!extractedText) return { drafts: [], parsed: false, type: null };
 
+    const rec = normalizeFileRecord(fileRecord);
+    const parseOpts = {
+      fileName: rec?.file_name || rec?.name,
+      sourceFileId: rec?.id,
+      sourceFileName: rec?.file_name || rec?.name,
+    };
+
     switch (detectedType) {
       case "org_chart":
       case "duty_assignments":
         return { drafts: parseOrgChartText(extractedText), parsed: true, type: "org_positions" };
       case "meeting_schedule":
       case "cap_calendar":
-        return { drafts: parseMeetingScheduleText(extractedText), parsed: true, type: "meetings" };
+        return {
+          drafts: parseMeetingScheduleText(extractedText, parseOpts),
+          parsed: true,
+          type: "meetings",
+        };
       case "inspection_checklist":
         return { drafts: parseInspectionText(extractedText), parsed: true, type: "inspection_items" };
       case "flight_review":
@@ -527,15 +776,18 @@
     const saved = [];
     for (const d of drafts) {
       if (!d.meeting_date) continue;
+      const timeLabel =
+        d.start_time && d.end_time ? `${d.start_time}-${d.end_time}` : d.meeting_time || d.start_time || null;
       const { data, error } = await sb
         .from("meetings")
         .insert({
           title: d.title,
           meeting_date: d.meeting_date,
-          meeting_time: d.meeting_time || null,
+          meeting_time: timeLabel,
           location: d.location || null,
+          uniform: d.uniform || null,
           notes: d.notes || "Smart import",
-          status: d.status || "planned",
+          status: d.status || "draft",
           created_by: uid,
           updated_by: uid,
           last_worked_by: uid,
@@ -544,7 +796,7 @@
         })
         .select()
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(`Draft meeting creation failed: ${error.message}`);
       saved.push(data);
     }
     return saved;
@@ -641,19 +893,43 @@
   }
 
   async function buildImportResult(fileRecord, extractedText, options) {
+    const rec = normalizeFileRecord(fileRecord);
     const userType = options?.detectedType || options?.category;
-    const classification = scoreClassification(extractedText, fileRecord.name || fileRecord.file_name);
+    const classification = scoreClassification(extractedText, rec?.file_name || rec?.name);
     let detectedType = userType && IMPORT_TYPES[userType] ? userType : classification.detectedType;
     let confidence = classification.confidence;
     if (userType && IMPORT_TYPES[userType]) confidence = Math.max(confidence, 0.55);
+    if (isBctScheduleContent(extractedText)) {
+      detectedType = "meeting_schedule";
+      confidence = Math.max(confidence, 0.92);
+    }
 
-    const e = ext(fileRecord.name || fileRecord.file_name);
+    const e = ext(rec?.file_name || rec?.name);
+    const isDocx = e === "docx" || e === "doc";
     const isBinary = BINARY_EXT.includes(e) && !extractedText;
+
+    if (isDocx && !extractedText) {
+      return {
+        ok: true,
+        detectedType: detectedType === "needs_review" ? "meeting_schedule" : detectedType,
+        confidence: 0.2,
+        category: TYPE_TO_CATEGORY.meeting_schedule,
+        message: "File uploaded and indexed. DOCX reading is not enabled yet.",
+        drafts: [],
+        parsed: false,
+        parseable: false,
+        fileRecord: rec,
+        extractedText: null,
+        needsReview: false,
+        importMeta: IMPORT_TYPES.meeting_schedule,
+        warnings: [],
+      };
+    }
 
     if (isBinary) {
       return {
         ok: true,
-        detectedType: detectedType === "needs_review" ? detectFileCategory(fileRecord.name, fileRecord.mime_type) : detectedType,
+        detectedType: detectedType === "needs_review" ? detectFileCategory(rec?.file_name, rec?.mime_type) : detectedType,
         confidence: 0.2,
         category: TYPE_TO_CATEGORY[detectedType] || CATEGORIES.needs_review,
         message:
@@ -661,14 +937,15 @@
         drafts: [],
         parsed: false,
         parseable: false,
-        fileRecord,
+        fileRecord: rec,
         extractedText: null,
         needsReview: true,
         importMeta: IMPORT_TYPES[detectedType] || IMPORT_TYPES.needs_review,
+        warnings: [],
       };
     }
 
-    const { drafts, parsed, type } = await createRecordsFromExtractedText(fileRecord, extractedText, detectedType);
+    const { drafts, parsed, type } = await createRecordsFromExtractedText(rec, extractedText, detectedType);
     const importMeta = IMPORT_TYPES[detectedType] || IMPORT_TYPES.needs_review;
 
     if (!parsed || !extractedText) {
@@ -681,11 +958,12 @@
         drafts: [],
         parsed: false,
         parseable: false,
-        fileRecord,
+        fileRecord: rec,
         extractedText,
         needsReview: true,
         importMeta,
         type,
+        warnings: [],
       };
     }
 
@@ -700,40 +978,49 @@
         drafts: [],
         parsed: true,
         parseable: true,
-        fileRecord,
+        fileRecord: rec,
         extractedText: (extractedText || "").slice(0, 8000),
         needsReview: true,
         importMeta,
         type,
+        warnings: [],
       };
     }
 
     const lowConfidence = confidence < 0.45 || detectedType === "needs_review";
+    const reviewMessage =
+      detectedType === "meeting_schedule" && drafts.length
+        ? `Review imported meeting schedule — ${drafts.length} weekly meeting draft(s) ready. Content dates were used (filename ignored when they conflict).`
+        : `Smart import detected ${drafts.length} possible record(s) for ${importMeta.label}. This is a best-effort extraction — review before confirming.`;
     return {
       ok: true,
       detectedType,
       confidence,
       category: TYPE_TO_CATEGORY[detectedType] || detectedType,
-      message: `Smart import detected ${drafts.length} possible record(s) for ${importMeta.label}. This is a best-effort extraction — review before confirming.`,
+      message: reviewMessage,
       drafts,
       parsed: true,
       parseable: true,
-      fileRecord,
+      fileRecord: rec,
       extractedText: (extractedText || "").slice(0, 8000),
       type,
       needsReview: true,
       lowConfidence,
       importMeta,
+      warnings: [],
     };
   }
 
   async function persistImportAudit(fileRecord, result) {
+    const warnings = [];
     const parsed = await saveParsedDocument(fileRecord.id, result.extractedText, {
       detected_type: result.detectedType,
       confidence: result.confidence,
       draft_count: result.drafts?.length || 0,
       scores: result.scores,
     });
+    if (!parsed) warnings.push("Import history tables are not installed yet.");
+
     const job = await saveImportJob({
       uploaded_file_id: fileRecord.id,
       detected_type: result.detectedType,
@@ -742,7 +1029,9 @@
       status: result.drafts?.length ? "pending_review" : "needs_review",
       record_count: result.drafts?.length || 0,
     });
-    return { parsed, job };
+    if (!job && warnings.length === 0) warnings.push("Import history tables are not installed yet.");
+
+    return { parsed, job, warnings };
   }
 
   async function updatePortalFromFile(fileRecord, extractedText, categoryOrType) {
@@ -755,13 +1044,50 @@
   }
 
   async function ingestUploadedFile(fileRecord, options) {
-    const text = options?.extractedText != null ? options.extractedText : await downloadFileText(fileRecord);
-    const folder = fileRecord.folder || fileRecord.upload_area;
+    const rec = normalizeFileRecord(fileRecord);
+    let text = options?.extractedText != null ? options.extractedText : null;
+    let extractionError = null;
+
+    if (text == null) {
+      try {
+        text = await downloadFileText(rec);
+      } catch (err) {
+        extractionError = err.message;
+      }
+    }
+
+    const e = ext(rec?.file_name || rec?.name);
+    if ((e === "docx" || e === "doc") && text == null && !extractionError) {
+      extractionError = "DOCX extraction failed.";
+    }
+
+    const folder = rec.file_category || rec.folder || rec.upload_area;
     const detected =
       options?.detectedType ||
-      detectFileCategory(fileRecord.name || fileRecord.file_name, fileRecord.mime_type, folder);
-    const result = await buildImportResult(fileRecord, text, { detectedType: detected });
-    await persistImportAudit(fileRecord, result);
+      detectFileCategory(rec?.file_name, rec?.mime_type, folder);
+
+    let result;
+    try {
+      result = await buildImportResult(rec, text, { detectedType: detected });
+    } catch (err) {
+      throw new Error(`Draft meeting creation failed: ${err.message}`);
+    }
+
+    if (extractionError && (e === "docx" || e === "doc")) {
+      result.message = "File uploaded and indexed. DOCX reading is not enabled yet.";
+      if (extractionError !== "DOCX extraction failed.") {
+        result.warnings = [...(result.warnings || []), extractionError];
+      }
+    }
+
+    const audit = await persistImportAudit(rec, result);
+    result.importJob = audit.job;
+    result.parsedDocument = audit.parsed;
+    if (audit.warnings?.length) {
+      result.warnings = [...(result.warnings || []), ...audit.warnings];
+      result.message = `${result.message} ${audit.warnings[0]}`;
+    }
+
     lastResult = result;
     global.dispatchEvent(new CustomEvent("smtn170:file-ingested", { detail: result }));
     return result;
@@ -769,50 +1095,79 @@
 
   async function uploadAndIngest(file, options) {
     const sb = getClient();
-    const uid = global.SMTN170Auth?.actorId?.();
-    if (!sb || !uid) throw new Error("Sign in to upload files.");
+    if (!sb) throw new Error("Sign in to upload files.");
     if (!file) throw new Error("No file selected.");
 
-    const extractedText = await extractTextFromFile(file);
+    const { data: userData, error: userErr } = await sb.auth.getUser();
+    const uid = userData?.user?.id;
+    if (userErr || !uid) throw new Error("Sign in to upload files.");
+
+    let extractedText = null;
+    try {
+      extractedText = await extractTextFromFile(file);
+    } catch (err) {
+      const e = ext(file.name);
+      if (e === "docx" || e === "doc") {
+        throw new Error(`DOCX extraction failed: ${err.message}`);
+      }
+    }
+
     const classification = scoreClassification(extractedText, file.name);
     const detectedType =
       options?.detectedType || options?.category || classification.detectedType;
-    const uploadArea = options?.upload_area || options?.folder || TYPE_TO_CATEGORY[detectedType] || "general";
+    const fileCategory =
+      options?.file_category ||
+      options?.upload_area ||
+      options?.folder ||
+      TYPE_TO_CATEGORY[detectedType] ||
+      "general";
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const storagePath = `imports/${uid}/${Date.now()}-${safeName}`;
+    const storagePath = `${uid}/${Date.now()}-${safeName}`;
     const bucket = global.SMTN170Supabase?.storageBucket?.() || "squadron-files";
 
     const { error: upErr } = await sb.storage.from(bucket).upload(storagePath, file, {
       cacheControl: "3600",
       upsert: false,
     });
-    if (upErr) throw new Error(upErr.message);
+    if (upErr) throw new Error(`Storage upload failed: ${upErr.message}`);
 
-    const now = new Date().toISOString();
-    const fileType = ext(file.name) || file.type;
     const insertPayload = {
-      name: file.name,
-      folder: uploadArea,
-      storage_path: storagePath,
-      mime_type: file.type,
-      size_bytes: file.size,
-      uploaded_by: uid,
-      last_worked_by: uid,
-      last_worked_at: now,
-      updated_at: now,
+      owner_id: uid,
+      file_name: file.name,
+      file_path: storagePath,
+      file_category: fileCategory,
+      steward_suggested_category: detectedType,
+      visibility: options?.visibility || "squadron",
     };
     const { data: row, error: dbErr } = await sb.from("uploaded_files").insert(insertPayload).select().single();
-    if (dbErr) throw new Error(dbErr.message);
-
-    try {
-      await sb.from("uploaded_files").update({ upload_area: uploadArea, file_type: fileType }).eq("id", row.id);
-    } catch {
-      /* optional columns */
+    if (dbErr) {
+      await sb.storage.from(bucket).remove([storagePath]).catch(() => {});
+      throw new Error(`File index save failed: ${dbErr.message}`);
     }
 
-    const fileRecord = { ...row, folder: uploadArea, upload_area: uploadArea, file_type: fileType };
-    const result = await buildImportResult(fileRecord, extractedText, { detectedType });
+    const fileRecord = normalizeFileRecord(row);
+    let result;
+    try {
+      result = await buildImportResult(fileRecord, extractedText, { detectedType });
+    } catch (err) {
+      throw new Error(`Draft meeting creation failed: ${err.message}`);
+    }
+
+    const e = ext(file.name);
+    if ((e === "docx" || e === "doc") && !extractedText) {
+      result.message = "File uploaded and indexed. DOCX reading is not enabled yet.";
+    }
+
     const audit = await persistImportAudit(fileRecord, result);
+    if (!audit.job) {
+      result.warnings = [...(result.warnings || []), "Import job save failed: import_jobs table not available."];
+    }
+    if (audit.warnings?.length) {
+      result.warnings = [...(result.warnings || []), ...audit.warnings.filter((w) => !w.includes("import_jobs"))];
+      if (audit.warnings.some((w) => w.includes("not installed"))) {
+        result.message = `${result.message} Import history tables are not installed yet.`;
+      }
+    }
     result.importJob = audit.job;
     result.parsedDocument = audit.parsed;
     lastResult = result;
@@ -890,7 +1245,7 @@
     if (!sb) return [];
     const { data, error } = await sb
       .from("import_jobs")
-      .select("*, uploaded_files(name, folder, storage_path)")
+      .select("*, uploaded_files(file_name, file_category, file_path, name, folder, storage_path)")
       .order("created_at", { ascending: false })
       .limit(limit || 20);
     if (error) {
@@ -927,6 +1282,9 @@
     CATEGORIES,
     detectFileCategory,
     scoreClassification,
+    normalizeFileRecord,
+    parseBctMeetingScheduleText,
+    isBctScheduleContent,
     extractTextFromFile,
     ingestUploadedFile,
     uploadAndIngest,

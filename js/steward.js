@@ -357,8 +357,8 @@
   function setComposeEnabled(enabled) {
     const input = document.getElementById("stewardInput");
     const sendBtn = document.getElementById("stewardSend");
-    document.querySelectorAll(".steward-prompt-chip, .steward-workflow-card").forEach((c) => {
-      c.disabled = !enabled;
+    document.querySelectorAll(".steward-chip").forEach((c) => {
+      if (c.tagName === "BUTTON") c.disabled = !enabled;
     });
     if (input) input.disabled = !enabled;
     if (sendBtn) sendBtn.disabled = !enabled;
@@ -382,13 +382,6 @@
     return "Steward is ready for meeting schedules, flight review currency, inspection prep, file import, org chart updates, and CAP references. What operation should we run?";
   }
 
-  function renderModeHint() {
-    const el = document.getElementById("stewardModeHint");
-    if (!el) return;
-    const hints = global.SMTN170StewardEngine?.MODE_HINTS || {};
-    el.textContent = hints[activeMode] || hints.chat || "";
-  }
-
   function renderModeTabs() {
     const root = document.getElementById("stewardModeTabs");
     if (!root) return;
@@ -396,7 +389,12 @@
       (m) =>
         `<button type="button" class="steward-mode-tab ${m.id === activeMode ? "active" : ""}" data-steward-mode="${escapeHtml(m.id)}" aria-selected="${m.id === activeMode}">${escapeHtml(m.label)}</button>`
     ).join("");
-    renderModeHint();
+  }
+
+  function toggleContextDrawer(forceOpen) {
+    const open = forceOpen === true ? true : forceOpen === false ? false : !document.body.classList.contains("steward-ctx-open");
+    document.body.classList.toggle("steward-ctx-open", open);
+    document.getElementById("stewardCtxToggle")?.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
   function setActiveMode(modeId) {
@@ -411,7 +409,7 @@
     if (document.querySelector('link[href*="steward-workspace.css"]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "./css/steward-workspace.css?v=2";
+    link.href = "./css/steward-workspace.css?v=3";
     document.head.appendChild(link);
   }
 
@@ -427,7 +425,7 @@
           <div class="steward-welcome-copy">
             <p><strong>Steward for CAP</strong> — mission support</p>
             <p>${greeting}</p>
-            <p class="steward-welcome-hint">Use quick workflows below or enter an operational request.</p>
+            <p class="steward-welcome-hint">Ask about schedules, readiness, org chart, or CAP guidance. Upload squadron files from the link below.</p>
           </div>
         </div>`;
       return;
@@ -508,18 +506,17 @@
             return true;
           });
 
-    root.innerHTML = actions
-      .map(
-        (a) => `
-      <button type="button" class="steward-workflow-card" data-workflow-id="${escapeHtml(a.id)}" ${a.href ? `data-workflow-href="${escapeHtml(a.href)}"` : ""} data-prompt="${escapeHtml(a.prompt || "")}">
-        <span class="steward-workflow-icon" aria-hidden="true">${escapeHtml(a.icon)}</span>
-        <span class="steward-workflow-text">
-          <strong>${escapeHtml(a.title)}</strong>
-          <span>${escapeHtml(a.subtitle)}</span>
-        </span>
-      </button>`
-      )
+    const uploadChip = `<a href="documents.html" class="steward-chip steward-chip--link">↑ Upload &amp; import files</a>`;
+    const chips = actions
+      .map((a) => {
+        if (a.href) {
+          return `<a href="${escapeHtml(a.href)}" class="steward-chip steward-chip--link">${escapeHtml(a.title)}</a>`;
+        }
+        const label = a.title.length > 36 ? a.title.slice(0, 34) + "…" : a.title;
+        return `<button type="button" class="steward-chip" data-workflow-id="${escapeHtml(a.id)}" data-prompt="${escapeHtml(a.prompt || "")}">${escapeHtml(label)}</button>`;
+      })
       .join("");
+    root.innerHTML = uploadChip + chips;
   }
 
   function renderContextList(items, emptyLabel) {
@@ -877,6 +874,9 @@
 
     document.getElementById("stewardArchiveChat")?.addEventListener("click", () => archiveCurrentChat());
 
+    document.getElementById("stewardCtxToggle")?.addEventListener("click", () => toggleContextDrawer());
+    document.getElementById("stewardCtxScrim")?.addEventListener("click", () => toggleContextDrawer(false));
+
     document.getElementById("stewardConvoTitle")?.addEventListener("change", async (e) => {
       state.conversationTitle = e.target.value.trim() || "New operation";
       await updateConversation({ title: state.conversationTitle });
@@ -908,14 +908,9 @@
     });
 
     document.getElementById("stewardPrompts")?.addEventListener("click", (e) => {
-      const card = e.target.closest(".steward-workflow-card");
-      if (!card || card.disabled) return;
-      const href = card.dataset.workflowHref;
-      if (href) {
-        global.location.href = href;
-        return;
-      }
-      const prompt = card.dataset.prompt || "";
+      const chip = e.target.closest(".steward-chip");
+      if (!chip || chip.disabled || chip.tagName === "A") return;
+      const prompt = chip.dataset.prompt || "";
       if (prompt) sendMessage(prompt);
     });
 
@@ -929,6 +924,7 @@
       const tab = e.target.closest("[data-steward-mode]");
       if (!tab) return;
       setActiveMode(tab.dataset.stewardMode);
+      toggleContextDrawer(false);
     });
 
     document.getElementById("stewardMessages")?.addEventListener("click", (e) => {
@@ -1023,63 +1019,50 @@
       </button>
       <div class="steward-backdrop" id="stewardBackdrop" aria-hidden="true"></div>
       <section class="steward-panel" id="stewardPanel" role="dialog" aria-modal="true" aria-labelledby="stewardTitle" aria-hidden="true">
-        <header class="steward-panel-head">
-          <div class="steward-head-brand">
-            <p class="steward-kicker">TN-170 · Mission support console</p>
-            <div class="steward-head-row">
-              <h2 id="stewardTitle">Steward for CAP</h2>
-              <p class="steward-status"><span class="steward-status-dot" aria-hidden="true"></span> Operational standby</p>
-            </div>
-            <div class="steward-head-toolbar">
-              <label class="visually-hidden" for="stewardConvoTitle">Operation title</label>
-              <input type="text" id="stewardConvoTitle" class="steward-op-title" value="New operation" maxlength="80" placeholder="Operation title" />
-              <button type="button" class="steward-head-btn" id="stewardArchiveChat" title="Archive operation">Archive</button>
-            </div>
+        <header class="steward-gpt-head">
+          <button type="button" class="steward-gpt-menu" id="stewardCtxToggle" aria-expanded="false" aria-controls="stewardWorkspaceContext" title="History &amp; context">☰</button>
+          <div class="steward-gpt-title-wrap">
+            <h2 id="stewardTitle">Steward for CAP</h2>
+            <p class="steward-gpt-status steward-status"><span class="steward-status-dot" aria-hidden="true"></span> Operational standby</p>
           </div>
-          <button type="button" class="steward-close" id="stewardClose" aria-label="Close Steward">✕</button>
+          <a href="documents.html" class="steward-upload-btn" id="stewardUploadLink">Upload files</a>
+          <button type="button" class="steward-gpt-close" id="stewardClose" aria-label="Close Steward">✕</button>
         </header>
 
-        <div class="steward-mode-bar">
-          <div class="steward-mode-tabs" id="stewardModeTabs" role="tablist" aria-label="Steward focus areas"></div>
-          <p class="steward-mode-hint" id="stewardModeHint"></p>
-        </div>
-
-        <div class="steward-workspace-layout">
-          <aside class="steward-ops-rail" aria-label="Workspace context">
-            <div class="steward-ops-rail-inner" id="stewardWorkspaceContext">
-              <p class="steward-ctx-loading">Loading workspace context…</p>
+        <div class="steward-gpt-body">
+          <div class="steward-ctx-scrim" id="stewardCtxScrim" aria-hidden="true"></div>
+          <aside class="steward-ctx-drawer" aria-label="History and squadron context">
+            <div class="steward-op-title-row">
+              <label class="visually-hidden" for="stewardConvoTitle">Operation title</label>
+              <input type="text" id="stewardConvoTitle" class="steward-op-title" value="New operation" maxlength="80" placeholder="Operation title" />
+              <button type="button" class="steward-ctx-action" id="stewardArchiveChat" style="margin-top:8px">Archive operation</button>
             </div>
+            <div id="stewardWorkspaceContext"><p class="steward-ctx-loading">Loading…</p></div>
           </aside>
 
-          <div class="steward-main-col">
+          <div class="steward-gpt-main">
+            <div class="steward-mode-pills" id="stewardModeTabs" role="tablist" aria-label="Steward focus areas"></div>
             <div class="steward-conversation-pane">
               <div class="steward-messages" id="stewardMessages" role="log" aria-live="polite"></div>
               <div class="steward-typing" id="stewardTyping" hidden aria-live="polite">
                 <div class="steward-msg steward-msg--steward">
-                  <div class="steward-msg-meta">
-                    <span class="steward-msg-avatar" aria-hidden="true">S</span>
-                    <span class="steward-msg-label">Steward</span>
-                  </div>
-                  <div class="steward-msg-bubble steward-msg-bubble--typing">
+                  <div class="steward-msg-bubble">
                     <span class="steward-typing-dots" aria-label="Steward is working"><span></span><span></span><span></span></span>
                   </div>
                 </div>
               </div>
             </div>
-
-            <footer class="steward-command-deck">
-              <div class="steward-workflows-section">
-                <h3 class="steward-section-label">Quick workflows</h3>
-                <div class="steward-workflow-grid" id="stewardPrompts"></div>
-              </div>
-              <form class="steward-command-bar" id="stewardForm">
-                <label class="steward-command-input-wrap">
-                  <span class="visually-hidden">Operational request</span>
-                  <textarea id="stewardInput" name="message" rows="2" placeholder="Describe the operation — schedules, readiness, files, org chart, CAP references…" autocomplete="off"></textarea>
-                </label>
-                <button type="submit" class="steward-send" id="stewardSend" aria-label="Send request">Send</button>
+            <footer class="steward-gpt-composer">
+              <div class="steward-chips" id="stewardPrompts"></div>
+              <form class="steward-composer-box" id="stewardForm">
+                <a href="documents.html" class="steward-attach-btn" title="Upload squadron files" aria-label="Upload files">+</a>
+                <label class="visually-hidden" for="stewardInput">Message Steward</label>
+                <textarea id="stewardInput" name="message" rows="1" placeholder="Message Steward…" autocomplete="off"></textarea>
+                <button type="submit" class="steward-send-icon" id="stewardSend" aria-label="Send message">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
               </form>
-              <p class="steward-command-foot">${escapeHtml(DISCLAIMER)} · Built by <strong>Faith Based Innovations</strong></p>
+              <p class="steward-composer-foot">${escapeHtml(DISCLAIMER)} Files are stored in Supabase; schedule and org data import after review in Upload &amp; Files.</p>
             </footer>
           </div>
         </div>
