@@ -1,5 +1,5 @@
 /**
- * TN-170 portal navigation — simplified for all members.
+ * TN-170 portal navigation — grouped sections for easy scanning.
  */
 (function initPortalNav(global) {
   function escapeHtml(t) {
@@ -30,22 +30,44 @@
     return `<a href="${escapeHtml(url)}" class="${cls}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}${hint ? `<small>${escapeHtml(hint)}</small>` : ""}</a>`;
   }
 
-  /** Main sidebar — plain labels, no staff/tools clutter */
-  const NAV_PRIMARY = [
-    { key: "home", href: "dashboard.html", label: "Home" },
-    { key: "calendar", href: "calendar.html", label: "Calendar" },
-    { key: "schedule", href: "schedule.html", label: "Meetings" },
-    { key: "files", href: "documents.html", label: "Files & Forms" },
-    { key: "bfr", href: "flight-review.html", label: "Flight Reviews" },
-    { key: "sui", href: "sui-readiness.html", label: "Inspection Prep" },
-    { key: "senior", href: "senior-member.html", label: "Senior Members" },
-    { key: "cadet", href: "cadet.html", label: "Cadets" },
-    { key: "parent", href: "parent.html", label: "Parents" },
-    { key: "profile", href: "profile.html", label: "My Profile" },
-    { key: "admin", href: "admin.html", label: "Admin" },
+  const NAV_SECTIONS = [
+    {
+      id: "main",
+      label: "Main",
+      items: [
+        { key: "home", href: "dashboard.html", label: "Home" },
+        { key: "calendar", href: "calendar.html", label: "Calendar" },
+        { key: "schedule", href: "schedule.html", label: "Meetings" },
+        { key: "files", href: "documents.html", label: "Files" },
+      ],
+    },
+    {
+      id: "people",
+      label: "People",
+      items: [
+        { key: "senior", href: "senior-member.html", label: "Senior Members" },
+        { key: "cadet", href: "cadet.html", label: "Cadets" },
+        { key: "parent", href: "parent.html", label: "Parents" },
+      ],
+    },
+    {
+      id: "readiness",
+      label: "Readiness",
+      items: [
+        { key: "bfr", href: "flight-review.html", label: "Flight Reviews" },
+        { key: "sui", href: "sui-readiness.html", label: "Inspection Prep" },
+      ],
+    },
+    {
+      id: "account",
+      label: "Account",
+      items: [
+        { key: "profile", href: "profile.html", label: "My Profile" },
+        { key: "admin", href: "admin.html", label: "Admin" },
+      ],
+    },
   ];
 
-  /** Hidden from sidebar — still routable (Quick Actions, bookmarks) */
   const NAV_HIDDEN = [
     { key: "readiness", href: "readiness.html" },
     { key: "exports", href: "exports.html" },
@@ -55,9 +77,13 @@
     { key: "training", href: "training.html" },
   ];
 
+  function allNavItems() {
+    return NAV_SECTIONS.flatMap((s) => s.items);
+  }
+
   function currentKey() {
     const path = (global.location.pathname || "").split("/").pop() || "dashboard.html";
-    const all = [...NAV_PRIMARY, ...NAV_HIDDEN];
+    const all = [...allNavItems(), ...NAV_HIDDEN];
     const found = all.find((n) => n.href === path);
     if (found) return found.key;
     if (path === "administration.html") return "admin";
@@ -66,12 +92,18 @@
   }
 
   function renderNav(active) {
-    const primary = NAV_PRIMARY.map(
-      (n) =>
-        `<a href="${n.href}" class="portal-nav-link ${active === n.key ? "active" : ""}">${escapeHtml(n.label)}</a>`
-    ).join("");
+    const groups = NAV_SECTIONS.map((section) => {
+      const links = section.items
+        .map(
+          (n) =>
+            `<a href="${n.href}" class="portal-nav-link ${active === n.key ? "active" : ""}">${escapeHtml(n.label)}</a>`
+        )
+        .join("");
+      return `<div class="portal-nav-group"><span class="portal-nav-group-label">${escapeHtml(section.label)}</span>${links}</div>`;
+    }).join("");
+
     const comms = `<div class="portal-nav-comms"><span class="portal-nav-comms-label">Stay connected</span>${renderDiscordLink("portal-nav-discord")}</div>`;
-    return `${primary}${comms}`;
+    return `${groups}${comms}`;
   }
 
   function renderDiscordPlacements() {
@@ -100,8 +132,9 @@
   }
 
   global.SMTN170PortalNav = {
-    NAV_PRIMARY,
+    NAV_SECTIONS,
     NAV_HIDDEN,
+    allNavItems,
     currentKey,
     renderDiscordPlacements,
     init,

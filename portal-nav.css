@@ -8,16 +8,18 @@
   gap: 6px;
 }
 
-.portal-nav-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
+.portal-nav-section,
+.portal-nav-group {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
-.portal-nav-section > span {
-  font-size: 0.68rem;
+.portal-nav-section > span,
+.portal-nav-group-label {
+  font-size: 0.72rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.1em;

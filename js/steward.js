@@ -383,11 +383,22 @@
     bindOpenTriggers();
   }
 
+  /** Open chat panel and optionally send a first message (dashboard hero, shortcuts). */
+  function askFromDashboard(text) {
+    openPanel();
+    if ((text || "").trim()) {
+      setTimeout(() => sendMessage(text), 120);
+    } else {
+      setTimeout(() => document.getElementById("stewardInput")?.focus(), 200);
+    }
+  }
+
   global.SMTN170Steward = {
     STORAGE_KEY,
     openPanel,
     closePanel,
     sendMessage,
+    askFromDashboard,
     rebind,
     init,
   };

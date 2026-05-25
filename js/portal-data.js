@@ -49,6 +49,27 @@
     "Safety briefing should be logged after this week's meeting.",
   ];
 
+  const ANNOUNCEMENTS = [
+    {
+      id: "ann-1",
+      date: "2026-05-01",
+      title: "May meeting schedule is posted",
+      body: "See the calendar for weekly meeting nights, uniform guidance, and training blocks.",
+    },
+    {
+      id: "ann-2",
+      date: "2026-04-28",
+      title: "Safety briefing night — May 12",
+      body: "Plan to log the squadron safety briefing after this week's meeting.",
+    },
+    {
+      id: "ann-3",
+      date: "2026-04-22",
+      title: "Flight review sessions on the calendar",
+      body: "Department review nights are marked on the squadron calendar. Open Flight Reviews for status.",
+    },
+  ];
+
   const UPCOMING_MEETINGS = [
     { date: "2026-05-05", title: "Weekly Squadron Meeting", time: "1900–2100", loc: "Squadron Classroom" },
     { date: "2026-05-12", title: "Safety Briefing Night", time: "1900–2100", loc: "Squadron Classroom" },
@@ -97,6 +118,7 @@
     READINESS_TASKS,
     MISSION_READINESS,
     UPCOMING_MEETINGS,
+    ANNOUNCEMENTS,
     THIS_WEEK,
     FILE_CATEGORIES,
     STEWARD_PROMPTS,

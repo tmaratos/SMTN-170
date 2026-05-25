@@ -1,5 +1,5 @@
 /**
- * TN-170 portal shell — layout, mobile menu, footer, simplified home dashboard.
+ * TN-170 portal shell — layout, mobile menu, footer, workspace home dashboard.
  * Future: Supabase session + role-based nav filtering.
  */
 (function initPortalShell(global) {
@@ -98,130 +98,209 @@
     });
   }
 
+  function bindDashboardSteward() {
+    const workspace = document.querySelector(".dash-workspace");
+    if (!workspace || workspace.dataset.stewardBound === "1") return;
+    workspace.dataset.stewardBound = "1";
+
+    const form = document.getElementById("dashStewardForm");
+    const input = document.getElementById("dashStewardInput");
+    const prompts = document.getElementById("dashStewardPrompts");
+
+    form?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = input?.value || "";
+      global.SMTN170Steward?.askFromDashboard?.(text);
+      if (input) input.value = "";
+    });
+
+    input?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        global.SMTN170Steward?.askFromDashboard?.(input.value);
+        input.value = "";
+      }
+    });
+
+    prompts?.addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-dash-prompt]");
+      if (!chip) return;
+      global.SMTN170Steward?.askFromDashboard?.(chip.dataset.dashPrompt || "");
+    });
+
+    document.querySelectorAll("[data-steward-ask]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const text = btn.dataset.stewardAsk || "";
+        global.SMTN170Steward?.askFromDashboard?.(text);
+      });
+    });
+  }
+
   function renderDashboardV2() {
     const root = document.getElementById("dashboardV2");
     if (!root || !global.SMTN170_DATA) return;
 
     const d = global.SMTN170_DATA;
+    const user = d.MOCK_USER || {};
     const nextMeeting = d.UPCOMING_MEETINGS?.[0];
     const attention = getAttentionItems(d);
-    const thisWeek = d.THIS_WEEK || [];
+    const prompts = (d.STEWARD_PROMPTS || []).slice(0, 5);
+    const m = d.MISSION_READINESS || {};
 
-    const nextMeetingBlock = nextMeeting
-      ? `<p class="dash-hero-lead">${escapeHtml(nextMeeting.title)}</p>
-         <p class="dash-hero-meta">${escapeHtml(formatDateFriendly(nextMeeting.date))} · ${escapeHtml(nextMeeting.time)}<br>${escapeHtml(nextMeeting.loc)}</p>`
-      : `<p class="dash-hero-lead">No meetings posted yet.</p>
-         <p class="dash-hero-meta">Check the calendar for the latest schedule.</p>`;
+    const welcomeName = user.rank && user.name ? `${user.rank} ${user.name}` : "member";
 
-    const dueLead =
-      attention.length === 0
-        ? "Nothing urgent right now."
-        : attention.length === 1
-          ? "1 item needs your attention."
-          : `${attention.length} items need your attention.`;
+    const summaryItems = [
+      nextMeeting
+        ? `<li><strong>Next meeting:</strong> ${escapeHtml(nextMeeting.title)} · ${escapeHtml(formatDateFriendly(nextMeeting.date))}</li>`
+        : `<li><strong>Next meeting:</strong> See the calendar</li>`,
+      attention.length
+        ? `<li><strong>Needs attention:</strong> ${attention.length} item${attention.length === 1 ? "" : "s"} due or waiting on review</li>`
+        : `<li><strong>Needs attention:</strong> Nothing urgent right now</li>`,
+      `<li><strong>Flight reviews:</strong> ${m.bfr?.current ?? 0} on track · ${m.bfr?.dueSoon ?? 0} due soon</li>`,
+    ].join("");
+
+    const promptChips = prompts
+      .map(
+        (p) =>
+          `<button type="button" class="dash-steward-chip" data-dash-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`
+      )
+      .join("");
+
+    const stewardShortcuts = prompts
+      .slice(0, 4)
+      .map(
+        (p) =>
+          `<button type="button" class="dash-shortcut-btn" data-steward-ask="${escapeHtml(p)}">${escapeHtml(p)}</button>`
+      )
+      .join("");
 
     root.innerHTML = `
-      <section class="dash-welcome" aria-labelledby="dashWelcomeTitle">
-        <h2 id="dashWelcomeTitle" class="dash-welcome-title">Welcome back.</h2>
-        <p class="dash-welcome-sub">Here is what needs attention this week.</p>
-      </section>
-
-      <section class="dash-hero-cards" aria-label="Main actions">
-        <article class="dash-hero-card">
-          <h3 class="dash-hero-card-title">Next Meeting</h3>
-          ${nextMeetingBlock}
-          <a class="btn-primary-lg" href="calendar.html">View Calendar</a>
-        </article>
-
-        <article class="dash-hero-card">
-          <h3 class="dash-hero-card-title">Items Due Soon</h3>
-          <p class="dash-hero-lead">${escapeHtml(dueLead)}</p>
-          <p class="dash-hero-meta">Monthly reports, safety items, and inspection prep.</p>
-          <a class="btn-primary-lg" href="readiness.html">Review Due Items</a>
-        </article>
-
-        <article class="dash-hero-card dash-hero-card--steward">
-          <h3 class="dash-hero-card-title">Need help finding something?</h3>
-          <p class="dash-hero-lead">Ask Steward for CAP standards, meeting prep, files, flight reviews, and inspection prep.</p>
-          <button type="button" class="btn-primary-lg btn-steward-lg" data-steward-open>Open Steward Chat</button>
-        </article>
-      </section>
-
-      <section class="dash-section" aria-labelledby="dashThisWeek">
-        <h2 id="dashThisWeek" class="dash-section-title">Today / This Week</h2>
-        <ul class="dash-simple-list">
-          ${thisWeek
-            .map(
-              (item) =>
-                `<li><span class="dash-list-icon" aria-hidden="true">•</span><span>${escapeHtml(item)}</span></li>`
-            )
-            .join("")}
-        </ul>
-      </section>
-
-      <section class="dash-section" aria-labelledby="dashMeetings">
-        <h2 id="dashMeetings" class="dash-section-title">Upcoming Meetings</h2>
-        <ul class="dash-meeting-list">
-          ${(d.UPCOMING_MEETINGS || [])
-            .slice(0, 4)
-            .map(
-              (ev) => `
-            <li class="dash-meeting-item">
-              <div class="dash-meeting-date">${escapeHtml(formatDateFriendly(ev.date))}</div>
-              <div class="dash-meeting-body">
-                <strong>${escapeHtml(ev.title)}</strong>
-                ${ev.tag ? `<span class="tag-bfr">${escapeHtml(ev.tag)}</span>` : ""}
-                <span class="dash-meeting-meta">${escapeHtml(ev.time)} · ${escapeHtml(ev.loc)}</span>
-              </div>
-            </li>`
-            )
-            .join("")}
-        </ul>
-        <a class="btn-secondary-lg" href="calendar.html">See full calendar</a>
-      </section>
-
-      <section class="dash-section" aria-labelledby="dashAttention">
-        <h2 id="dashAttention" class="dash-section-title">Things That Need Attention</h2>
-        ${
-          attention.length
-            ? `<ul class="dash-attention-list">
-          ${attention
-            .map(
-              (t) => `
-            <li class="dash-attention-item">
-              ${renderChip(t.status)}
-              <span class="dash-attention-label">${escapeHtml(t.label)}</span>
-            </li>`
-            )
-            .join("")}
-        </ul>`
-            : `<p class="dash-empty-note">You are caught up on the items we track here. Check back after the next meeting.</p>`
-        }
-        <a class="btn-secondary-lg" href="readiness.html">Open squadron overview</a>
-      </section>
-
-      <section class="dash-section" aria-labelledby="dashQuick">
-        <h2 id="dashQuick" class="dash-section-title">Quick Actions</h2>
-        <div class="dash-quick-grid">
-          <a class="dash-quick-btn" href="schedule.html"><span class="dash-quick-label">Meeting schedule</span></a>
-          <a class="dash-quick-btn" href="documents.html"><span class="dash-quick-label">Files &amp; forms</span></a>
-          <a class="dash-quick-btn" href="flight-review.html"><span class="dash-quick-label">Flight reviews</span></a>
-          <a class="dash-quick-btn" href="sui-readiness.html"><span class="dash-quick-label">Inspection prep</span></a>
-          <a class="dash-quick-btn" href="senior-member.html"><span class="dash-quick-label">Senior members</span></a>
-          <a class="dash-quick-btn" href="cadet.html"><span class="dash-quick-label">Cadets</span></a>
-        </div>
-        <details class="dash-staff-tools">
-          <summary>More tools for staff</summary>
-          <div class="dash-quick-grid dash-quick-grid--staff">
-            <a class="dash-quick-btn dash-quick-btn--muted" href="exports.html">Print &amp; export</a>
-            <a class="dash-quick-btn dash-quick-btn--muted" href="resources.html">CAP references</a>
-            <a class="dash-quick-btn dash-quick-btn--muted" href="operations.html">Operations</a>
-            <a class="dash-quick-btn dash-quick-btn--muted" href="safety.html">Safety</a>
-            <a class="dash-quick-btn dash-quick-btn--muted" href="training.html">Training</a>
+      <div class="dash-workspace">
+        <header class="dash-hero-band">
+          <div class="card-info dash-hero-welcome">
+            <p class="dash-hero-eyebrow">TN-170 Oak Ridge Composite Squadron</p>
+            <h2 class="dash-hero-title">Welcome back, ${escapeHtml(welcomeName)}.</h2>
+            <p class="dash-hero-lead">Here is what is happening and what may need your attention this week.</p>
           </div>
-        </details>
-        <div class="dash-discord-wrap" data-portal-discord></div>
-      </section>`;
+          <div class="card-info dash-hero-summary">
+            <h3 class="card-info-title">This week at a glance</h3>
+            <ul class="dash-summary-list">${summaryItems}</ul>
+          </div>
+        </header>
+
+        <section class="card-assistant dash-steward-hub" aria-label="Steward for CAP">
+          <div class="dash-steward-head">
+            <div class="dash-steward-avatar" aria-hidden="true">S</div>
+            <div class="dash-steward-intro">
+              <h2 class="dash-steward-title">Steward for CAP</h2>
+              <p class="dash-steward-tagline">Your squadron guide · Built by Faith Based Innovations</p>
+            </div>
+            <span class="dash-steward-badge">Ask anything</span>
+          </div>
+          <p class="dash-steward-hint">Meeting prep, files, flight reviews, inspection items, and CAP references — type a question or pick a suggestion below.</p>
+          <form class="dash-steward-form" id="dashStewardForm">
+            <label class="visually-hidden" for="dashStewardInput">Ask Steward anything</label>
+            <input type="text" id="dashStewardInput" class="dash-steward-input" placeholder="Ask Steward anything…" autocomplete="off" />
+            <button type="submit" class="dash-steward-submit">Ask Steward</button>
+          </form>
+          <div class="dash-steward-prompts" id="dashStewardPrompts">${promptChips}</div>
+        </section>
+
+        <div class="dash-columns">
+          <div class="dash-col dash-col--left">
+            <section class="card-info dash-block" aria-labelledby="dashWeek">
+              <h3 id="dashWeek" class="card-info-title">Today / This Week</h3>
+              <ul class="dash-bullet-list">
+                ${(d.THIS_WEEK || [])
+                  .map((item) => `<li>${escapeHtml(item)}</li>`)
+                  .join("")}
+              </ul>
+            </section>
+
+            <section class="card-info dash-block" aria-labelledby="dashMeetings">
+              <h3 id="dashMeetings" class="card-info-title">Upcoming Meetings</h3>
+              <ul class="dash-meeting-compact">
+                ${(d.UPCOMING_MEETINGS || [])
+                  .slice(0, 4)
+                  .map(
+                    (ev) => `
+                  <li>
+                    <time>${escapeHtml(formatDateFriendly(ev.date))}</time>
+                    <div>
+                      <strong>${escapeHtml(ev.title)}</strong>
+                      ${ev.tag ? `<span class="tag-bfr">${escapeHtml(ev.tag)}</span>` : ""}
+                      <span>${escapeHtml(ev.time)} · ${escapeHtml(ev.loc)}</span>
+                    </div>
+                  </li>`
+                  )
+                  .join("")}
+              </ul>
+              <a class="card-link" href="calendar.html">Open calendar →</a>
+            </section>
+
+            <section class="card-info dash-block" aria-labelledby="dashAnnounce">
+              <h3 id="dashAnnounce" class="card-info-title">Announcements</h3>
+              <ul class="dash-announce-list">
+                ${(d.ANNOUNCEMENTS || [])
+                  .map(
+                    (a) => `
+                  <li class="dash-announce-item">
+                    <time>${escapeHtml(formatDateFriendly(a.date))}</time>
+                    <strong>${escapeHtml(a.title)}</strong>
+                    <p>${escapeHtml(a.body)}</p>
+                  </li>`
+                  )
+                  .join("")}
+              </ul>
+            </section>
+          </div>
+
+          <div class="dash-col dash-col--right">
+            <section class="card-warning dash-block" aria-labelledby="dashDue">
+              <h3 id="dashDue" class="card-warning-title">Due Soon</h3>
+              ${
+                attention.length
+                  ? `<ul class="dash-due-list">
+                ${attention
+                  .map(
+                    (t) => `
+                  <li class="dash-due-item">
+                    ${renderChip(t.status)}
+                    <span>${escapeHtml(t.label)}</span>
+                  </li>`
+                  )
+                  .join("")}
+              </ul>
+              <a class="card-link card-link--light" href="readiness.html">Review all items →</a>`
+                  : `<p class="dash-caught-up">You are caught up. Nice work.</p>`
+              }
+            </section>
+
+            <section class="card-action dash-block" aria-labelledby="dashActions">
+              <h3 id="dashActions" class="card-action-title">Quick Actions</h3>
+              <div class="dash-action-grid">
+                <a class="dash-action-tile" href="calendar.html"><span class="dash-action-icon" aria-hidden="true">📅</span><span>Open Calendar</span></a>
+                <a class="dash-action-tile" href="documents.html"><span class="dash-action-icon" aria-hidden="true">📁</span><span>Upload Files</span></a>
+                <a class="dash-action-tile" href="flight-review.html"><span class="dash-action-icon" aria-hidden="true">✈</span><span>Flight Reviews</span></a>
+                <a class="dash-action-tile" href="sui-readiness.html"><span class="dash-action-icon" aria-hidden="true">✓</span><span>Inspection Prep</span></a>
+                <button type="button" class="dash-action-tile dash-action-tile--steward" data-steward-ask><span class="dash-action-icon" aria-hidden="true">💬</span><span>Ask Steward</span></button>
+                <a class="dash-action-tile" href="schedule.html"><span class="dash-action-icon" aria-hidden="true">📋</span><span>View Meetings</span></a>
+              </div>
+            </section>
+
+            <section class="card-assistant dash-block dash-block--compact" aria-labelledby="dashStewardShortcuts">
+              <h3 id="dashStewardShortcuts" class="card-assistant-title">Steward shortcuts</h3>
+              <p class="dash-shortcut-note">Tap to open Steward with a ready-made question.</p>
+              <div class="dash-shortcut-grid">${stewardShortcuts}</div>
+            </section>
+
+            <div class="card-info dash-block dash-block--compact" data-portal-discord></div>
+          </div>
+        </div>
+      </div>`;
+
+    bindDashboardSteward();
   }
 
   function ensureSteward(callback) {
@@ -241,7 +320,7 @@
       return;
     }
     const script = document.createElement("script");
-    script.src = "./js/steward.js?v=2";
+    script.src = "./js/steward.js?v=3";
     script.onload = () => {
       global.SMTN170Steward?.rebind?.();
       callback?.();
@@ -256,6 +335,7 @@
     ensureSteward(() => {
       global.SMTN170PortalNav?.renderDiscordPlacements?.();
       global.SMTN170Steward?.rebind?.();
+      bindDashboardSteward();
     });
   }
 
