@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Oak Ridge Composite Squadron | Documents</title>
+  <link rel="stylesheet" href="./styles.css?v=8" />
+  <link rel="stylesheet" href="./desktop.css?v=8" media="(min-width: 901px)" />
+  <link rel="stylesheet" href="./mobile.css?v=8" media="(max-width: 900px)" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" />
+      <nav class="nav">
+        <a href="dashboard.html"><span>⌂</span> Dashboard</a>
+        <a href="schedule.html"><span>▣</span> Schedule Builder</a>
+        <a href="calendar.html"><span>◷</span> Calendar / Events</a>
+        <a class="active" href="documents.html"><span>□</span> Documents</a>
+        <a href="resources.html"><span>▤</span> Resources</a>
+        <a href="exports.html"><span>⇩</span> Exports</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>Documents</h1>
+          <p>Store schedules, forms, templates, SOPs, training files, and planning documents.</p>
+        </div>
+        <div class="user">
+          <span class="badge">Authorized Senior Member</span>
+          <div class="avatar">SM</div>
+        </div>
+      </header>
+
+      <section class="calendar-grid">
+        <article class="card panel">
+          <h2>Upload Document</h2>
+          <form class="form-panel">
+            <label>Document Name</label>
+            <input placeholder="May 2026 Schedule" />
+            <label>Category</label>
+            <select>
+              <option>Schedules</option>
+              <option>Forms</option>
+              <option>Safety</option>
+              <option>Training</option>
+              <option>Aerospace Education</option>
+              <option>Local Procedures</option>
+            </select>
+            <label>File</label>
+            <input type="file" />
+            <button type="button">Upload Document</button>
+          </form>
+        </article>
+
+        <article class="card panel">
+          <h2>Document Library</h2>
+          <div class="doc-list">
+            <div><strong>May 2026 Schedule</strong><span>Schedule PDF</span></div>
+            <div><strong>Safety Brief Template</strong><span>Safety</span></div>
+            <div><strong>AEX Planning Sheet</strong><span>Aerospace Education</span></div>
+            <div><strong>Meeting Agenda Template</strong><span>Templates</span></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

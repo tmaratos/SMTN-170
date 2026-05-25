@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Oak Ridge Composite Squadron | Calendar</title>
+  <link rel="stylesheet" href="./styles.css?v=8" />
+  <link rel="stylesheet" href="./desktop.css?v=8" media="(min-width: 901px)" />
+  <link rel="stylesheet" href="./mobile.css?v=8" media="(max-width: 900px)" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" />
+      <nav class="nav">
+        <a href="dashboard.html"><span>⌂</span> Dashboard</a>
+        <a href="schedule.html"><span>▣</span> Schedule Builder</a>
+        <a class="active" href="calendar.html"><span>◷</span> Calendar / Events</a>
+        <a href="documents.html"><span>□</span> Documents</a>
+        <a href="resources.html"><span>▤</span> Resources</a>
+        <a href="exports.html"><span>⇩</span> Exports</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>Calendar / Events</h1>
+          <p>Events generated from the monthly schedule appear here.</p>
+        </div>
+        <div class="user">
+          <span class="badge">Authorized Senior Member</span>
+          <div class="avatar">SM</div>
+        </div>
+      </header>
+
+      <section class="calendar-grid">
+        <article class="card panel">
+          <h2>Add Event</h2>
+          <form class="form-panel">
+            <label>Event Title</label>
+            <input placeholder="Weekly Squadron Meeting" />
+            <label>Date</label>
+            <input type="date" />
+            <label>Start Time</label>
+            <input type="time" />
+            <label>End Time</label>
+            <input type="time" />
+            <label>Location</label>
+            <input placeholder="Squadron Classroom" />
+            <button type="button">Add Event</button>
+          </form>
+        </article>
+
+        <article class="card panel">
+          <h2>May 2026 Events</h2>
+          <div class="event-list">
+            <div class="event-item"><b>May 05</b><span>Weekly Squadron Meeting<br><small>1900 - 2100 · Squadron Classroom</small></span></div>
+            <div class="event-item"><b>May 11</b><span>Firearm Training<br><small>0900 - 1200 · Range</small></span></div>
+            <div class="event-item"><b>May 12</b><span>Safety Briefing Night<br><small>1900 - 2100 · Squadron Classroom</small></span></div>
+            <div class="event-item"><b>May 16</b><span>Rummage Sale<br><small>0800 - 1500 · Squadron Hangar</small></span></div>
+            <div class="event-item"><b>May 19</b><span>Red Ribbon Leadership Academy<br><small>1900 - 2100 · Squadron Classroom</small></span></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

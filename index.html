@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- Prevent aggressive mobile/GitHub Pages caching -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>Oak Ridge Composite Squadron</title>
+
+  <!-- IMPORTANT -->
+  <link rel="stylesheet" href="./styles.css?v=8" />
+  <link rel="stylesheet" href="./desktop.css?v=8" media="(min-width: 901px)" />
+  <link rel="stylesheet" href="./mobile.css?v=8" media="(max-width: 900px)" />
+</head>
+<body class="login-page">
+  <main class="login-wrap">
+    <section class="login-card">
+      <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" class="login-logo" />
+
+      <p class="kicker">Oak Ridge Composite Squadron</p>
+      <h1>Senior Member Operations Portal</h1>
+      <p class="login-copy">
+        Build monthly schedules, manage squadron documents, organize resources,
+        and export calendar-ready operations plans.
+      </p>
+
+      <form onsubmit="portalLogin(event)" class="login-form">
+        <label>Email</label>
+        <input type="email" placeholder="senior.member@example.com" />
+
+        <label>Access Code</label>
+        <input type="password" placeholder="Portal access code" />
+
+        <button type="submit">Enter Portal</button>
+      </form>
+
+      <p class="small-note">Prototype login. Supabase authentication can be added later.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

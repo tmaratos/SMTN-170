@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Oak Ridge Composite Squadron | Resources</title>
+  <link rel="stylesheet" href="./styles.css?v=8" />
+  <link rel="stylesheet" href="./desktop.css?v=8" media="(min-width: 901px)" />
+  <link rel="stylesheet" href="./mobile.css?v=8" media="(max-width: 900px)" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo" />
+      <nav class="nav">
+        <a href="dashboard.html"><span>⌂</span> Dashboard</a>
+        <a href="schedule.html"><span>▣</span> Schedule Builder</a>
+        <a href="calendar.html"><span>◷</span> Calendar / Events</a>
+        <a href="documents.html"><span>□</span> Documents</a>
+        <a class="active" href="resources.html"><span>▤</span> Resources</a>
+        <a href="exports.html"><span>⇩</span> Exports</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>Resources</h1>
+          <p>Organize squadron materials in sections — add custom folders so nothing gets lost.</p>
+        </div>
+        <div class="user">
+          <span class="badge">Authorized Senior Member</span>
+          <div class="avatar">SM</div>
+        </div>
+      </header>
+
+      <section class="page-stack">
+        <article class="card panel resource-toolbar">
+          <h2>Add custom section</h2>
+          <p class="toolbar-copy">Create a new category for documents, links, and references. Everything is saved in your browser until Supabase is connected.</p>
+          <form id="addSectionForm" class="form-panel">
+            <label for="sectionName">Section name</label>
+            <input id="sectionName" name="sectionName" required placeholder="e.g. Character Development, ES Kits, Cadet Activities" />
+            <label for="sectionDescription">Description (optional)</label>
+            <input id="sectionDescription" name="sectionDescription" placeholder="What belongs in this section?" />
+            <button type="submit">Create section</button>
+          </form>
+        </article>
+
+        <div id="resourceSections" class="resource-sections" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+  <script src="resources.js"></script>
+</body>
+</html>
