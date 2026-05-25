@@ -430,6 +430,8 @@ button{font:inherit}
 
 </style>
 <link rel="stylesheet" href="./flight-review.css?v=1" />
+<link rel="stylesheet" href="./document-intake.css?v=1" />
+<link rel="stylesheet" href="./portal-nav.css?v=1" />
 </head>
 
 <body>
@@ -438,15 +440,7 @@ button{font:inherit}
   <aside class="sidebar">
     <img class="logo" src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="Oak Ridge Composite Squadron logo">
 
-    <nav class="nav">
-      <a class="active" href="dashboard.html"><span>⌂</span> Dashboard</a>
-      <a href="schedule.html"><span>▣</span> Schedule Builder</a>
-      <a href="calendar.html"><span>◷</span> Calendar / Events</a>
-      <a href="flight-review.html"><span>✈</span> Flight Review</a>
-      <a href="documents.html"><span>□</span> Documents</a>
-      <a href="resources.html"><span>▤</span> Resources</a>
-      <a href="exports.html"><span>⇩</span> Exports</a>
-    </nav>
+    <nav class="nav" data-portal-nav="dashboard"></nav>
   </aside>
 
   <main class="main">
@@ -454,7 +448,7 @@ button{font:inherit}
     <header class="topbar">
       <div>
         <h1>Oak Ridge Composite Squadron</h1>
-        <p>Senior Member Operations Portal</p>
+        <p>Squadron Operations Desk</p>
       </div>
 
       <div class="user">
@@ -470,22 +464,22 @@ button{font:inherit}
         <section class="card hero">
           <p class="kicker">Welcome Back</p>
           <h2>Senior Member</h2>
-          <p class="hero-desc">Plan. Organize. Lead. Excellence in all we do.</p>
+          <p class="hero-desc">Monthly schedule · BFR · SUI · ops · safety · training · files.</p>
 
           <div class="stats">
-            <div class="stat"><strong>May 2026</strong><span>Schedule In Progress</span></div>
-            <div class="stat"><strong>16</strong><span>Events Planned</span></div>
-            <div class="stat"><strong>24</strong><span>Documents Available</span></div>
-            <div class="stat"><strong>4</strong><span>Exports This Month</span></div>
+            <div class="stat"><strong>May 2026</strong><span>Monthly Schedule</span></div>
+            <div class="stat"><strong>16</strong><span>Squadron Events</span></div>
+            <div class="stat"><strong>8</strong><span>Directorates on BFR</span></div>
+            <div class="stat"><strong>72%</strong><span>SUI Prepared</span></div>
           </div>
         </section>
 
         <section class="card">
           <div class="panel-head">
-            <h2>May 2026 Schedule Preview</h2>
+            <h2>May 2026 — Monthly Schedule</h2>
             <div class="actions">
-              <a class="btn" href="schedule.html">View Full Schedule</a>
-              <a class="btn gold" href="schedule.html">Edit Schedule</a>
+              <a class="btn" href="schedule.html">Full schedule</a>
+              <a class="btn gold" href="schedule.html">Build schedule</a>
             </div>
           </div>
 
@@ -553,7 +547,15 @@ button{font:inherit}
         </section>
 
         <section class="card fr-dash-card" id="frDashboardCard" aria-live="polite">
-          <p class="kicker" style="margin:0 0 6px">Loading readiness…</p>
+          <p class="kicker" style="margin:0 0 6px">Biannual Flight Reviews</p>
+        </section>
+
+        <section class="card fr-dash-card" id="suiDashboardCard" aria-live="polite">
+          <p class="kicker" style="margin:0 0 6px">SUI Readiness</p>
+        </section>
+
+        <section class="card di-dash-card" id="diDashboardRecent" aria-live="polite">
+          <p class="kicker" style="margin:0 0 6px">File Library</p>
         </section>
 
       </div>
@@ -562,8 +564,8 @@ button{font:inherit}
 
         <section class="card side-card">
           <div class="panel-head" style="padding:0;margin-bottom:10px;">
-            <h2>Upcoming Events</h2>
-            <a class="btn" href="calendar.html">View Calendar</a>
+            <h2>Squadron Calendar</h2>
+            <a class="btn" href="calendar.html">Full calendar</a>
           </div>
 
           <div class="event-list" id="dashboardEventList">
@@ -575,12 +577,27 @@ button{font:inherit}
         </section>
 
         <section class="card side-card">
-          <h2>Quick Actions</h2>
+          <div class="panel-head" style="padding:0;margin-bottom:10px;">
+            <h2>Unfiled — needs review</h2>
+            <a class="btn" href="documents.html#review">Filing queue</a>
+          </div>
+          <div id="diDashboardNeedsReview" aria-live="polite">
+            <p class="di-upload-meta">Loading…</p>
+          </div>
+        </section>
+
+        <section class="card side-card di-dash-card">
+          <h2>File library status</h2>
+          <div id="diDashboardStorage" aria-live="polite"></div>
+        </section>
+
+        <section class="card side-card">
+          <h2>Common tasks</h2>
           <div class="quick">
-            <a href="schedule.html">Create Schedule<small>Use Template</small></a>
-            <a href="exports.html">Export Schedule<small>PDF / CSV / ICS</small></a>
-            <a href="calendar.html">Add Event<small>To Calendar</small></a>
-            <a href="documents.html">Upload Document<small>To Portal</small></a>
+            <a href="documents.html#upload">File to library<small>Upload · squadron folders</small></a>
+            <a href="schedule.html">Monthly schedule<small>Meeting plan</small></a>
+            <a href="flight-review.html">BFR packets<small>Directorate reviews</small></a>
+            <a href="sui-readiness.html">SUI checklist<small>Inspection prep</small></a>
           </div>
         </section>
 
@@ -589,6 +606,9 @@ button{font:inherit}
     </section>
   </main>
 </div>
+<script src="./portal-nav.js?v=1"></script>
 <script src="./flight-review.js?v=1"></script>
+<script src="./sui-readiness.js?v=1"></script>
+<script src="./document-intake.js?v=1"></script>
 </body>
 </html>

@@ -1,0 +1,60 @@
+/* Squadron hub / administration landing pages */
+
+.ops-hero,
+.hub-hero {
+  margin-bottom: 18px;
+}
+
+.ops-hero h2,
+.hub-hero h2 {
+  margin: 8px 0;
+  text-transform: uppercase;
+}
+
+.ops-hero p,
+.hub-hero p {
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 40rem;
+}
+
+.ops-grid,
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.ops-card,
+.hub-card {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.ops-card h3,
+.hub-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ops-card p,
+.hub-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.ops-card .gold-btn,
+.hub-card .gold-btn {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+@media (max-width: 650px) {
+  .ops-grid,
+  .hub-grid {
+    grid-template-columns: 1fr;
+  }
+}

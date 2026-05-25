@@ -6,36 +6,29 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Calendar / Events | Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./styles.css?v=6" />
+  <title>Squadron Calendar | Oak Ridge Composite Squadron</title>
+  <link rel="stylesheet" href="./styles.css?v=8" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=1" />
 </head>
-<body>
+<body data-portal-page="schedule">
   <div class="shell">
     <aside class="sidebar">
       <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="schedule.html">Schedule Builder</a>
-        <a class="active" href="calendar.html">Calendar / Events</a>
-        <a href="flight-review.html">Flight Review Readiness</a>
-        <a href="documents.html">Documents</a>
-        <a href="resources.html">Resources</a>
-        <a href="exports.html">Exports</a>
-      </nav>
+      <nav data-portal-nav="shell"></nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>Calendar / Events</h1>
-          <p>Monthly squadron schedule · department biannual flight reviews</p>
+          <h1>Squadron Calendar</h1>
+          <p>Meeting nights · BFR sessions · training · special activities</p>
         </div>
       </header>
 
       <section class="calendar-grid">
         <article class="panel">
-          <h2>Add Event</h2>
+          <h2>Post squadron event</h2>
           <form class="form-panel" id="calendarAddForm">
             <label>Event Title</label>
             <input name="title" placeholder="Weekly Squadron Meeting" required />
@@ -49,7 +42,7 @@
             <input name="location" placeholder="Squadron Classroom" />
             <button type="submit">Add Event</button>
           </form>
-          <p class="small-note" style="margin-top:14px">Department reviews scheduled in <a href="flight-review.html" style="color:var(--cyan);font-weight:800">Flight Review Readiness</a> appear here with a <span class="fr-event-badge">BFR</span> badge.</p>
+          <p class="small-note" style="margin-top:14px">Directorate BFR nights from <a href="flight-review.html" style="color:var(--cyan);font-weight:800">Biannual Flight Reviews</a> show with a <span class="fr-event-badge">BFR</span> badge.</p>
         </article>
 
         <article class="panel">
@@ -59,6 +52,7 @@
       </section>
     </main>
   </div>
+  <script src="./portal-nav.js?v=1"></script>
   <script src="./flight-review.js?v=1"></script>
 </body>
 </html>

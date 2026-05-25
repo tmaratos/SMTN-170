@@ -554,9 +554,9 @@
       )
       .join("");
     printDocument(
-      "Squadron Flight Review Readiness Summary",
-      `<h1>Squadron Biannual Flight Review Readiness</h1>
-      <p class="meta">Readiness: <strong>${m.readinessPercent}%</strong> · Current: ${m.current} · Due soon: ${m.dueSoon} · Overdue: ${m.overdue} · Scheduled: ${m.scheduled} · Completed: ${m.completed} · Missing documentation items: ${m.missingDocs}</p>
+      "Squadron BFR Status Summary",
+      `<h1>Biannual Flight Reviews — Squadron Summary</h1>
+      <p class="meta">Directorate BFR status: <strong>${m.readinessPercent}%</strong> · Current: ${m.current} · Due soon: ${m.dueSoon} · Overdue: ${m.overdue} · Scheduled: ${m.scheduled} · Completed: ${m.completed} · Missing documentation items: ${m.missingDocs}</p>
       <table><thead><tr><th>Department</th><th>Status</th><th>Next due</th><th>Reviewer</th><th>Missing</th></tr></thead><tbody>${rows}</tbody></table>`
     );
   }
@@ -568,12 +568,12 @@
     root.innerHTML = `
       <div class="fr-dash-head">
         <div>
-          <p class="kicker" style="margin:0 0 6px">Biannual Flight Review</p>
-          <h2 style="margin:0;font-size:1.35rem;text-transform:uppercase">Readiness</h2>
+          <p class="kicker" style="margin:0 0 6px">Biannual Flight Reviews</p>
+          <h2 style="margin:0;font-size:1.35rem;text-transform:uppercase">Directorate status</h2>
         </div>
-        <div class="fr-readiness-ring" aria-label="Squadron readiness ${m.readinessPercent} percent">
+        <div class="fr-readiness-ring" aria-label="BFR squadron status ${m.readinessPercent} percent">
           <strong>${m.readinessPercent}%</strong>
-          <span>Ready</span>
+          <span>On BFR</span>
         </div>
       </div>
       <div class="fr-dash-stats">
@@ -584,8 +584,8 @@
         <div><strong>${m.missingDocs}</strong><span>Missing docs</span></div>
       </div>
       <div class="fr-dash-actions">
-        <a class="btn gold" href="flight-review.html">Prepare Review</a>
-        <a class="btn" href="flight-review.html#departments">View departments</a>
+        <a class="btn gold" href="flight-review.html">Prepare BFR packet</a>
+        <a class="btn" href="flight-review.html#departments">View directorates</a>
       </div>`;
   }
 
@@ -687,20 +687,20 @@
         <article class="panel fr-summary-hero">
           <p class="kicker">Squadron-wide</p>
           <div class="fr-summary-top">
-            <h2>Biannual Flight Review Readiness</h2>
-            <div class="fr-readiness-ring fr-readiness-ring--lg" aria-label="Readiness ${m.readinessPercent} percent">
+            <h2>Biannual Flight Reviews</h2>
+            <div class="fr-readiness-ring fr-readiness-ring--lg" aria-label="BFR status ${m.readinessPercent} percent">
               <strong>${m.readinessPercent}%</strong>
-              <span>Squadron ready</span>
+              <span>Directorate BFR</span>
             </div>
           </div>
-          <p class="fr-summary-copy">Track department biannual reviews, documentation, and scheduled sessions — not just calendar placeholders.</p>
+          <p class="fr-summary-copy">Track each directorate’s BFR packet, due dates, and scheduled review nights — the way senior members and ops officers actually run the squadron.</p>
         </article>
-        <article class="stat-card"><span>${m.current}</span><strong>Current</strong><p>Departments within compliance window</p></article>
-        <article class="stat-card"><span>${m.dueSoon}</span><strong>Due soon</strong><p>Due within 45 days</p></article>
-        <article class="stat-card"><span class="fr-stat-warn">${m.overdue}</span><strong>Overdue</strong><p>Requires immediate preparation</p></article>
-        <article class="stat-card"><span>${m.scheduled}</span><strong>Scheduled</strong><p>Reviews on squadron calendar</p></article>
-        <article class="stat-card"><span>${m.completed}</span><strong>Completed</strong><p>Confirmed this cycle</p></article>
-        <article class="stat-card"><span>${m.missingDocs}</span><strong>Missing docs</strong><p>Outstanding documentation items</p></article>`;
+        <article class="stat-card"><span>${m.current}</span><strong>Current</strong><p>Directorates within BFR window</p></article>
+        <article class="stat-card"><span>${m.dueSoon}</span><strong>Due soon</strong><p>BFR due within 45 days</p></article>
+        <article class="stat-card"><span class="fr-stat-warn">${m.overdue}</span><strong>Overdue</strong><p>Packet prep required now</p></article>
+        <article class="stat-card"><span>${m.scheduled}</span><strong>Scheduled</strong><p>On squadron calendar</p></article>
+        <article class="stat-card"><span>${m.completed}</span><strong>Completed</strong><p>BFR confirmed this cycle</p></article>
+        <article class="stat-card"><span>${m.missingDocs}</span><strong>Missing</strong><p>Outstanding packet items</p></article>`;
     }
 
     if (deptRoot) {
@@ -711,7 +711,7 @@
       const select = scheduleForm.querySelector('[name="departmentId"]');
       if (select && !select.dataset.filled) {
         select.innerHTML =
-          '<option value="">Select department</option>' +
+          '<option value="">Select directorate</option>' +
           data.departments
             .filter((d) => d.status !== STATUS.COMPLETED)
             .map((d) => `<option value="${d.id}">${escapeHtml(d.name)}</option>`)

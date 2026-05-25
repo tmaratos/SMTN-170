@@ -12,34 +12,27 @@
   <title>Oak Ridge Composite Squadron</title>
 
   <!-- IMPORTANT -->
-  <link rel="stylesheet" href="./styles.css?v=5" />
+  <link rel="stylesheet" href="./styles.css?v=8" />
+  <link rel="stylesheet" href="./portal-nav.css?v=1" />
 </head>
-<body>
+<body data-portal-page="schedule">
   <div class="shell">
     <aside class="sidebar">
       <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a class="active" href="schedule.html">Schedule Builder</a>
-        <a href="calendar.html">Calendar / Events</a>
-        <a href="flight-review.html">Flight Review Readiness</a>
-        <a href="documents.html">Documents</a>
-        <a href="resources.html">Resources</a>
-        <a href="exports.html">Exports</a>
-      </nav>
+      <nav data-portal-nav="shell"></nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>Monthly Operations Schedule</h1>
-          <p>Choose a template, fill fields, generate the monthly schedule, then export.</p>
+          <h1>Monthly Schedule</h1>
+          <p>Cadet meeting plan · uniform nights · training blocks · print for meeting night</p>
         </div>
       </header>
 
       <section class="builder-layout">
         <form class="panel form-panel">
-          <h2>Schedule Template</h2>
+          <h2>Meeting schedule template</h2>
 
           <label>Month</label>
           <input type="month" value="2026-05" />
@@ -75,7 +68,7 @@
             <h2>Generated Schedule</h2>
             <div class="btn-row">
               <button class="ghost-btn">Save Draft</button>
-              <a href="exports.html" class="gold-btn">Export</a>
+              <a href="exports.html" class="gold-btn">Print &amp; export</a>
             </div>
           </div>
 
@@ -106,6 +99,7 @@
     </main>
   </div>
 
+  <script src="./portal-nav.js?v=1"></script>
   <script src="app.js"></script>
 </body>
 </html>

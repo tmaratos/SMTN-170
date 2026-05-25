@@ -1,0 +1,48 @@
+/* Portal navigation — operational hierarchy */
+
+.portal-nav-tools {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+}
+
+.portal-nav-tools::before {
+  content: "Tools";
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.sidebar nav .portal-nav-tool {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  border-radius: 10px;
+}
+
+.sidebar nav .portal-nav-tool:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.app .nav {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.app .nav a {
+  font-size: 0.78rem;
+  padding: 12px 14px;
+}
+
+@media (max-width: 1100px) {
+  .portal-nav-tools {
+    grid-column: 1 / -1;
+  }
+}

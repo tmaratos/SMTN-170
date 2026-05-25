@@ -12,28 +12,21 @@
   <title>Oak Ridge Composite Squadron</title>
 
   <!-- IMPORTANT -->
-  <link rel="stylesheet" href="./styles.css?v=5" />
+  <link rel="stylesheet" href="./styles.css?v=8" />
+  <link rel="stylesheet" href="./portal-nav.css?v=1" />
 </head>
-<body>
+<body data-portal-page="files">
   <div class="shell">
     <aside class="sidebar">
       <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="schedule.html">Schedule Builder</a>
-        <a href="calendar.html">Calendar / Events</a>
-        <a href="flight-review.html">Flight Review Readiness</a>
-        <a href="documents.html">Documents</a>
-        <a class="active" href="resources.html">Resources</a>
-        <a href="exports.html">Exports</a>
-      </nav>
+      <nav data-portal-nav="shell"></nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>Resources</h1>
-          <p>Quick access to planning materials, references, and squadron operating resources.</p>
+          <h1>Reference Shelf</h1>
+          <p>CAP publications · wing notices · lesson references · external links</p>
         </div>
       </header>
 
@@ -43,9 +36,11 @@
         <article class="panel"><h2>Aerospace Education</h2><p>AEX, STEM, lesson planning, and activity resources.</p></article>
         <article class="panel"><h2>Training</h2><p>Training nights, leadership lessons, and meeting plans.</p></article>
         <article class="panel"><h2>Forms</h2><p>Frequently used local forms and shared templates.</p></article>
-        <article class="panel"><h2>External Links</h2><p>BAND, CAP references, and approved support resources.</p></article>
+        <article class="panel"><h2>External Links</h2><p>BAND, eServices, CAP.gov references, and approved support resources.</p></article>
       </section>
+      <p class="small-note" style="margin-top:18px">Squadron uploads and directorate files belong in the <a href="documents.html" style="color:var(--cyan);font-weight:800">File Library</a>.</p>
     </main>
   </div>
+  <script src="./portal-nav.js?v=1"></script>
 </body>
 </html>

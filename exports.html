@@ -6,30 +6,23 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Exports | Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./styles.css?v=6" />
+  <title>Print &amp; Export | Oak Ridge Composite Squadron</title>
+  <link rel="stylesheet" href="./styles.css?v=8" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=1" />
 </head>
-<body>
+<body data-portal-page="schedule">
   <div class="shell">
     <aside class="sidebar">
       <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="schedule.html">Schedule Builder</a>
-        <a href="calendar.html">Calendar / Events</a>
-        <a href="flight-review.html">Flight Review Readiness</a>
-        <a href="documents.html">Documents</a>
-        <a href="resources.html">Resources</a>
-        <a class="active" href="exports.html">Exports</a>
-      </nav>
+      <nav data-portal-nav="shell"></nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>Exports</h1>
-          <p>Schedule exports · biannual flight review packets and readiness reports</p>
+          <h1>Print &amp; Export</h1>
+          <p>Monthly schedule · BFR packets · SUI brief · roster prints</p>
         </div>
       </header>
 
@@ -60,8 +53,8 @@
       </section>
 
       <section class="fr-exports-section" id="fr-exports">
-        <h2>Flight review exports</h2>
-        <p class="small-note" style="margin:0 0 16px">Printable demo exports open in a new window. Connect to Supabase-backed document storage for production packets.</p>
+        <h2>Biannual flight review — print</h2>
+        <p class="small-note" style="margin:0 0 16px">Print directorate BFR checklists and squadron summaries for command briefings.</p>
         <section class="export-grid export-grid--flight-review">
           <article class="panel export-card">
             <h2>Department review checklist</h2>
@@ -82,14 +75,15 @@
           </article>
 
           <article class="panel export-card">
-            <h2>Squadron readiness summary</h2>
-            <p>Squadron-wide readiness percentage and department status table.</p>
-            <button type="button" data-export="summary">Export readiness summary</button>
+            <h2>Squadron BFR summary</h2>
+            <p>Directorate status table for commander or ops officer briefing.</p>
+            <button type="button" data-export="summary">Print BFR summary</button>
           </article>
         </section>
       </section>
     </main>
   </div>
+  <script src="./portal-nav.js?v=1"></script>
   <script src="./flight-review.js?v=1"></script>
 </body>
 </html>

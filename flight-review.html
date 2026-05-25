@@ -4,32 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>Flight Review Readiness | Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./styles.css?v=6" />
+  <title>Biannual Flight Reviews | Oak Ridge Composite Squadron</title>
+  <link rel="stylesheet" href="./styles.css?v=8" />
   <link rel="stylesheet" href="./flight-review.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=1" />
 </head>
-<body>
+<body data-portal-page="bfr">
   <div class="shell">
     <aside class="sidebar">
       <img src="assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" class="side-logo" alt="Logo" />
-      <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="schedule.html">Schedule Builder</a>
-        <a href="calendar.html">Calendar / Events</a>
-        <a href="flight-review.html" class="active">Flight Review Readiness</a>
-        <a href="documents.html">Documents</a>
-        <a href="resources.html">Resources</a>
-        <a href="exports.html">Exports</a>
-      </nav>
+      <nav data-portal-nav="shell"></nav>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>Flight Review Readiness</h1>
-          <p>Department biannual reviews · documentation · scheduling</p>
+          <h1>Biannual Flight Reviews</h1>
+          <p>Directorate BFR packets · due dates · squadron calendar</p>
         </div>
       </header>
 
@@ -39,36 +30,37 @@
 
       <section class="fr-module-layout">
         <aside class="panel">
-          <h2>Schedule department review</h2>
-          <p>Adds a biannual flight review session to the squadron calendar.</p>
+          <h2>Schedule directorate BFR</h2>
+          <p>Posts the review on the squadron calendar and ties it to the directorate packet.</p>
           <form class="form-panel" id="frScheduleForm">
-            <label>Department</label>
+            <label>Directorate</label>
             <select name="departmentId" required>
-              <option value="">Select department</option>
+              <option value="">Select directorate</option>
             </select>
-            <label>Review date</label>
+            <label>BFR date</label>
             <input type="date" name="reviewDate" required />
-            <label>Assigned reviewer / officer</label>
+            <label>Reviewing officer</label>
             <input name="reviewer" placeholder="Rank and name" />
             <label>Location</label>
             <input name="location" value="Squadron Classroom" />
-            <button type="submit">Schedule on calendar</button>
+            <button type="submit">Post to squadron calendar</button>
           </form>
           <p class="fr-supabase-note">
-            <strong>Future-ready:</strong> This demo stores state in <code>localStorage</code>. Later connect to Supabase for auth, officer roles, document uploads, and review history.
+            <strong>Live system:</strong> Supabase will store BFR metadata and roles; review files remain in the <a href="documents.html" style="color:var(--cyan);font-weight:800">File Library</a>.
           </p>
         </aside>
 
         <div id="departments">
           <div class="panel-head" style="margin-bottom:14px;padding:0;">
-            <h2 style="margin:0">Department readiness</h2>
-            <a class="ghost-btn" href="exports.html#fr-exports">Export reports</a>
+            <h2 style="margin:0">Directorate BFR status</h2>
+            <a class="ghost-btn" href="exports.html#fr-exports">Print BFR reports</a>
           </div>
           <div class="fr-dept-grid" id="frDepartmentGrid" aria-live="polite"></div>
         </div>
       </section>
     </main>
   </div>
+  <script src="./portal-nav.js?v=1"></script>
   <script src="./flight-review.js?v=1"></script>
 </body>
 </html>

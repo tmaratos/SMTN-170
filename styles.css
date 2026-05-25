@@ -674,6 +674,12 @@ mark.cyan {
   align-content: space-between;
 }
 
+.page-stack {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
+}
+
 /* MOBILE */
 
 @media (max-width: 1100px) {
@@ -700,6 +706,7 @@ mark.cyan {
   .builder-layout,
   .calendar-grid,
   .fr-module-layout,
+  .di-layout,
   .resource-grid,
   .export-grid,
   .export-grid--flight-review {
