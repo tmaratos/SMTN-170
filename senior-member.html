@@ -9,9 +9,10 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Senior Members | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
-  <link rel="stylesheet" href="./portal-nav.css?v=5" />
+  <title>Senior Member Workspace | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
+  <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=7" />
 </head>
 <body data-portal-page="senior">
   <div class="portal-app">
@@ -29,19 +30,20 @@
     <div class="portal-main">
       <header class="portal-topbar">
         <div>
-          <h1>Senior Members</h1>
-          <p>Staff tools · flight reviews · inspection · training</p>
+          <h1>Senior Member Workspace</h1>
+          <p>Private Senior Member operations workspace for TN-170</p>
         </div>
       </header>
       <div class="portal-content portal-content--wide">
         <div class="page-frame page-stack">
-          <p class="role-banner">Senior member &amp; staff area — parent and cadet-only content is not shown here.</p>
+          <p class="page-intro">Approved Senior Members share one operations workspace — meetings, files, readiness, org chart, and Steward. Roles are for identity and audit only.</p>
           <div data-steward-context="senior"></div>
           <div class="card-grid-2">
             <a class="card-action hub-card" href="flight-review.html"><h3>Flight reviews</h3><p>Department packets, due dates, and review nights.</p></a>
             <a class="card-action hub-card" href="sui-readiness.html"><h3>Inspection prep</h3><p>Checklist by work area and commander review.</p></a>
             <a class="card-info hub-card" href="schedule.html"><h3>Meeting planner</h3><p>Build the monthly meeting schedule and print.</p></a>
             <a class="card-info hub-card" href="documents.html"><h3>Files &amp; forms</h3><p>Upload and review squadron documents.</p></a>
+            <a class="card-action hub-card" href="orgchart.html"><h3>Organization chart</h3><p>Leadership structure, vacancies, and staff assignments.</p></a>
           </div>
           <article class="card-info"><h2 style="margin:0 0 10px;font-size:1.15rem">Staff planning</h2><p class="steward-planned" style="margin:0">Placeholder for directorate goals, agendas, and command briefings — Supabase later.</p></article>
         </div>
@@ -49,9 +51,6 @@
       <div data-portal-footer></div>
     </div>
   </div>
-  <script src="./portal-config.js?v=2"></script>
-  <script src="./portal-nav.js?v=5"></script>
-  <script src="./js/portal-shell.js?v=4"></script>
-  <script src="./js/steward.js?v=3"></script>
+  <script src="./js/portal-scripts.js?v=1" data-page="senior"></script>
 </body>
 </html>

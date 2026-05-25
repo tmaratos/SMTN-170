@@ -2,42 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
-  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
-  <link rel="manifest" href="./assets/site.webmanifest" />
-  <meta name="theme-color" content="#030914" />
-  <title>TN-170 Oak Ridge Composite Squadron</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=1" />
-  <link rel="stylesheet" href="./portal-nav.css?v=3" />
+  <meta http-equiv="refresh" content="0;url=login.html" />
+  <title>TN-170 Senior Member Portal</title>
+  <script src="./js/supabase-config.js?v=1"></script>
+  <script src="./js/supabase-client.js?v=1"></script>
+  <script src="./js/portal-auth.js?v=2"></script>
+  <script>
+    (async function () {
+      await window.SMTN170Supabase?.whenReady?.();
+      await window.SMTN170Auth?.init?.();
+      if (window.SMTN170Auth?.isAuthenticated?.()) {
+        const s = window.SMTN170Auth.loadSession();
+        location.replace(
+          s?.accountStatus === "awaiting_verification" ? "pending-approval.html" : "dashboard.html"
+        );
+      } else {
+        location.replace("login.html");
+      }
+    })();
+  </script>
 </head>
-<body class="login-v2">
-  <main class="login-card-v2">
-    <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170 Oak Ridge Composite Squadron" class="login-patch" />
-    <p class="login-motto">Not Without Effort.</p>
-    <h1>TN-170 Squadron Portal</h1>
-    <p class="login-unit">Oak Ridge Composite Squadron · Civil Air Patrol</p>
-    <p class="login-unit" style="font-size:0.95rem">Meetings · calendar · files · Steward help</p>
-
-    <form class="login-form-v2" onsubmit="portalLogin(event)">
-      <label for="loginEmail">Email</label>
-      <input id="loginEmail" type="email" placeholder="senior.member@example.com" autocomplete="username" />
-      <label for="loginCode">Access code</label>
-      <input id="loginCode" type="password" placeholder="Portal access code" autocomplete="current-password" />
-      <button type="submit" class="btn-gold">Enter Portal</button>
-    </form>
-
-    <p class="steward-planned" style="margin-top:16px;text-align:center">Prototype entry — Supabase authentication will connect here.</p>
-    <div class="login-discord" data-portal-discord style="margin-top:18px"></div>
-    <p class="portal-fbi" style="margin-top:20px;font-size:0.72rem;color:var(--tn-muted)">Steward for CAP · Built by Faith Based Innovations</p>
-  </main>
-
-  <script src="./portal-config.js?v=2"></script>
-  <script src="./js/portal-data.js?v=1"></script>
-  <script src="./portal-nav.js?v=3"></script>
-  <script src="./js/steward.js?v=2"></script>
-  <script src="./app.js"></script>
-</body>
+<body><p><a href="login.html">TN-170 Senior Member portal — sign in</a></p></body>
 </html>

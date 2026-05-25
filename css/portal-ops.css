@@ -1,0 +1,725 @@
+/**
+ * TN-170 operational UX — readability for Senior Members (35–70).
+ * Simpler, larger, lower cognitive load. Not corporate SaaS.
+ */
+
+:root {
+  --ops-font-base: 1.0625rem;
+  --ops-font-lg: 1.2rem;
+  --ops-font-xl: 1.45rem;
+  --ops-space: 20px;
+  --ops-radius: 14px;
+  --ops-touch: 48px;
+}
+
+html {
+  font-size: 17px;
+}
+
+body {
+  font-size: var(--ops-font-base);
+  line-height: 1.55;
+}
+
+.portal-topbar h1 {
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.portal-topbar p {
+  font-size: 1rem;
+  margin-top: 6px;
+}
+
+.page-intro,
+.login-lead {
+  font-size: 1.08rem;
+  line-height: 1.6;
+  max-width: 58ch;
+}
+
+.btn-gold,
+.btn-primary-lg,
+.btn-outline,
+.ghost-btn {
+  min-height: var(--ops-touch);
+  font-size: 1rem;
+  padding: 12px 20px;
+  border-radius: 12px;
+}
+
+.btn-lg {
+  min-height: 52px;
+  font-size: 1.05rem;
+}
+
+input,
+select,
+textarea {
+  font-size: 1rem !important;
+  padding: 14px 16px !important;
+  min-height: var(--ops-touch);
+  border-radius: 12px !important;
+}
+
+.panel,
+.card-info,
+.card-action,
+.card-warning,
+.card-assistant,
+.workspace-panel {
+  border-radius: var(--ops-radius);
+  padding: var(--ops-space) 22px;
+  border-width: 1px;
+}
+
+.card-grid-2,
+.card-grid-3,
+.dash-action-grid {
+  gap: 16px;
+}
+
+.portal-menu-toggle {
+  min-width: var(--ops-touch);
+  min-height: var(--ops-touch);
+  font-size: 1.4rem;
+}
+
+.portal-nav-link {
+  padding: 14px 16px;
+  font-size: 1rem;
+  min-height: var(--ops-touch);
+  display: flex;
+  align-items: center;
+}
+
+/* Session loading */
+.portal-session-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(3, 9, 20, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portal-session-loading[hidden] {
+  display: none !important;
+}
+
+.portal-session-loading-card {
+  text-align: center;
+  padding: 32px;
+}
+
+.portal-session-spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  border: 3px solid rgba(201, 162, 39, 0.25);
+  border-top-color: var(--tn-gold);
+  border-radius: 50%;
+  animation: portal-spin 0.9s linear infinite;
+}
+
+@keyframes portal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.portal-session-loading-text {
+  font-size: 1.1rem;
+  color: var(--tn-muted);
+}
+
+.login-error {
+  color: #f5a090;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+/* Steward — warmer, larger */
+.steward-fab {
+  min-height: 56px;
+  padding: 0 22px;
+  font-size: 1rem;
+}
+
+.steward-panel {
+  width: min(420px, 100vw);
+}
+
+.steward-panel-head .steward-kicker {
+  font-size: 0.72rem;
+}
+
+.steward-msg-bubble {
+  font-size: 1rem;
+  line-height: 1.55;
+  padding: 14px 16px;
+}
+
+.steward-prompt-chip {
+  font-size: 0.92rem;
+  padding: 10px 14px;
+  min-height: 44px;
+}
+
+.steward-compose input {
+  font-size: 1rem !important;
+  min-height: 48px !important;
+}
+
+.steward-send {
+  min-height: 48px;
+  font-size: 1rem;
+  padding: 0 18px;
+}
+
+.steward-fbi-footer {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--tn-muted);
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--tn-line);
+}
+
+/* Steward Phase 1 — conversation UI */
+.steward-toolbar {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--tn-line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.steward-convo-title {
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.6);
+  color: #fff;
+}
+
+.steward-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.steward-tool-btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--tn-gold);
+  background: rgba(201, 162, 39, 0.12);
+  color: var(--tn-gold);
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.steward-tool-btn--muted {
+  border-color: var(--tn-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--tn-muted);
+}
+
+.steward-convo-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--tn-line);
+  -webkit-overflow-scrolling: touch;
+}
+
+.steward-convo-item {
+  flex: 0 0 auto;
+  max-width: 160px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.5);
+  color: var(--tn-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.steward-convo-item.active {
+  border-color: var(--tn-gold);
+  color: #fff;
+  background: rgba(201, 162, 39, 0.15);
+}
+
+.steward-compose textarea#stewardInput {
+  width: 100%;
+  min-height: 52px;
+  max-height: 120px;
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.45;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.85);
+  color: #fff;
+  font-family: inherit;
+}
+
+.steward-compose {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.steward-input-wrap {
+  display: block;
+}
+
+/* Profile */
+.profile-complete-banner {
+  margin-bottom: 20px;
+  padding: 20px 22px;
+}
+
+.profile-complete-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.profile-complete-inner h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.profile-form-title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.profile-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 600px) {
+  .profile-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.profile-form label {
+  display: block;
+  font-weight: 700;
+  margin: 14px 0 6px;
+  font-size: 0.95rem;
+}
+
+.profile-optional {
+  font-weight: 600;
+  color: var(--tn-muted);
+  font-size: 0.85rem;
+}
+
+.profile-hint {
+  font-size: 0.85rem;
+  color: var(--tn-muted);
+  margin: 6px 0 0;
+}
+
+.profile-readonly {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.35);
+}
+
+.profile-readonly legend {
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.profile-readonly p {
+  margin: 10px 0;
+}
+
+.profile-actions {
+  margin-top: 24px;
+}
+
+.profile-alert {
+  margin-bottom: 16px;
+  padding: 14px 18px;
+}
+
+.profile-photo-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.profile-photo-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: rgba(18, 63, 145, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--tn-muted);
+}
+
+.profile-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portal-nav-account {
+  padding: 12px 14px 14px;
+  border-bottom: 1px solid var(--tn-line);
+  margin-bottom: 8px;
+}
+
+.portal-nav-account-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(201, 162, 39, 0.08);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+}
+
+.portal-nav-account-link:hover {
+  background: rgba(201, 162, 39, 0.14);
+}
+
+.portal-nav-account-name {
+  display: block;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.portal-nav-account-email {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--tn-muted);
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+/* Guided schedule builder */
+.sched-wizard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sched-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sched-step-pill {
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.5);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.sched-step-pill.active {
+  border-color: var(--tn-gold);
+  background: rgba(201, 162, 39, 0.15);
+  color: #fff;
+}
+
+.sched-step-pill.done {
+  color: var(--tn-gold);
+}
+
+.sched-step-card {
+  padding: 24px;
+}
+
+.sched-week-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 700px) {
+  .sched-week-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.sched-week-card {
+  padding: 18px;
+  border-radius: var(--ops-radius);
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.4);
+}
+
+.sched-week-card h4 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  color: var(--tn-gold);
+}
+
+.sched-preview-doc {
+  padding: 24px;
+  background: #fff;
+  color: #111;
+  border-radius: var(--ops-radius);
+  font-size: 1rem;
+}
+
+.sched-preview-doc h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+}
+
+.sched-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 0.95rem;
+}
+
+.sched-preview-table th,
+.sched-preview-table td {
+  border: 1px solid #ccc;
+  padding: 12px;
+  text-align: left;
+}
+
+.sched-preview-table th {
+  background: #e8eef8;
+}
+
+.sched-nav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* File library — squadron drive */
+.fl-root {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.fl-folders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fl-folder-btn {
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.5);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.fl-folder-btn.active {
+  border-color: var(--tn-gold);
+  background: rgba(201, 162, 39, 0.12);
+}
+
+.fl-dropzone {
+  border: 2px dashed rgba(201, 162, 39, 0.45);
+  border-radius: var(--ops-radius);
+  padding: 36px 24px;
+  text-align: center;
+  background: rgba(18, 63, 145, 0.08);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.fl-dropzone.fl-dropzone--over {
+  border-color: var(--tn-gold);
+  background: rgba(201, 162, 39, 0.1);
+}
+
+.fl-dropzone p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.fl-dropzone small {
+  display: block;
+  margin-top: 8px;
+  color: var(--tn-muted);
+}
+
+.fl-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fl-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--ops-radius);
+  border: 1px solid var(--tn-line);
+  background: rgba(3, 12, 28, 0.7);
+}
+
+.fl-file-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(18, 63, 145, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: var(--tn-gold);
+}
+
+.fl-file-main {
+  flex: 1;
+  min-width: 200px;
+}
+
+.fl-file-main strong {
+  font-size: 1.05rem;
+  display: block;
+}
+
+.fl-file-meta {
+  font-size: 0.88rem;
+  color: var(--tn-muted);
+  margin-top: 4px;
+}
+
+.fl-progress {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.fl-progress span {
+  display: block;
+  height: 100%;
+  background: var(--tn-gold);
+  transition: width 0.2s;
+}
+
+.fl-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.login-notice {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(18, 63, 145, 0.25);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  color: #d8e4f4;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.portal-session-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 9, 20, 0.92);
+}
+
+.portal-session-loading-card {
+  text-align: center;
+  padding: 28px 36px;
+}
+
+.portal-session-loading-text {
+  font-size: 1.1rem;
+  color: #c5d4e8;
+  margin-top: 16px;
+}
+
+.portal-session-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border: 3px solid rgba(201, 162, 39, 0.25);
+  border-top-color: var(--tn-gold, #c9a227);
+  border-radius: 50%;
+  animation: portal-spin 0.8s linear infinite;
+}
+
+@keyframes portal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace-split {
+    flex-direction: column !important;
+  }
+
+  .portal-content {
+    padding: 16px !important;
+  }
+
+  .schedule-table {
+    font-size: 0.85rem;
+  }
+
+  .org-workspace {
+    flex-direction: column;
+  }
+}

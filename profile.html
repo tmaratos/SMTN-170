@@ -10,8 +10,9 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>My Profile | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
-  <link rel="stylesheet" href="./portal-nav.css?v=5" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
+  <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=6" />
 </head>
 <body data-portal-page="profile">
   <div class="portal-app">
@@ -30,44 +31,15 @@
       <header class="portal-topbar">
         <div>
           <h1>My Profile</h1>
-          <p>Role · Steward history · personal tasks</p>
+          <p>Private Senior Member operations workspace for TN-170</p>
         </div>
       </header>
-      <div class="portal-content portal-content--wide page-stack" id="profilePage"></div>
+      <div class="portal-content portal-content--wide page-stack" id="profilePage">
+        <p class="page-intro">Loading your profile…</p>
+      </div>
       <div data-portal-footer></div>
     </div>
   </div>
-  <script src="./portal-config.js?v=2"></script>
-  <script src="./js/portal-data.js?v=2"></script>
-  <script src="./portal-nav.js?v=5"></script>
-  <script src="./js/portal-shell.js?v=4"></script>
-  <script src="./js/steward.js?v=3"></script>
-  <script>
-    (function () {
-      const u = window.SMTN170_DATA?.MOCK_USER;
-      const roles = window.SMTN170_DATA?.ROLES || {};
-      const root = document.getElementById("profilePage");
-      if (!root || !u) return;
-      const roleOpts = Object.values(roles)
-        .map((r) => `<option value="${r.id}" ${r.id === u.role ? "selected" : ""}>${r.label}</option>`)
-        .join("");
-      root.innerHTML = `
-        <article class="panel">
-          <h2>Member profile</h2>
-          <p><strong>${u.rank} ${u.name}</strong><br>${u.unit}<br>${u.email}</p>
-          <label style="display:block;margin-top:14px;font-weight:800">Role (demo selector)</label>
-          <select id="profileRoleMock" style="width:100%;margin-top:6px;padding:12px;border-radius:10px;border:1px solid var(--tn-line);background:rgba(1,8,20,.8);color:#fff">${roleOpts}</select>
-          <p class="steward-planned" style="margin-top:10px">Future: Supabase auth profile and wing-verified roles.</p>
-        </article>
-        <button type="button" class="steward-launch-strip" data-steward-open>
-          <span class="steward-launch-icon" aria-hidden="true">💬</span>
-          <span><strong>Steward chat history</strong>Open your assistant — session chat stays visible until you close this browser tab.</span>
-        </button>
-        <p class="steward-planned">Future: private Steward conversations stored per profile in Supabase.</p>
-        <article class="panel"><h2>Personal tasks</h2><p class="steward-planned">Placeholder — assigned readiness and filing tasks.</p></article>
-        <article class="panel"><h2>Saved notes</h2><p class="steward-planned">Placeholder — member notes synced to Supabase.</p></article>`;
-      window.SMTN170Steward?.rebind?.();
-    })();
-  </script>
+  <script src="./js/portal-scripts.js?v=1" data-page="profile"></script>
 </body>
 </html>

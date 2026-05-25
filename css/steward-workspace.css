@@ -1,0 +1,529 @@
+/**
+ * Steward for CAP — large operational assistant workspace (Phase 1)
+ */
+
+/* Secondary floating trigger */
+.steward-fab {
+  min-height: 48px;
+  padding: 0 16px 0 14px;
+  background: rgba(12, 24, 48, 0.92);
+  border: 2px solid rgba(201, 162, 39, 0.55);
+  color: var(--tn-gold, #c9a227);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  font-weight: 700;
+  font-size: 0.88rem;
+  z-index: 400;
+}
+
+.steward-fab:hover {
+  background: rgba(18, 63, 145, 0.95);
+  border-color: var(--tn-gold, #c9a227);
+  color: #fff;
+}
+
+.steward-fab-label {
+  font-size: 0.85rem;
+}
+
+body.steward-open .steward-fab {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Backdrop — dim + blur */
+.steward-backdrop {
+  background: rgba(3, 9, 20, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Wide workspace panel (replaces narrow drawer) */
+.steward-panel {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  width: min(920px, calc(100vw - 32px));
+  min-width: min(720px, calc(100vw - 32px));
+  max-width: 920px;
+  height: min(88vh, 900px);
+  max-height: calc(100dvh - 32px);
+  border-radius: 16px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  transform: translate(-50%, -48%) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: linear-gradient(165deg, #152a4a 0%, #0a1428 45%, #060d1c 100%);
+}
+
+.steward-panel.open {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.steward-panel-head {
+  padding: 18px 22px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.steward-panel-head h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 4px 0 0;
+  color: #f4f7fc;
+}
+
+.steward-kicker {
+  font-size: 0.75rem;
+  color: rgba(201, 162, 39, 0.9);
+  margin: 0;
+}
+
+.steward-status {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: #b8c5d9;
+  font-weight: 600;
+}
+
+.steward-status-dot {
+  background: #8fa3bf;
+}
+
+.steward-status-dot--live,
+.steward-status--live .steward-status-dot {
+  background: #5cb87a;
+  box-shadow: 0 0 8px rgba(92, 184, 122, 0.6);
+}
+
+.steward-status--live {
+  color: #9fd4b0;
+}
+
+.steward-msg-source {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.78rem;
+  color: rgba(201, 162, 39, 0.95);
+  font-weight: 700;
+}
+
+.steward-msg-disclaimer-inline {
+  margin: 10px 0 0;
+  font-size: 0.72rem;
+  color: #8fa3bf;
+  line-height: 1.45;
+}
+
+.steward-confirm-bar {
+  margin: 16px 8px 8px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+}
+
+.steward-confirm-text {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #e8eef8;
+}
+
+.steward-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.steward-confirm-btn {
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.steward-confirm-btn--yes {
+  background: linear-gradient(135deg, #b8922a, #c9a227);
+  color: #0a1428;
+  border-color: transparent;
+}
+
+.steward-confirm-btn--no {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eef8;
+}
+
+.steward-cap-actions {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201, 162, 39, 0.25);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.steward-cap-btn {
+  min-height: 48px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(201, 162, 39, 0.45);
+}
+
+.steward-cap-btn--primary {
+  background: linear-gradient(135deg, #b8922a, #c9a227);
+  color: #0a1428;
+}
+
+.steward-cap-btn--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eef8;
+}
+
+.steward-cap-btn:hover {
+  filter: brightness(1.08);
+}
+
+.steward-mode-tab[data-steward-mode="cap"].active {
+  border-color: rgba(18, 63, 145, 0.8);
+  background: rgba(18, 63, 145, 0.35);
+}
+
+.steward-close {
+  width: 48px;
+  height: 48px;
+  font-size: 1.4rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.steward-continuity {
+  margin: 0;
+  padding: 10px 22px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #a8b8d0;
+  background: rgba(18, 63, 145, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.steward-mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.steward-mode-tab {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #c5d0e0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.steward-mode-tab:hover,
+.steward-mode-tab.active {
+  border-color: rgba(201, 162, 39, 0.6);
+  background: rgba(201, 162, 39, 0.15);
+  color: #fff;
+}
+
+.steward-mode-hint {
+  padding: 8px 22px 0;
+  font-size: 0.82rem;
+  color: var(--tn-muted, #8fa3bf);
+  margin: 0;
+}
+
+.steward-workspace-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.steward-side-col {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.steward-convo-title {
+  width: 100%;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+
+.steward-side-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.steward-tool-btn {
+  width: 100%;
+  min-height: 42px;
+  font-size: 0.85rem;
+}
+
+.steward-convo-list {
+  flex: 1;
+  overflow-y: auto;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  padding: 0;
+  border: none;
+  gap: 6px;
+}
+
+.steward-convo-item {
+  max-width: none;
+  width: 100%;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.steward-main-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.steward-disclaimer {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 20px;
+  font-size: 0.75rem;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.steward-chat-body {
+  flex: 1;
+  min-height: 200px;
+  padding: 16px 20px;
+}
+
+.steward-messages {
+  gap: 18px;
+  padding: 4px 0 12px;
+}
+
+.steward-welcome {
+  gap: 16px;
+  padding: 20px 8px;
+  max-width: 52ch;
+}
+
+.steward-welcome-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 1.4rem;
+}
+
+.steward-welcome-copy p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #d8e2ef;
+}
+
+.steward-welcome-copy p strong {
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.steward-msg {
+  max-width: 85%;
+}
+
+.steward-msg--user {
+  margin-left: auto;
+}
+
+.steward-msg--steward {
+  margin-right: auto;
+}
+
+.steward-msg-bubble {
+  font-size: 1rem;
+  line-height: 1.55;
+  padding: 14px 18px;
+  border-radius: 14px;
+}
+
+.steward-msg--user .steward-msg-bubble {
+  background: rgba(18, 63, 145, 0.55);
+  border: 1px solid rgba(88, 140, 220, 0.4);
+}
+
+.steward-msg--steward .steward-msg-bubble {
+  background: rgba(30, 42, 58, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #eef2f8;
+}
+
+.steward-chat-footer {
+  flex-shrink: 0;
+  padding: 14px 20px 18px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.steward-prompts {
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+.steward-prompt-chip {
+  font-size: 0.88rem;
+  padding: 12px 16px;
+  min-height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  color: #e8eef8;
+}
+
+.steward-compose {
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.steward-compose textarea#stewardInput {
+  min-height: 56px;
+  font-size: 1.05rem;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.steward-send {
+  min-height: 56px;
+  min-width: 88px;
+  font-size: 1rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #b8922a, #c9a227);
+  color: #0a1428;
+  font-weight: 800;
+}
+
+.steward-fbi-footer {
+  margin-top: 10px;
+}
+
+/* Dashboard simple Steward card */
+.steward-launch-card {
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+
+.steward-launch-card h2 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+}
+
+.steward-launch-card p {
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--tn-muted);
+  max-width: 56ch;
+}
+
+.steward-launch-card .btn-gold {
+  min-height: 52px;
+  padding: 14px 28px;
+  font-size: 1.05rem;
+}
+
+/* Mobile: full-screen Steward */
+@media (max-width: 768px) {
+  .steward-panel {
+    top: 0;
+    left: 0;
+    width: 100vw;
+    min-width: 0;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    transform: translateY(100%);
+  }
+
+  .steward-panel.open {
+    transform: translateY(0);
+  }
+
+  .steward-workspace-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .steward-side-col {
+    display: none;
+  }
+
+  .steward-close {
+    width: 52px;
+    height: 52px;
+  }
+
+  .steward-mode-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 14px;
+  }
+
+  .steward-mode-tab {
+    flex: 0 0 auto;
+  }
+
+  .steward-prompts {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .steward-prompt-chip {
+    flex: 0 0 auto;
+    max-width: 280px;
+  }
+}

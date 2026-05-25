@@ -9,15 +9,16 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Home | TN-170 Oak Ridge</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
-  <link rel="stylesheet" href="./portal-nav.css?v=5" />
+  <title>Home | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
+  <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=7" />
+  <link rel="stylesheet" href="./css/steward-workspace.css?v=1" />
 </head>
 <body class="page-home" data-portal-page="home">
   <div class="portal-app">
-    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-expanded="false" aria-label="Open menu">☰</button>
+    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
     <div class="portal-backdrop" id="portalBackdrop"></div>
-
     <aside class="portal-sidebar" id="portalSidebar">
       <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
       <div class="portal-brand">
@@ -27,7 +28,6 @@
       </div>
       <nav id="portalNav"></nav>
     </aside>
-
     <div class="portal-main">
       <div class="portal-content portal-content--wide portal-content--workspace">
         <div id="dashboardV2"></div>
@@ -35,11 +35,6 @@
       <div data-portal-footer></div>
     </div>
   </div>
-
-  <script src="./portal-config.js?v=2"></script>
-  <script src="./js/portal-data.js?v=2"></script>
-  <script src="./portal-nav.js?v=5"></script>
-  <script src="./js/portal-shell.js?v=4"></script>
-  <script src="./js/steward.js?v=3"></script>
+  <script src="./js/portal-scripts.js?v=1" data-page="dashboard"></script>
 </body>
 </html>

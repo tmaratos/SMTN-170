@@ -1,6 +1,6 @@
 /**
  * TN-170 portal shell — layout, mobile menu, footer, workspace home dashboard.
- * Future: Supabase session + role-based nav filtering.
+ * Future: Supabase session. Roles do not filter operational pages — see portal-auth.js.
  */
 (function initPortalShell(global) {
   const MOTTO = "Not Without Effort.";
@@ -99,56 +99,23 @@
   }
 
   function bindDashboardSteward() {
-    const workspace = document.querySelector(".dash-workspace");
-    if (!workspace || workspace.dataset.stewardBound === "1") return;
-    workspace.dataset.stewardBound = "1";
-
-    const form = document.getElementById("dashStewardForm");
-    const input = document.getElementById("dashStewardInput");
-    const prompts = document.getElementById("dashStewardPrompts");
-
-    form?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const text = input?.value || "";
-      global.SMTN170Steward?.askFromDashboard?.(text);
-      if (input) input.value = "";
-    });
-
-    input?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        global.SMTN170Steward?.askFromDashboard?.(input.value);
-        input.value = "";
-      }
-    });
-
-    prompts?.addEventListener("click", (e) => {
-      const chip = e.target.closest("[data-dash-prompt]");
-      if (!chip) return;
-      global.SMTN170Steward?.askFromDashboard?.(chip.dataset.dashPrompt || "");
-    });
-
-    document.querySelectorAll("[data-steward-ask]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const text = btn.dataset.stewardAsk || "";
-        global.SMTN170Steward?.askFromDashboard?.(text);
-      });
-    });
+    global.SMTN170Steward?.rebind?.();
   }
 
   function renderDashboardV2() {
     const root = document.getElementById("dashboardV2");
-    if (!root || !global.SMTN170_DATA) return;
+    if (!root || !global.SMTN170_DATA || !global.SMTN170Auth?.loadSession?.()) return;
 
     const d = global.SMTN170_DATA;
-    const user = d.MOCK_USER || {};
+    const user = d.MOCK_USER;
     const nextMeeting = d.UPCOMING_MEETINGS?.[0];
     const attention = getAttentionItems(d);
-    const prompts = (d.STEWARD_PROMPTS || []).slice(0, 5);
     const m = d.MISSION_READINESS || {};
 
-    const welcomeName = user.rank && user.name ? `${user.rank} ${user.name}` : "member";
+    const welcome =
+      global.SMTN170Auth?.getWelcomeGreeting?.() ||
+      (user ? { full: `Welcome back, ${user.displayName || user.name || ""}.` } : { full: "Welcome back." });
+    const welcomeTitle = welcome.full;
 
     const summaryItems = [
       nextMeeting
@@ -160,28 +127,13 @@
       `<li><strong>Flight reviews:</strong> ${m.bfr?.current ?? 0} on track · ${m.bfr?.dueSoon ?? 0} due soon</li>`,
     ].join("");
 
-    const promptChips = prompts
-      .map(
-        (p) =>
-          `<button type="button" class="dash-steward-chip" data-dash-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`
-      )
-      .join("");
-
-    const stewardShortcuts = prompts
-      .slice(0, 4)
-      .map(
-        (p) =>
-          `<button type="button" class="dash-shortcut-btn" data-steward-ask="${escapeHtml(p)}">${escapeHtml(p)}</button>`
-      )
-      .join("");
-
     root.innerHTML = `
       <div class="dash-workspace">
         <header class="dash-hero-band">
           <div class="card-info dash-hero-welcome">
             <p class="dash-hero-eyebrow">TN-170 Oak Ridge Composite Squadron</p>
-            <h2 class="dash-hero-title">Welcome back, ${escapeHtml(welcomeName)}.</h2>
-            <p class="dash-hero-lead">Here is what is happening and what may need your attention this week.</p>
+            <h2 class="dash-hero-title">${escapeHtml(welcomeTitle)}</h2>
+            <p class="dash-hero-lead">Private Senior Member operations workspace for TN-170 — shared with all approved Senior Members.</p>
           </div>
           <div class="card-info dash-hero-summary">
             <h3 class="card-info-title">This week at a glance</h3>
@@ -189,22 +141,10 @@
           </div>
         </header>
 
-        <section class="card-assistant dash-steward-hub" aria-label="Steward for CAP">
-          <div class="dash-steward-head">
-            <div class="dash-steward-avatar" aria-hidden="true">S</div>
-            <div class="dash-steward-intro">
-              <h2 class="dash-steward-title">Steward for CAP</h2>
-              <p class="dash-steward-tagline">Your squadron guide · Built by Faith Based Innovations</p>
-            </div>
-            <span class="dash-steward-badge">Ask anything</span>
-          </div>
-          <p class="dash-steward-hint">Meeting prep, files, flight reviews, inspection items, and CAP references — type a question or pick a suggestion below.</p>
-          <form class="dash-steward-form" id="dashStewardForm">
-            <label class="visually-hidden" for="dashStewardInput">Ask Steward anything</label>
-            <input type="text" id="dashStewardInput" class="dash-steward-input" placeholder="Ask Steward anything…" autocomplete="off" />
-            <button type="submit" class="dash-steward-submit">Ask Steward</button>
-          </form>
-          <div class="dash-steward-prompts" id="dashStewardPrompts">${promptChips}</div>
+        <section class="card-assistant steward-launch-card" aria-label="Steward for CAP">
+          <h2>Steward for CAP</h2>
+          <p>Ask Steward for help with meetings, files, flight reviews, inspection prep, org charts, and CAP references.</p>
+          <button type="button" class="btn-gold" data-steward-open>Open Steward</button>
         </section>
 
         <div class="dash-columns">
@@ -249,6 +189,7 @@
                     <time>${escapeHtml(formatDateFriendly(a.date))}</time>
                     <strong>${escapeHtml(a.title)}</strong>
                     <p>${escapeHtml(a.body)}</p>
+                    ${global.SMTN170Auth?.renderAuditHtml?.(a) || ""}
                   </li>`
                   )
                   .join("")}
@@ -268,11 +209,12 @@
                   <li class="dash-due-item">
                     ${renderChip(t.status)}
                     <span>${escapeHtml(t.label)}</span>
+                    ${global.SMTN170Auth?.renderAuditHtml?.(t) || ""}
                   </li>`
                   )
                   .join("")}
               </ul>
-              <a class="card-link card-link--light" href="readiness.html">Review all items →</a>`
+              <a class="card-link card-link--light" href="tasks.html">Review tasks →</a>`
                   : `<p class="dash-caught-up">You are caught up. Nice work.</p>`
               }
             </section>
@@ -284,18 +226,10 @@
                 <a class="dash-action-tile" href="documents.html"><span class="dash-action-icon" aria-hidden="true">📁</span><span>Upload Files</span></a>
                 <a class="dash-action-tile" href="flight-review.html"><span class="dash-action-icon" aria-hidden="true">✈</span><span>Flight Reviews</span></a>
                 <a class="dash-action-tile" href="sui-readiness.html"><span class="dash-action-icon" aria-hidden="true">✓</span><span>Inspection Prep</span></a>
-                <button type="button" class="dash-action-tile dash-action-tile--steward" data-steward-ask><span class="dash-action-icon" aria-hidden="true">💬</span><span>Ask Steward</span></button>
                 <a class="dash-action-tile" href="schedule.html"><span class="dash-action-icon" aria-hidden="true">📋</span><span>View Meetings</span></a>
               </div>
             </section>
 
-            <section class="card-assistant dash-block dash-block--compact" aria-labelledby="dashStewardShortcuts">
-              <h3 id="dashStewardShortcuts" class="card-assistant-title">Steward shortcuts</h3>
-              <p class="dash-shortcut-note">Tap to open Steward with a ready-made question.</p>
-              <div class="dash-shortcut-grid">${stewardShortcuts}</div>
-            </section>
-
-            <div class="card-info dash-block dash-block--compact" data-portal-discord></div>
           </div>
         </div>
       </div>`;
@@ -347,12 +281,22 @@
     });
   }
 
+  const PORTAL_TAGLINE = "Private Senior Member operations workspace for TN-170";
+  const LEGACY_TOPBAR = /parent|cadet-only|staff area|stay connected|squadron discord|public access|recruitment/i;
+
+  function normalizeTopbarCopy() {
+    document.querySelectorAll(".portal-topbar > div > p").forEach((p) => {
+      if (LEGACY_TOPBAR.test(p.textContent || "")) p.textContent = PORTAL_TAGLINE;
+    });
+    document.querySelectorAll("[data-portal-discord]").forEach((el) => el.remove());
+  }
+
   function init() {
     bindMobileNav();
     injectFooter();
+    normalizeTopbarCopy();
     renderDashboardV2();
     bootPortalAssets(() => {
-      global.SMTN170PortalNav?.renderDiscordPlacements?.();
       global.SMTN170Steward?.rebind?.();
       bindDashboardSteward();
       global.SMTN170Pages?.bindStewardContextActions?.();
@@ -360,6 +304,14 @@
   }
 
   global.SMTN170Shell = { renderChip, statusClass, statusLabel, init };
+
+  function onProfileChange() {
+    renderDashboardV2();
+    global.SMTN170PortalNav?.init?.();
+  }
+
+  global.addEventListener("smtn170:auth-changed", onProfileChange);
+  global.addEventListener("smtn170:profile-updated", onProfileChange);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

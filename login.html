@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
+  <link rel="manifest" href="./assets/site.webmanifest" />
+  <meta name="theme-color" content="#030914" />
+  <title>Sign in | TN-170</title>
+  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
+  <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
+  <link rel="stylesheet" href="./portal-nav.css?v=6" />
+</head>
+<body class="login-v2">
+  <main class="login-card-v2">
+    <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170 Oak Ridge Composite Squadron" class="login-patch" />
+    <p class="login-motto">Not Without Effort.</p>
+    <h1>Senior Member Portal</h1>
+    <p class="login-unit">TN-170 Oak Ridge Composite Squadron</p>
+    <p class="login-unit login-lead">Private Senior Member operations workspace for TN-170. Approved Senior Members only.</p>
+
+    <form class="login-form-v2" id="loginForm">
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" name="email" type="email" placeholder="your.email@example.com" autocomplete="username" required />
+
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" name="password" type="password" placeholder="Your portal password" autocomplete="current-password" required />
+
+      <p id="loginNotice" class="login-notice" hidden role="status"></p>
+      <p id="loginError" class="login-error" hidden role="alert"></p>
+
+      <button type="submit" class="btn-gold btn-lg" id="loginSubmit">Sign in</button>
+    </form>
+
+    <p class="login-hint">First time? Ask Commander or Command Staff to approve your account after you register.</p>
+    <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
+  </main>
+
+  <script src="./portal-config.js?v=3"></script>
+  <script src="./js/supabase-config.js?v=1"></script>
+  <script src="./js/supabase-client.js?v=1"></script>
+  <script src="./js/profile-service.js?v=1"></script>
+  <script src="./js/portal-auth.js?v=4"></script>
+  <script src="./js/auth-session.js?v=1"></script>
+  <script src="./js/portal-bootstrap.js?v=2"></script>
+  <script>
+    (function () {
+      const form = document.getElementById("loginForm");
+      const errEl = document.getElementById("loginError");
+      const noticeEl = document.getElementById("loginNotice");
+      const btn = document.getElementById("loginSubmit");
+      const params = new URLSearchParams(location.search);
+      if (params.get("expired") === "1") {
+        noticeEl.textContent = "Your session expired. Please sign in again.";
+        noticeEl.hidden = false;
+        sessionStorage.removeItem("smtn170_had_session");
+      } else if (params.get("signed_out") === "1") {
+        noticeEl.textContent = "You have been signed out.";
+        noticeEl.hidden = false;
+        sessionStorage.removeItem("smtn170_had_session");
+      }
+
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        errEl.hidden = true;
+        btn.disabled = true;
+        btn.textContent = "Signing in…";
+
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
+
+        try {
+          if (!window.SMTN170Supabase.isConfigured()) {
+            window.SMTN170Auth.login(email, window.SMTN170Auth.ACCOUNT_STATUS.APPROVED);
+            sessionStorage.setItem("smtn170_had_session", "1");
+            location.href = "dashboard.html";
+            return;
+          }
+          await window.SMTN170Auth.signIn(email, password);
+          const s = window.SMTN170Auth.loadSession();
+          if (s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.AWAITING) {
+            location.href = "pending-approval.html";
+          } else {
+            sessionStorage.setItem("smtn170_had_session", "1");
+            location.href = "dashboard.html";
+          }
+        } catch (err) {
+          errEl.textContent = err.message || "Could not sign in. Check email and password.";
+          errEl.hidden = false;
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Sign in";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Supabase local/deploy config — SMTN-170
+
+[functions.steward-core]
+verify_jwt = true

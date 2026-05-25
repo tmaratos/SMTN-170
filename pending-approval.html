@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
+  <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
+  <title>Pending Approval | TN-170</title>
+</head>
+<body class="login-v2">
+  <main class="login-card-v2" style="max-width:520px;text-align:left">
+    <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" class="login-patch" style="margin-bottom:16px" />
+    <p class="login-motto">Not Without Effort.</p>
+    <h1 style="text-align:left">Awaiting approval</h1>
+    <p class="login-unit" style="text-align:left">Your account is signed in but not yet approved for the TN-170 Senior Member portal.</p>
+    <p class="login-unit login-lead" style="text-align:left">Commander or Command Staff will verify your membership. Once approved, you will share the same workspace as all Senior Members.</p>
+    <p id="pendingEmail" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
+    <button type="button" class="btn-gold btn-lg" style="width:100%;margin-top:20px" onclick="logout()">Sign out</button>
+    <p class="portal-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
+  </main>
+  <script src="./js/supabase-config.js?v=1"></script>
+  <script src="./js/supabase-client.js?v=1"></script>
+  <script src="./js/profile-service.js?v=1"></script>
+  <script src="./js/portal-auth.js?v=3"></script>
+  <script src="./app.js"></script>
+  <script>
+    (async function () {
+      await window.SMTN170Supabase?.whenReady?.();
+      await window.SMTN170Auth?.init?.();
+      const s = window.SMTN170Auth?.loadSession?.();
+      if (!s) {
+        location.href = "login.html";
+        return;
+      }
+      if (s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.APPROVED) {
+        location.href = "dashboard.html";
+        return;
+      }
+      const el = document.getElementById("pendingEmail");
+      if (el && s.email) el.textContent = "Signed in as: " + s.email;
+    })();
+  </script>
+</body>
+</html>

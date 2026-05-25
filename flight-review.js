@@ -86,6 +86,8 @@
         followUpTasks: ["Brief commander on winter ops tempo"],
         completionConfirmed: false,
         scheduledReviewDate: null,
+        last_worked_by_name: "Maj. J. Whitmore",
+        last_worked_at: "2026-05-10T11:00:00Z",
       },
       {
         name: "Emergency Services",
@@ -104,6 +106,8 @@
         followUpTasks: ["Coordinate tabletop exercise date with Safety"],
         completionConfirmed: false,
         scheduledReviewDate: "2026-05-08",
+        last_worked_by_name: "Capt. R. Delgado",
+        last_worked_at: "2026-05-08T09:15:00Z",
       },
       {
         name: "Aerospace Education",
@@ -126,6 +130,8 @@
         followUpTasks: ["Book 30-min review block with Aerospace Education officer"],
         completionConfirmed: false,
         scheduledReviewDate: null,
+        last_worked_by_name: "1st Lt. K. Nguyen",
+        last_worked_at: "2026-04-20T16:30:00Z",
       },
       {
         name: "Cadet Programs",
@@ -306,6 +312,20 @@
     return div.innerHTML;
   }
 
+  function actorName() {
+    const s = global.SMTN170Auth?.loadSession?.();
+    if (!s) return "Capt. M. Ellis";
+    return (s.rank ? s.rank + " " : "") + (s.displayName || s.email || "Member");
+  }
+
+  function touchAudit(dept) {
+    const now = new Date().toISOString();
+    dept.last_worked_by_name = actorName();
+    dept.last_worked_at = now;
+    dept.updated_by_name = dept.last_worked_by_name;
+    dept.updated_at = now;
+  }
+
   function getDepartment(data, id) {
     return data.departments.find((d) => d.id === id);
   }
@@ -317,6 +337,7 @@
     if (reviewer) dept.assignedReviewer = reviewer;
     dept.status = STATUS.SCHEDULED;
     dept.completionConfirmed = false;
+    touchAudit(dept);
     save(data);
     return true;
   }
@@ -334,6 +355,8 @@
     next.setMonth(next.getMonth() + 6);
     dept.nextReviewDueDate = next.toISOString().slice(0, 10);
     dept.missingDocuments = [];
+    touchAudit(dept);
+    dept.completed_by_name = actorName();
     save(data);
     return { ok: true };
   }
@@ -342,6 +365,7 @@
     const dept = getDepartment(data, id);
     if (!dept) return false;
     Object.assign(dept, patch);
+    touchAudit(dept);
     if (!dept.completionConfirmed) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -356,6 +380,7 @@
     if (!dept || !fileName) return false;
     dept.uploadedFiles = dept.uploadedFiles || [];
     dept.uploadedFiles.push({ id: uid(), name: fileName, uploadedAt: new Date().toISOString().slice(0, 10) });
+    touchAudit(dept);
     save(data);
     return true;
   }
@@ -364,6 +389,7 @@
     const dept = getDepartment(data, id);
     if (!dept) return false;
     dept.missingDocuments = (dept.missingDocuments || []).filter((m) => m !== docName);
+    touchAudit(dept);
     save(data);
     return true;
   }
@@ -613,6 +639,7 @@
           <span class="fr-chip">${files} file${files === 1 ? "" : "s"}</span>
           <span class="fr-chip">${(dept.actionItems || []).filter((a) => !a.done).length} open actions</span>
         </div>
+        ${global.SMTN170Auth?.renderAuditHtml?.(dept) || ""}
         <div class="fr-dept-detail" hidden>
           ${renderDepartmentDetail(dept)}
         </div>

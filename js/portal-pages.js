@@ -50,6 +50,17 @@
       body: "Open Steward for staff planning, flight reviews, inspection prep, and training file questions.",
       prompts: ["Help prepare a senior member meeting agenda."],
     },
+    orgchart: {
+      title: "Need help organizing the squadron structure?",
+      body: "Steward can suggest typical CAP billets, highlight vacancies, and help you think through staff assignments — not a corporate HR tool, just squadron ops guidance.",
+      prompts: [
+        "Help build the squadron org chart.",
+        "Show vacant operational positions.",
+        "Recommend org chart improvements.",
+        "What positions are normally present in a CAP squadron?",
+        "Help reorganize staff assignments.",
+      ],
+    },
   };
 
   function renderStewardContext(ctx) {
@@ -122,5 +133,5 @@
     bindStewardContextActions();
   }
 
-  global.SMTN170Pages = { STEWARD_CONTEXTS, init, bindStewardContextActions };
+  global.SMTN170Pages = { STEWARD_CONTEXTS, init, injectStewardContexts, bindStewardContextActions };
 })(window);

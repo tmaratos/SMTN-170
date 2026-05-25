@@ -2,67 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png" />
-  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
-  <link rel="manifest" href="./assets/site.webmanifest" />
-  <meta name="theme-color" content="#030914" />
-  <title>Squadron Overview | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
-  <link rel="stylesheet" href="./portal-nav.css?v=5" />
+  <meta http-equiv="refresh" content="0;url=tasks.html" />
+  <title>Redirecting | TN-170</title>
+  <script>location.replace("tasks.html");</script>
 </head>
-<body data-portal-page="readiness">
-  <div class="portal-app">
-    <button type="button" class="portal-menu-toggle" id="portalMenuToggle" aria-label="Open menu">☰</button>
-    <div class="portal-backdrop" id="portalBackdrop"></div>
-    <aside class="portal-sidebar" id="portalSidebar">
-      <button type="button" class="portal-menu-close" id="portalMenuClose" aria-label="Close menu">✕</button>
-      <div class="portal-brand">
-        <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" />
-        <strong>TN-170</strong>
-        <span>Oak Ridge Composite</span>
-      </div>
-      <nav id="portalNav"></nav>
-    </aside>
-    <div class="portal-main">
-      <header class="portal-topbar">
-        <div>
-          <h1>Squadron Overview</h1>
-          <p>What is due · what needs a look · links to details</p>
-        </div>
-      </header>
-      <div class="portal-content portal-content--wide page-stack" id="readinessPage"></div>
-      <div data-portal-footer></div>
-    </div>
-  </div>
-  <script src="./portal-config.js?v=2"></script>
-  <script src="./js/portal-data.js?v=2"></script>
-  <script src="./portal-nav.js?v=5"></script>
-  <script src="./js/portal-shell.js?v=4"></script>
-  <script src="./js/steward.js?v=3"></script>
-  <script>
-    (function () {
-      const d = window.SMTN170_DATA;
-      const chip = window.SMTN170Shell?.renderChip || (() => "");
-      const root = document.getElementById("readinessPage");
-      if (!root || !d) return;
-      root.innerHTML = `
-        <p class="dash-welcome-sub" style="margin:0 0 20px;font-size:1.1rem">A simple checklist for the squadron. Open a section below for more detail.</p>
-        <div class="dash-quick-grid" style="margin-bottom:24px">
-          <a class="dash-quick-btn" href="flight-review.html"><span class="dash-quick-label">Flight reviews</span></a>
-          <a class="dash-quick-btn" href="sui-readiness.html"><span class="dash-quick-label">Inspection prep</span></a>
-          <a class="dash-quick-btn" href="documents.html"><span class="dash-quick-label">Files &amp; forms</span></a>
-        </div>
-        <article class="panel"><h2 style="font-size:1.25rem;text-transform:none">Monthly tasks</h2><ul class="task-list">${d.READINESS_TASKS.monthly.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
-        <article class="panel"><h2 style="font-size:1.25rem;text-transform:none">Annual items</h2><ul class="task-list">${d.READINESS_TASKS.annual.map(t => `<li>${chip(t.status)}<span>${t.label}</span></li>`).join("")}</ul></article>
-        <button type="button" class="steward-launch-strip" data-steward-open style="margin-top:8px">
-          <span class="steward-launch-icon" aria-hidden="true">💬</span>
-          <span><strong>Questions?</strong> Ask Steward for help with due items and filing.</span>
-        </button>`;
-      window.SMTN170Steward?.rebind?.();
-    })();
-  </script>
-</body>
+<body><p><a href="tasks.html">TN-170 Senior Member portal</a></p></body>
 </html>

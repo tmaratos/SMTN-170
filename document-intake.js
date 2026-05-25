@@ -43,23 +43,27 @@
     FLAGGED: "flagged",
   };
 
-  const ROLES = {
-    ADMIN: "admin",
-    OFFICER: "officer",
-    MEMBER: "member",
-  };
+  function getActor() {
+    const s = global.SMTN170Auth?.loadSession?.();
+    if (s) {
+      const name = (s.rank ? s.rank + " " : "") + (s.displayName || s.email || "Member");
+      return {
+        id: s.userId,
+        name,
+        roleLabel: global.SMTN170Auth.getRoleLabel(s.role),
+      };
+    }
+    return { id: "user-demo-1", name: "Capt. M. Ellis", roleLabel: "Senior Member" };
+  }
 
-  const MOCK_USER = {
-    id: "user-demo-officer",
-    name: "Capt. M. Ellis",
-    role: ROLES.OFFICER,
-  };
-
-  const PERMISSIONS = {
-    [ROLES.ADMIN]: ["upload", "review", "move", "delete", "finalize"],
-    [ROLES.OFFICER]: ["upload", "review", "move", "finalize"],
-    [ROLES.MEMBER]: ["upload"],
-  };
+  function touchRecordAudit(record) {
+    const actor = getActor();
+    const now = new Date().toISOString();
+    record.last_worked_by_name = actor.name;
+    record.last_worked_at = now;
+    record.updated_by_name = actor.name;
+    record.updated_at = now;
+  }
 
   const INTEGRATION = {
     supabase: {
@@ -98,7 +102,12 @@
   }
 
   function can(action) {
-    return (PERMISSIONS[MOCK_USER.role] || []).includes(action);
+    const auth = global.SMTN170Auth;
+    if (auth) {
+      if (action === "delete") return auth.can("delete_records");
+      return auth.isApproved();
+    }
+    return action !== "delete";
   }
 
   function escapeHtml(text) {
@@ -179,8 +188,8 @@
       id: uid(),
       action,
       details,
-      by: MOCK_USER.name,
-      byUserId: MOCK_USER.id,
+      by: getActor().name,
+      byUserId: getActor().id,
       at: new Date().toISOString(),
       fromCategory: details.fromCategory || file.finalCategory,
       toCategory: details.toCategory || null,
@@ -203,8 +212,8 @@
       fileTypeKind: typeInfo.kind,
       mimeType: typeInfo.mime,
       fileSize: file.size || 0,
-      uploadedBy: MOCK_USER.name,
-      uploadedByUserId: MOCK_USER.id,
+      uploadedBy: getActor().name,
+      uploadedByUserId: getActor().id,
       uploadDate: new Date().toISOString(),
       suggestedCategory: classification.suggestedCategory,
       finalCategory,
@@ -222,6 +231,7 @@
       movementHistory: [],
     };
 
+    touchRecordAudit(record);
     logMovement(record, "uploaded", {
       toCategory: finalCategory,
       note: "Intake upload (demo — Google Drive placeholder)",
@@ -395,9 +405,10 @@
             id: uid(),
             type: "file_upload",
             fileId: record.id,
-            by: MOCK_USER.name,
+            by: getActor().name,
             at: record.uploadDate,
           });
+          touchRecordAudit(record);
           save(data);
           onComplete(record);
         } catch (err) {
@@ -453,9 +464,11 @@
     if (patch.reviewed) {
       file.reviewed = true;
       file.reviewStatus = REVIEW_STATUS.REVIEWED;
-      logMovement(file, "reviewed", { note: "Marked reviewed by officer" });
+      file.reviewed_by_name = getActor().name;
+      logMovement(file, "reviewed", { note: "Marked reviewed" });
     }
 
+    touchRecordAudit(file);
     save(data);
     return file;
   }
@@ -471,7 +484,7 @@
         <span class="di-status-pill ${gd.connected ? "di-status-pill--ok" : "di-status-pill--warn"}">
           ${escapeHtml(gd.label)}: ${escapeHtml(gd.status)}
         </span>
-        <span class="di-status-pill">Role: ${escapeHtml(MOCK_USER.role)} · ${escapeHtml(MOCK_USER.name)}</span>
+        <span class="di-status-pill">Signed in: ${escapeHtml(getActor().roleLabel)} · ${escapeHtml(getActor().name)}</span>
       </div>`;
   }
 
@@ -578,6 +591,7 @@
           ${tagHtml}
         </div>
         ${file.notes ? `<p class="di-upload-meta">${escapeHtml(file.notes)}</p>` : ""}
+        ${global.SMTN170Auth?.renderAuditHtml?.(file) || ""}
         ${detail}
       </article>`;
   }
