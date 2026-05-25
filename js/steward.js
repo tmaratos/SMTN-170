@@ -6,6 +6,53 @@
   const DISCLAIMER =
     "Steward responses are assistance only. Official CAP publications and command guidance remain authoritative.";
 
+  const WORKFLOW_ACTIONS = [
+    {
+      id: "schedule",
+      icon: "📋",
+      title: "Build Meeting Schedule",
+      subtitle: "Plan month and meeting nights",
+      prompt: "Help me build this month's squadron meeting schedule with uniforms and training nights.",
+    },
+    {
+      id: "bfr",
+      icon: "✈",
+      title: "Review Flight Expirations",
+      subtitle: "BFR and review currency",
+      prompt: "Show overdue and due-soon flight reviews for the squadron.",
+    },
+    {
+      id: "inspection",
+      icon: "✓",
+      title: "Prepare Inspection Checklist",
+      subtitle: "SUI readiness tracking",
+      prompt: "Prepare inspection readiness checklist items we should track.",
+    },
+    {
+      id: "org",
+      icon: "◇",
+      title: "Review Org Chart",
+      subtitle: "Staffing and vacancies",
+      prompt: "Help me review the squadron organization chart and vacant positions.",
+    },
+    {
+      id: "upload-schedule",
+      icon: "↑",
+      title: "Upload Existing Schedule",
+      subtitle: "Smart import · Files",
+      href: "documents.html",
+      prompt: "Help me import an existing meeting schedule into the portal.",
+    },
+    {
+      id: "import-files",
+      icon: "📁",
+      title: "Import Squadron Files",
+      subtitle: "Smart import workflow",
+      href: "documents.html",
+      prompt: "What files have been uploaded and what still needs review before import?",
+    },
+  ];
+
   const DEFAULT_PROMPTS = [
     "Build next month's meeting schedule",
     "Show overdue flight reviews",
@@ -41,13 +88,14 @@
 
   let state = {
     conversationId: null,
-    conversationTitle: "New conversation",
+    conversationTitle: "New operation",
     messages: [],
     conversations: [],
     isThinking: false,
     loaded: false,
     dataConnected: false,
     pendingConfirmation: null,
+    workspaceContext: null,
   };
 
   function titleFromMessage(text) {
@@ -309,7 +357,7 @@
   function setComposeEnabled(enabled) {
     const input = document.getElementById("stewardInput");
     const sendBtn = document.getElementById("stewardSend");
-    document.querySelectorAll(".steward-prompt-chip").forEach((c) => {
+    document.querySelectorAll(".steward-prompt-chip, .steward-workflow-card").forEach((c) => {
       c.disabled = !enabled;
     });
     if (input) input.disabled = !enabled;
@@ -329,9 +377,9 @@
       const timeWord = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
       const name = (profile?.preferred_name || profile?.first_name || "").trim().split(/\s+/)[0];
       const nameBit = name ? `, ${name}` : "";
-      return `${timeWord}${nameBit}. I can help with meeting schedules, flight reviews, inspection prep, file organization, org charts, and CAP references. What would you like to work on?`;
+      return `${timeWord}${nameBit}. Steward is ready for meeting schedules, flight review currency, inspection prep, file import, org chart updates, and CAP references. What operation should we run?`;
     }
-    return "Good afternoon. I can help with meeting schedules, flight reviews, inspection prep, file organization, org charts, and CAP references. What would you like to work on?";
+    return "Steward is ready for meeting schedules, flight review currency, inspection prep, file import, org chart updates, and CAP references. What operation should we run?";
   }
 
   function renderModeHint() {
@@ -363,7 +411,7 @@
     if (document.querySelector('link[href*="steward-workspace.css"]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "./css/steward-workspace.css?v=1";
+    link.href = "./css/steward-workspace.css?v=2";
     document.head.appendChild(link);
   }
 
@@ -377,8 +425,9 @@
         <div class="steward-welcome">
           <div class="steward-welcome-avatar" aria-hidden="true">S</div>
           <div class="steward-welcome-copy">
-            <p><strong>Steward for CAP</strong></p>
+            <p><strong>Steward for CAP</strong> — mission support</p>
             <p>${greeting}</p>
+            <p class="steward-welcome-hint">Use quick workflows below or enter an operational request.</p>
           </div>
         </div>`;
       return;
@@ -436,10 +485,10 @@
     if (!el) return;
     if (connected) {
       el.innerHTML =
-        '<span class="steward-status-dot steward-status-dot--live" aria-hidden="true"></span> Data connected';
+        '<span class="steward-status-dot steward-status-dot--live" aria-hidden="true"></span> Portal data linked';
       el.classList.add("steward-status--live");
     } else {
-      el.innerHTML = '<span class="steward-status-dot" aria-hidden="true"></span> Ready to help';
+      el.innerHTML = '<span class="steward-status-dot" aria-hidden="true"></span> Operational standby';
       el.classList.remove("steward-status--live");
     }
   }
@@ -447,12 +496,162 @@
   function renderPrompts() {
     const root = document.getElementById("stewardPrompts");
     if (!root) return;
-    root.innerHTML = getPrompts()
+    const actions =
+      activeMode === "chat"
+        ? WORKFLOW_ACTIONS
+        : WORKFLOW_ACTIONS.filter((a) => {
+            if (activeMode === "cap") return a.id === "import-files";
+            if (activeMode === "files") return a.id === "import-files" || a.id === "upload-schedule";
+            if (activeMode === "meetings") return a.id === "schedule" || a.id === "upload-schedule";
+            if (activeMode === "readiness") return a.id === "bfr" || a.id === "inspection";
+            if (activeMode === "org") return a.id === "org";
+            return true;
+          });
+
+    root.innerHTML = actions
       .map(
-        (p) =>
-          `<button type="button" class="steward-prompt-chip" data-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`
+        (a) => `
+      <button type="button" class="steward-workflow-card" data-workflow-id="${escapeHtml(a.id)}" ${a.href ? `data-workflow-href="${escapeHtml(a.href)}"` : ""} data-prompt="${escapeHtml(a.prompt || "")}">
+        <span class="steward-workflow-icon" aria-hidden="true">${escapeHtml(a.icon)}</span>
+        <span class="steward-workflow-text">
+          <strong>${escapeHtml(a.title)}</strong>
+          <span>${escapeHtml(a.subtitle)}</span>
+        </span>
+      </button>`
       )
       .join("");
+  }
+
+  function renderContextList(items, emptyLabel) {
+    if (!items?.length) return `<li class="steward-ctx-empty">${escapeHtml(emptyLabel)}</li>`;
+    return items.join("");
+  }
+
+  function renderWorkspaceContext() {
+    const root = document.getElementById("stewardWorkspaceContext");
+    if (!root) return;
+    const ctx = state.workspaceContext;
+    if (!ctx) {
+      root.innerHTML = `<p class="steward-ctx-loading">Loading workspace context…</p>`;
+      return;
+    }
+
+    const opItems = ctx.operations
+      .map(
+        (o) =>
+          `<li><button type="button" class="steward-ctx-link" data-convo-id="${escapeHtml(o.id)}">${escapeHtml(o.label)}</button></li>`
+      );
+    const schedItems = ctx.schedules.map(
+      (s) => `<li><a class="steward-ctx-link" href="calendar.html">${escapeHtml(s.label)}</a></li>`
+    );
+    const uploadItems = ctx.uploads.map(
+      (u) => `<li><a class="steward-ctx-link" href="documents.html">${escapeHtml(u.label)}</a></li>`
+    );
+    const taskItems = ctx.tasks.map(
+      (t) => `<li><a class="steward-ctx-link" href="tasks.html">${escapeHtml(t.label)}</a></li>`
+    );
+    const expItems = ctx.expirations.map(
+      (e) => `<li><a class="steward-ctx-link" href="flight-review.html">${escapeHtml(e.label)}</a></li>`
+    );
+
+    root.innerHTML = `
+      <div class="steward-ctx-block">
+        <h3 class="steward-ctx-head">Recent operations</h3>
+        <ul class="steward-ctx-list">${renderContextList(opItems, "No recent operations")}</ul>
+        <button type="button" class="steward-ctx-action" id="stewardNewChat">Start new operation</button>
+      </div>
+      <div class="steward-ctx-block">
+        <h3 class="steward-ctx-head">Recent schedules</h3>
+        <ul class="steward-ctx-list">${renderContextList(schedItems, "No upcoming meetings")}</ul>
+      </div>
+      <div class="steward-ctx-block">
+        <h3 class="steward-ctx-head">Recent uploads</h3>
+        <ul class="steward-ctx-list">${renderContextList(uploadItems, "No recent uploads")}</ul>
+      </div>
+      <div class="steward-ctx-block">
+        <h3 class="steward-ctx-head">Recent tasks</h3>
+        <ul class="steward-ctx-list">${renderContextList(taskItems, "No open tasks")}</ul>
+      </div>
+      <div class="steward-ctx-block">
+        <h3 class="steward-ctx-head">Upcoming expirations</h3>
+        <ul class="steward-ctx-list">${renderContextList(expItems, "No expirations flagged")}</ul>
+      </div>`;
+  }
+
+  async function loadWorkspaceContext() {
+    const sb = getSupabase();
+    const empty = { operations: [], schedules: [], uploads: [], tasks: [], expirations: [] };
+    if (!sb) {
+      state.workspaceContext = empty;
+      return empty;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const convos = await listConversations();
+
+    let meetings = [];
+    let tasks = [];
+    let fr = [];
+
+    try {
+      const [mRes, tRes, fRes] = await Promise.all([
+        sb
+          .from("meetings")
+          .select("title, meeting_date")
+          .gte("meeting_date", today)
+          .order("meeting_date", { ascending: true })
+          .limit(5),
+        sb
+          .from("portal_tasks")
+          .select("title, due_date, status")
+          .neq("status", "completed")
+          .order("due_date", { ascending: true, nullsFirst: false })
+          .limit(5),
+        sb.from("flight_reviews").select("department, status").in("status", ["due_soon", "overdue", "needs_review"]).limit(6),
+      ]);
+      if (!mRes.error) meetings = mRes.data || [];
+      if (!tRes.error) tasks = tRes.data || [];
+      if (!fRes.error) fr = fRes.data || [];
+    } catch (err) {
+      console.warn("[Steward] workspace context", err);
+    }
+
+    let uploads = [];
+    try {
+      uploads = (await global.SMTN170FileIngestion?.listUploadedFiles?.(5)) || [];
+    } catch {
+      /* ignore */
+    }
+
+    const fmtDate = (d) => {
+      if (!d) return "";
+      try {
+        return new Date(d + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      } catch {
+        return d;
+      }
+    };
+
+    state.workspaceContext = {
+      operations: convos.slice(0, 6).map((c) => ({
+        id: c.id,
+        label: (c.title || "Operation").slice(0, 42),
+      })),
+      schedules: meetings.map((m) => ({
+        label: `${fmtDate(m.meeting_date)} · ${m.title || "Meeting"}`,
+      })),
+      uploads: uploads.map((f) => ({
+        label: (f.name || "File").slice(0, 40),
+      })),
+      tasks: tasks.map((t) => ({
+        label: `${t.title || "Task"}${t.due_date ? ` · due ${fmtDate(t.due_date)}` : ""}`,
+      })),
+      expirations: fr.map((r) => ({
+        label: `${r.department || "Review"} · ${(r.status || "needs review").replace(/_/g, " ")}`,
+      })),
+    };
+
+    return state.workspaceContext;
   }
 
   function pushStewardReplyFromApi(result) {
@@ -607,7 +806,7 @@
   async function archiveCurrentChat() {
     if (
       !confirm(
-        "Archive this conversation? It will be hidden from your active list. You can start a new chat afterward. (Nothing is permanently deleted.)"
+        "Archive this operation? It will be hidden from your active list. You can start a new operation afterward. (Nothing is permanently deleted.)"
       )
     ) {
       return;
@@ -630,29 +829,13 @@
     const conv = state.conversations.find((c) => c.id === id);
     if (!conv) return;
     state.conversationId = conv.id;
-    state.conversationTitle = conv.title || "New conversation";
+    state.conversationTitle = conv.title || "New operation";
     state.messages = await loadMessagesForConversation(conv.id);
     renderTitleField();
     renderMessages();
-    document.getElementById("stewardConvoList")?.querySelectorAll("[data-convo-id]").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.convoId === id);
-    });
-  }
-
-  function renderConversationList() {
-    const root = document.getElementById("stewardConvoList");
-    if (!root) return;
-    if (!state.conversations.length) {
-      root.innerHTML = "";
-      return;
-    }
-    root.innerHTML = state.conversations
-      .slice(0, 8)
-      .map(
-        (c) =>
-          `<button type="button" class="steward-convo-item ${c.id === state.conversationId ? "active" : ""}" data-convo-id="${escapeHtml(c.id)}">${escapeHtml(c.title || "Conversation")}</button>`
-      )
-      .join("");
+    state.conversations = await listConversations();
+    await loadWorkspaceContext();
+    renderWorkspaceContext();
   }
 
   function openPanel() {
@@ -664,6 +847,7 @@
     renderModeTabs();
     loadAndRender().then(() => {
       renderMessages();
+      renderWorkspaceContext();
       setTimeout(() => document.getElementById("stewardInput")?.focus(), 280);
     });
   }
@@ -691,18 +875,24 @@
     document.getElementById("stewardClose")?.addEventListener("click", closePanel);
     document.getElementById("stewardBackdrop")?.addEventListener("click", closePanel);
 
-    document.getElementById("stewardNewChat")?.addEventListener("click", () => startNewChat());
     document.getElementById("stewardArchiveChat")?.addEventListener("click", () => archiveCurrentChat());
 
     document.getElementById("stewardConvoTitle")?.addEventListener("change", async (e) => {
-      state.conversationTitle = e.target.value.trim() || "New conversation";
+      state.conversationTitle = e.target.value.trim() || "New operation";
       await updateConversation({ title: state.conversationTitle });
     });
 
-    document.getElementById("stewardConvoList")?.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-convo-id]");
-      if (!btn) return;
-      switchConversation(btn.dataset.convoId);
+    document.getElementById("stewardWorkspaceContext")?.addEventListener("click", (e) => {
+      if (e.target.closest("#stewardNewChat")) {
+        e.preventDefault();
+        startNewChat();
+        return;
+      }
+      const convoBtn = e.target.closest("[data-convo-id]");
+      if (convoBtn?.dataset.convoId) {
+        e.preventDefault();
+        switchConversation(convoBtn.dataset.convoId);
+      }
     });
 
     document.getElementById("stewardForm")?.addEventListener("submit", (e) => {
@@ -718,9 +908,21 @@
     });
 
     document.getElementById("stewardPrompts")?.addEventListener("click", (e) => {
-      const chip = e.target.closest("[data-prompt]");
-      if (!chip || chip.disabled) return;
-      sendMessage(chip.dataset.prompt || "");
+      const card = e.target.closest(".steward-workflow-card");
+      if (!card || card.disabled) return;
+      const href = card.dataset.workflowHref;
+      if (href) {
+        global.location.href = href;
+        return;
+      }
+      const prompt = card.dataset.prompt || "";
+      if (prompt) sendMessage(prompt);
+    });
+
+    const inputEl = document.getElementById("stewardInput");
+    inputEl?.addEventListener("input", () => {
+      inputEl.style.height = "auto";
+      inputEl.style.height = `${Math.min(inputEl.scrollHeight, 160)}px`;
     });
 
     document.getElementById("stewardModeTabs")?.addEventListener("click", (e) => {
@@ -822,33 +1024,35 @@
       <div class="steward-backdrop" id="stewardBackdrop" aria-hidden="true"></div>
       <section class="steward-panel" id="stewardPanel" role="dialog" aria-modal="true" aria-labelledby="stewardTitle" aria-hidden="true">
         <header class="steward-panel-head">
-          <div class="steward-head-text">
-            <p class="steward-kicker">Squadron operations assistant</p>
-            <h2 id="stewardTitle">Steward for CAP</h2>
-            <p class="steward-status"><span class="steward-status-dot" aria-hidden="true"></span> Ready to help</p>
+          <div class="steward-head-brand">
+            <p class="steward-kicker">TN-170 · Mission support console</p>
+            <div class="steward-head-row">
+              <h2 id="stewardTitle">Steward for CAP</h2>
+              <p class="steward-status"><span class="steward-status-dot" aria-hidden="true"></span> Operational standby</p>
+            </div>
+            <div class="steward-head-toolbar">
+              <label class="visually-hidden" for="stewardConvoTitle">Operation title</label>
+              <input type="text" id="stewardConvoTitle" class="steward-op-title" value="New operation" maxlength="80" placeholder="Operation title" />
+              <button type="button" class="steward-head-btn" id="stewardArchiveChat" title="Archive operation">Archive</button>
+            </div>
           </div>
           <button type="button" class="steward-close" id="stewardClose" aria-label="Close Steward">✕</button>
         </header>
 
-        <p class="steward-continuity">Steward helps preserve squadron continuity on the TN-170 Senior Member operations portal — meetings, files, flight reviews, inspection prep, and org chart data.</p>
-
-        <div class="steward-mode-tabs" id="stewardModeTabs" role="tablist" aria-label="Steward modes"></div>
-        <p class="steward-mode-hint" id="stewardModeHint"></p>
+        <div class="steward-mode-bar">
+          <div class="steward-mode-tabs" id="stewardModeTabs" role="tablist" aria-label="Steward focus areas"></div>
+          <p class="steward-mode-hint" id="stewardModeHint"></p>
+        </div>
 
         <div class="steward-workspace-layout">
-          <aside class="steward-side-col" aria-label="Conversations">
-            <label class="visually-hidden" for="stewardConvoTitle">Conversation title</label>
-            <input type="text" id="stewardConvoTitle" class="steward-convo-title" value="New conversation" maxlength="80" />
-            <div class="steward-side-actions">
-              <button type="button" class="steward-tool-btn" id="stewardNewChat">New Chat</button>
-              <button type="button" class="steward-tool-btn steward-tool-btn--muted" id="stewardArchiveChat">Archive</button>
+          <aside class="steward-ops-rail" aria-label="Workspace context">
+            <div class="steward-ops-rail-inner" id="stewardWorkspaceContext">
+              <p class="steward-ctx-loading">Loading workspace context…</p>
             </div>
-            <div class="steward-convo-list" id="stewardConvoList" role="list" aria-label="Recent conversations"></div>
           </aside>
 
           <div class="steward-main-col">
-            <p class="steward-disclaimer">${escapeHtml(DISCLAIMER)}</p>
-            <div class="steward-chat-body">
+            <div class="steward-conversation-pane">
               <div class="steward-messages" id="stewardMessages" role="log" aria-live="polite"></div>
               <div class="steward-typing" id="stewardTyping" hidden aria-live="polite">
                 <div class="steward-msg steward-msg--steward">
@@ -857,23 +1061,25 @@
                     <span class="steward-msg-label">Steward</span>
                   </div>
                   <div class="steward-msg-bubble steward-msg-bubble--typing">
-                    <span class="steward-typing-dots" aria-label="Steward is thinking"><span></span><span></span><span></span></span>
+                    <span class="steward-typing-dots" aria-label="Steward is working"><span></span><span></span><span></span></span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <footer class="steward-chat-footer">
-              <div class="steward-prompts-label">Suggested for TN-170 operations</div>
-              <div class="steward-prompts" id="stewardPrompts"></div>
-              <form class="steward-compose" id="stewardForm">
-                <label class="steward-input-wrap">
-                  <span class="visually-hidden">Message Steward</span>
-                  <textarea id="stewardInput" name="message" rows="3" placeholder="Ask Steward about meetings, files, readiness, org chart, or CAP references…" autocomplete="off"></textarea>
+            <footer class="steward-command-deck">
+              <div class="steward-workflows-section">
+                <h3 class="steward-section-label">Quick workflows</h3>
+                <div class="steward-workflow-grid" id="stewardPrompts"></div>
+              </div>
+              <form class="steward-command-bar" id="stewardForm">
+                <label class="steward-command-input-wrap">
+                  <span class="visually-hidden">Operational request</span>
+                  <textarea id="stewardInput" name="message" rows="2" placeholder="Describe the operation — schedules, readiness, files, org chart, CAP references…" autocomplete="off"></textarea>
                 </label>
-                <button type="submit" class="steward-send" id="stewardSend">Send</button>
+                <button type="submit" class="steward-send" id="stewardSend" aria-label="Send request">Send</button>
               </form>
-              <p class="steward-fbi-footer">Built by <strong>Faith Based Innovations</strong></p>
+              <p class="steward-command-foot">${escapeHtml(DISCLAIMER)} · Built by <strong>Faith Based Innovations</strong></p>
             </footer>
           </div>
         </div>
@@ -888,9 +1094,10 @@
   async function loadAndRender() {
     await global.SMTN170Auth?.syncSessionFromSupabase?.();
     await ensureActiveConversation();
+    await loadWorkspaceContext();
     state.loaded = true;
     renderTitleField();
-    renderConversationList();
+    renderWorkspaceContext();
     renderMessages();
     saveLocalFallback();
   }

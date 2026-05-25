@@ -32,7 +32,7 @@
     "./js/portal-pages.js?v=3",
     "./js/steward-api.js?v=2",
     "./js/steward-launcher.js?v=1",
-    "./js/steward.js?v=12",
+    "./js/steward.js?v=13",
     "./js/file-ingestion.js?v=3",
     "./app.js?v=7",
     "./js/profile-banner.js?v=1",
