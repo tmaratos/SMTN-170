@@ -2,6 +2,12 @@
  * TN-170 profile display and completeness helpers.
  */
 (function initProfileService(global) {
+  const PROFILE_STATUS = {
+    AWAITING: "awaiting_approval",
+    APPROVED: "approved",
+    ACTIVE: "active",
+  };
+
   const EDITABLE_FIELDS = [
     "first_name",
     "last_name",
@@ -91,9 +97,26 @@
     return !trim(row.first_name) || !trim(row.last_name);
   }
 
+  /** Read public.profiles.status (canonical approval field). */
+  function getProfileStatus(row) {
+    if (!row) return "";
+    return trim(row.status).toLowerCase();
+  }
+
+  function isProfileStatusApproved(rowOrStatus) {
+    const s = typeof rowOrStatus === "string" ? trim(rowOrStatus).toLowerCase() : getProfileStatus(rowOrStatus);
+    return s === PROFILE_STATUS.APPROVED || s === PROFILE_STATUS.ACTIVE;
+  }
+
+  function isProfileStatusAwaiting(rowOrStatus) {
+    const s = typeof rowOrStatus === "string" ? trim(rowOrStatus).toLowerCase() : getProfileStatus(rowOrStatus);
+    return s === PROFILE_STATUS.AWAITING;
+  }
+
   function mapSessionFromProfile(row) {
     if (!row) return null;
     const displayName = computeDisplayName(row);
+    const status = getProfileStatus(row) || PROFILE_STATUS.AWAITING;
     return {
       userId: row.id,
       email: row.email,
@@ -107,7 +130,8 @@
       profilePhotoUrl: trim(row.profile_photo_url),
       displayName,
       role: row.role,
-      accountStatus: row.account_status,
+      status,
+      accountStatus: status,
       roleLabel: null,
       unit: "TN-170 Oak Ridge Composite Squadron",
       updatedAt: row.updated_at,
@@ -125,11 +149,15 @@
   }
 
   global.SMTN170Profile = {
+    PROFILE_STATUS,
     EDITABLE_FIELDS,
     normalizeRank,
     computeDisplayName,
     computeWelcomeGreeting,
     isProfileIncomplete,
+    getProfileStatus,
+    isProfileStatusApproved,
+    isProfileStatusAwaiting,
     mapSessionFromProfile,
     pickEditablePayload,
     fullName,

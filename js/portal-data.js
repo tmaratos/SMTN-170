@@ -11,8 +11,9 @@
   };
 
   const ACCOUNT_STATUS = {
-    AWAITING: "awaiting_verification",
+    AWAITING: "awaiting_approval",
     APPROVED: "approved",
+    ACTIVE: "active",
   };
 
   const FILE_CATEGORIES = [

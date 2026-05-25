@@ -14,8 +14,9 @@
   };
 
   const ACCOUNT_STATUS = {
-    AWAITING: "awaiting_verification",
+    AWAITING: "awaiting_approval",
     APPROVED: "approved",
+    ACTIVE: "active",
   };
 
   const ADMIN_ROLES = [ROLES.COMMANDER.id, ROLES.COMMAND_STAFF.id];
@@ -45,7 +46,8 @@
       email: row.email,
       displayName: row.email,
       role: row.role || ROLES.SENIOR_MEMBER.id,
-      accountStatus: row.account_status || ACCOUNT_STATUS.AWAITING,
+      status: Profile()?.getProfileStatus?.(row) || ACCOUNT_STATUS.AWAITING,
+      accountStatus: Profile()?.getProfileStatus?.(row) || ACCOUNT_STATUS.AWAITING,
       unit: "TN-170 Oak Ridge Composite Squadron",
     };
   }
@@ -90,6 +92,7 @@
     console.log("SESSION_FOUND");
     const row = await fetchProfile(user.id);
     profile = row;
+    console.log("Loaded profile:", profile);
     session = mapProfile(row) || {
       userId: user.id,
       email: user.email || "",
@@ -100,6 +103,7 @@
       rank: "",
       role: ROLES.SENIOR_MEMBER.id,
       roleLabel: getRoleLabel(ROLES.SENIOR_MEMBER.id),
+      status: ACCOUNT_STATUS.AWAITING,
       accountStatus: ACCOUNT_STATUS.AWAITING,
       unit: "TN-170 Oak Ridge Composite Squadron",
     };
@@ -139,8 +143,8 @@
   }
 
   function isApproved(s) {
-    const x = s || session;
-    return x && x.accountStatus === ACCOUNT_STATUS.APPROVED;
+    const x = s || profile || session;
+    return Profile()?.isProfileStatusApproved?.(x) ?? false;
   }
 
   function isAdmin(s) {
@@ -153,7 +157,7 @@
     if (!x) return false;
     if (ADMIN_ACTIONS.has(action)) return isAdmin(x);
     if (action === "view_portal") return isApproved(x);
-    if (action === "view_pending") return x.accountStatus === ACCOUNT_STATUS.AWAITING;
+    if (action === "view_pending") return Profile()?.isProfileStatusAwaiting?.(x || profile);
     return isApproved(x);
   }
 
@@ -295,7 +299,7 @@
       preferred_name: "",
       rank: "",
       role: role || ROLES.SENIOR_MEMBER.id,
-      account_status: accountStatus || ACCOUNT_STATUS.APPROVED,
+      status: accountStatus || ACCOUNT_STATUS.APPROVED,
       updated_at: new Date().toISOString(),
     };
     session = mapProfile(profile);

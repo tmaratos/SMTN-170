@@ -17,8 +17,8 @@
     if (!sb) return { rows: [], configured: false };
     const { data, error } = await sb
       .from("profiles")
-      .select("id, email, first_name, last_name, preferred_name, rank, role, account_status, created_at, updated_at")
-      .eq("account_status", "awaiting_verification")
+      .select("id, email, first_name, last_name, preferred_name, rank, role, status, created_at, updated_at")
+      .eq("status", "awaiting_approval")
       .order("created_at", { ascending: true });
     if (error) return { rows: [], configured: true, error: error.message };
     return { rows: data || [], configured: true };
@@ -29,7 +29,7 @@
     if (!sb) throw new Error("Supabase is not configured.");
     const { error } = await sb
       .from("profiles")
-      .update({ account_status: status, updated_at: new Date().toISOString() })
+      .update({ status })
       .eq("id", userId);
     if (error) throw error;
   }
@@ -69,7 +69,7 @@
 
       <section class="card-warning panel">
         <h2>Pending approvals</h2>
-        <p>Members with <code>awaiting_verification</code> can sign in but only see the pending approval page until approved.</p>
+        <p>Members with <code>awaiting_approval</code> can sign in but only see the pending approval page until approved.</p>
         ${!pendingRes.configured ? '<p class="dash-empty">Connect Supabase to load pending members.</p>' : ""}
         ${pendingRes.error ? `<p class="dash-empty">${escapeHtml(pendingRes.error)}</p>` : ""}
         <table class="admin-table">

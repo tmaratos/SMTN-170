@@ -38,25 +38,17 @@
       profile_photo_url: session.profilePhotoUrl || "",
       role: session.role,
       status: session.status,
-      account_status: session.accountStatus,
+      status: session.status || session.accountStatus,
       updated_at: session.updatedAt || null,
     };
   }
 
   function getAccessStatusLabel(row) {
-    const auth = global.SMTN170Auth;
-    const rawStatus = (row?.status || "").toString().toLowerCase();
-    if (rawStatus === "active") return "Active";
-    if (row?.account_status === auth?.ACCOUNT_STATUS?.APPROVED || row?.account_status === "approved") {
-      return "Active";
-    }
-    if (
-      row?.account_status === auth?.ACCOUNT_STATUS?.AWAITING ||
-      row?.account_status === "awaiting_verification"
-    ) {
-      return "Awaiting approval";
-    }
-    return row?.account_status || row?.status || "—";
+    const svc = global.SMTN170Profile;
+    if (svc?.isProfileStatusApproved?.(row)) return "Active";
+    if (svc?.isProfileStatusAwaiting?.(row)) return "Awaiting approval";
+    const s = svc?.getProfileStatus?.(row) || row?.status || "";
+    return s ? s.replace(/_/g, " ") : "—";
   }
 
   function renderForm(row, message, messageType) {

@@ -78,23 +78,27 @@
         const profile = global.SMTN170Auth?.getProfile?.();
         const name =
           global.SMTN170Profile?.computeDisplayName?.(profile || session) || session.email || "Member";
+        const approved = global.SMTN170Profile?.isProfileStatusApproved?.(profile || session);
         return {
           name,
           rankLine: "",
           email: session.email || "",
           roleLabel: global.SMTN170Auth?.getRoleLabel?.(session.role) || session.role,
-          statusLabel: "Active",
-          statusClass: "active",
+          statusLabel: approved ? "" : "Awaiting approval",
+          statusClass: approved ? "active" : "pending",
         };
       })();
 
     const statusClass =
       lines.statusClass === "pending" ? "portal-nav-status--pending" : "portal-nav-status--active";
+    const statusBadge = lines.statusLabel
+      ? `<span class="portal-nav-status ${statusClass}" title="${escapeHtml(lines.statusLabel)}">${escapeHtml(lines.statusLabel)}</span>`
+      : "";
 
     return `<div class="portal-nav-account-card">
       <div class="portal-nav-account-head">
         <span class="portal-nav-account-name">${escapeHtml(lines.name)}</span>
-        <span class="portal-nav-status ${statusClass}" title="${escapeHtml(lines.statusLabel)}">${escapeHtml(lines.statusLabel)}</span>
+        ${statusBadge}
       </div>
       ${lines.rankLine ? `<span class="portal-nav-account-rank">${escapeHtml(lines.rankLine)}</span>` : ""}
       <span class="portal-nav-account-role">${escapeHtml(lines.roleLabel)}</span>

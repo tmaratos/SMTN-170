@@ -34,7 +34,7 @@
         location.href = "login.html";
         return;
       }
-      if (s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.APPROVED) {
+      if (window.SMTN170Auth?.isApproved?.(s)) {
         location.href = "dashboard.html";
         return;
       }
