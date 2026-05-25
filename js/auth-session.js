@@ -44,12 +44,26 @@
   /**
    * Redirect to login if no session. Call on protected pages after bootstrap.
    */
-  async function requireAuth(options) {
+  async function requireAuth() {
     await ensureReady();
+    const sb = global.SMTN170Supabase?.getClient?.();
+    const { data: authData, error } = sb
+      ? await sb.auth.getSession()
+      : { data: { session: null }, error: null };
+    if (error) {
+      console.error("Session check error:", error);
+    }
+    if (!authData?.session) {
+      console.log("No session found");
+      console.log("Redirecting to login");
+      global.location.replace(LOGIN + "?expired=1");
+      return null;
+    }
+    await auth()?.syncSessionFromSupabase?.();
     const session = auth()?.loadSession?.();
     if (!session) {
-      const q = options?.expired ? "?expired=1" : "";
-      global.location.replace(LOGIN + q);
+      console.log("Redirecting to login");
+      global.location.replace(LOGIN + "?expired=1");
       return null;
     }
     if (session.accountStatus === auth().ACCOUNT_STATUS.AWAITING) {

@@ -1,74 +1,71 @@
 /**
- * TN-170 Supabase client — window.TN170_SUPABASE + SMTN170Supabase (protected pages).
+ * TN-170 — single Supabase browser client (same URL/key/options as login.html).
  */
 (function initSupabaseClient(global) {
-  function cfg() {
-    return global.SUPABASE_CONFIG || null;
-  }
+  const SUPABASE_URL = "https://hmfbeqnlcchkjyzqnlni.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai";
 
-  function isConfigured() {
-    const c = cfg();
-    return !!(c && c.isConfigured && c.url && c.anonKey);
-  }
+  const AUTH_OPTIONS = {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: global.localStorage,
+    },
+  };
 
   let client = null;
-  let initError = null;
+  let readyPromise = null;
+
+  function ensureSdk() {
+    if (global.supabase && typeof global.supabase.createClient === "function") {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Supabase SDK failed to load"));
+      document.head.appendChild(s);
+    });
+  }
 
   function buildClient() {
     if (client) return client;
-
-    const c = cfg();
-    if (!c || !c.isConfigured || !c.url || !c.anonKey) {
-      initError = new Error(
-        global.TN170SupabaseConfig?.adminMessage?.() || "Supabase is not configured."
-      );
-      return null;
-    }
-
     if (!global.supabase || typeof global.supabase.createClient !== "function") {
-      initError = new Error(
-        "Supabase SDK not loaded. Ensure the Supabase CDN script loads before supabase-client.js."
-      );
       return null;
     }
-
-    try {
-      client = global.supabase.createClient(c.url, c.anonKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          storage: global.localStorage,
-        },
-        realtime: { params: { eventsPerSecond: 8 } },
-      });
-      initError = null;
-    } catch (err) {
-      initError = err;
-      console.error("[TN-170] Supabase init failed", err);
-      client = null;
-    }
-
+    client = global.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_OPTIONS);
+    global.TN170SupabaseClient = client;
     return client;
   }
-
-  buildClient();
 
   function getClient() {
     return client || buildClient();
   }
 
-  function getInitError() {
-    return initError;
+  async function whenReady() {
+    if (!readyPromise) {
+      readyPromise = ensureSdk()
+        .then(() => buildClient())
+        .catch((err) => {
+          console.error("[TN-170] Supabase client init failed", err);
+          return null;
+        });
+    }
+    await readyPromise;
+    return getClient();
   }
 
-  function whenReady() {
-    return Promise.resolve(getClient());
+  async function getSession() {
+    const sb = await whenReady();
+    if (!sb) return { data: { session: null }, error: new Error("No Supabase client") };
+    return sb.auth.getSession();
   }
 
   function onAuthStateChange(cb) {
     const sb = getClient();
-    if (!sb) return { data: { subscription: { unsubscribe: () => {} } } } };
+    if (!sb) return { data: { subscription: { unsubscribe: () => {} } } };
     return sb.auth.onAuthStateChange(cb);
   }
 
@@ -84,24 +81,38 @@
     return ch;
   }
 
-  const api = {
+  global.SUPABASE_CONFIG = {
+    url: SUPABASE_URL,
+    anonKey: SUPABASE_ANON_KEY,
+    storageBucket: "squadron-files",
+    isConfigured: true,
+  };
+
+  global.SMTN170_SUPABASE_CONFIG = {
+    SUPABASE_URL: SUPABASE_URL,
+    SUPABASE_ANON_KEY: SUPABASE_ANON_KEY,
+    STORAGE_BUCKET: "squadron-files",
+  };
+
+  global.SMTN170Supabase = {
+    getClient,
+    whenReady,
+    getSession,
+    onAuthStateChange,
+    subscribeTable,
+    storageBucket: () => "squadron-files",
+    isConfigured: () => !!(SUPABASE_URL && SUPABASE_ANON_KEY),
+  };
+
+  global.TN170_SUPABASE = {
     get client() {
       return getClient();
     },
-    isConfigured,
-    getInitError,
+    isConfigured: () => !!(SUPABASE_URL && SUPABASE_ANON_KEY),
+    getInitError: () => null,
   };
 
-  global.TN170_SUPABASE = api;
-
-  global.SMTN170Supabase = {
-    init: async () => getClient(),
-    getClient,
-    getInitError,
-    whenReady,
-    isConfigured,
-    onAuthStateChange,
-    subscribeTable,
-    storageBucket: () => cfg()?.storageBucket || "squadron-files",
-  };
+  if (global.supabase?.createClient) {
+    buildClient();
+  }
 })(window);

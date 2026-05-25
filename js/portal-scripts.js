@@ -1,6 +1,6 @@
 /**
  * Standard script chain for protected portal pages.
- * Include once before </body>: <script src="./js/portal-scripts.js?v=1" data-page="dashboard"></script>
+ * Include once before </body>: <script src="./js/portal-scripts.js?v=5" data-page="dashboard"></script>
  */
 (function loadPortalScripts() {
   const PAGE_SCRIPTS = {
@@ -21,12 +21,12 @@
 
   const chain = [
     "./portal-config.js?v=3",
-    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js",
-    "./js/supabase-config.js?v=4",
-    "./js/supabase-client.js?v=4",
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+    "./js/supabase-config.js?v=5",
+    "./js/supabase-client.js?v=5",
     "./js/profile-service.js?v=1",
-    "./js/auth.js?v=1",
-    "./js/auth-session.js?v=1",
+    "./js/auth.js?v=5",
+    "./js/auth-session.js?v=5",
     "./portal-nav.js?v=11",
     "./js/portal-shell.js?v=5",
     "./js/portal-pages.js?v=3",
@@ -34,7 +34,7 @@
     "./js/steward.js?v=9",
     "./app.js?v=2",
     "./js/profile-banner.js?v=1",
-    "./js/portal-bootstrap.js?v=1",
+    "./js/portal-bootstrap.js?v=5",
   ];
 
   const page = document.currentScript?.dataset?.page || document.body?.dataset?.portalPage || "";

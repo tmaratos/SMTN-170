@@ -40,11 +40,10 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-config.js?v=5"></script>
+  <script src="./js/supabase-client.js?v=5"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const SUPABASE_URL = "https://hmfbeqnlcchkjyzqnlni.supabase.co";
-      const SUPABASE_ANON_KEY = "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai";
-
+    document.addEventListener("DOMContentLoaded", async function () {
       const form = document.getElementById("loginForm");
       const errEl = document.getElementById("loginError");
       const noticeEl = document.getElementById("loginNotice");
@@ -59,20 +58,37 @@
       if (params.get("expired") === "1") {
         noticeEl.textContent = "Your session expired. Please sign in again.";
         noticeEl.hidden = false;
-        sessionStorage.removeItem("smtn170_had_session");
       } else if (params.get("signed_out") === "1") {
         noticeEl.textContent = "You have been signed out.";
         noticeEl.hidden = false;
-        sessionStorage.removeItem("smtn170_had_session");
       }
 
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        showError("Supabase library failed to load. Check your connection and refresh the page.");
+      let supabaseClient;
+      try {
+        supabaseClient = await window.SMTN170Supabase.whenReady();
+      } catch (e) {
+        console.error(e);
+        showError("Supabase failed to load. Refresh the page.");
         btn.disabled = true;
         return;
       }
 
-      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (!supabaseClient) {
+        showError("Supabase failed to load. Refresh the page.");
+        btn.disabled = true;
+        return;
+      }
+
+      try {
+        const { data: existing } = await supabaseClient.auth.getSession();
+        if (existing && existing.session) {
+          console.log("Session found");
+          window.location.href = "dashboard.html";
+          return;
+        }
+      } catch (e) {
+        console.warn("[TN-170] session check on login", e);
+      }
 
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
@@ -95,7 +111,7 @@
           }
 
           if (data && data.session) {
-            sessionStorage.setItem("smtn170_had_session", "1");
+            console.log("Login success");
             window.location.href = "dashboard.html";
           } else {
             showError("Sign in did not return a session. Try again.");
