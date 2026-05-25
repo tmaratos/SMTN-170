@@ -35,7 +35,6 @@
       items: [
         { key: "senior", href: "senior-member.html", label: "Senior Member Workspace" },
         { key: "resources", href: "resources.html", label: "CAP References" },
-        { key: "steward", href: "#steward", label: "Steward", stewardOpen: true },
       ],
     },
     {
@@ -189,7 +188,6 @@
     });
     updateBrandSubtitle();
     bindLogout();
-    bindStewardNav();
     global.SMTN170Auth?.applyNavVisibility?.();
     global.SMTN170Steward?.rebind?.();
   }

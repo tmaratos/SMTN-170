@@ -709,7 +709,8 @@
       : "";
 
     root.innerHTML = `
-      ${importNotice ? `<div class="card-info org-notice" role="status">${escapeHtml(importNotice)}</div>` : ""}
+      ${renderDraftReviewPanel()}
+      ${importNotice && !pendingIngest?.drafts?.length ? `<div class="card-info org-notice" role="status">${escapeHtml(importNotice)}</div>` : ""}
       <header class="org-hero card-info">
         <div class="org-hero-text">
           <p class="org-hero-eyebrow">Squadron staff structure</p>
@@ -719,7 +720,7 @@
         <div class="org-hero-actions">
           <button type="button" class="btn-gold btn-lg" data-action="add-position">Add Position</button>
           <button type="button" class="btn-outline btn-lg" data-action="import-org-chart">Import Existing Org Chart</button>
-          <input type="file" id="orgChartImportInput" accept="image/*,.pdf,application/pdf" hidden />
+          <input type="file" id="orgChartImportInput" accept="image/*,.pdf,application/pdf,.csv,.txt,text/csv,text/plain" hidden />
           <button type="button" class="btn-outline btn-lg" data-action="view-vacancies">View Vacancies (${m.vacant})</button>
           <button type="button" class="btn-outline btn-lg" data-action="export-chart">Export Chart</button>
           <button type="button" class="btn-outline btn-lg btn-steward-lg" data-steward-ask="Help draft organization chart positions from the uploaded org chart.">Ask Steward</button>
@@ -810,6 +811,27 @@
       const action = btn.dataset.action;
       if (action === "add-position") openEditor(null);
       if (action === "import-org-chart") document.getElementById("orgChartImportInput")?.click();
+      if (action === "approve-all-drafts" && pendingIngest?.drafts?.length) {
+        global.SMTN170FileIngestion.commitDrafts(pendingIngest)
+          .then(async () => {
+            pendingIngest = null;
+            importNotice = "All draft positions saved.";
+            await hydrateFromSupabase();
+            render();
+          })
+          .catch((e) => alert(e.message));
+      }
+      if (action === "discard-all-drafts") {
+        pendingIngest = null;
+        importNotice = "Draft positions discarded.";
+        render();
+      }
+      const draftBtn = e.target.closest("[data-draft-action]");
+      if (draftBtn) {
+        const idx = Number(draftBtn.dataset.idx);
+        if (draftBtn.dataset.draftAction === "approve") approveDraftPosition(idx);
+        if (draftBtn.dataset.draftAction === "discard") discardDraftPosition(idx);
+      }
       if (action === "edit-position") openEditor(btn.dataset.orgId);
       if (action === "close-editor") closeEditor();
       if (action === "view-vacancies") {
@@ -854,6 +876,7 @@
   let chartData = { positions: [] };
   let importNotice = "";
   let importedFiles = [];
+  let pendingIngest = null;
 
   function getChartData() {
     return chartData.positions?.length ? chartData : load();
@@ -892,35 +915,63 @@
     return { ok: false, reason: "draft_not_implemented" };
   }
 
+  function renderDraftReviewPanel() {
+    if (!pendingIngest?.drafts?.length) return "";
+    const rows = pendingIngest.drafts
+      .map(
+        (d, i) => `
+      <div class="org-draft-row" data-draft-idx="${i}">
+        <strong>${escapeHtml(d.title)}</strong>
+        <span>${escapeHtml(d.department)}</span>
+        <span>${escapeHtml(d.assigned_member_name || "Vacant")}</span>
+        <button type="button" class="ghost-btn btn-sm" data-draft-action="approve" data-idx="${i}">Approve</button>
+        <button type="button" class="ghost-btn btn-sm" data-draft-action="discard" data-idx="${i}">Discard</button>
+      </div>`
+      )
+      .join("");
+    return `<section class="org-draft-panel ingest-review-panel card-info">
+      <h3>Draft positions from import</h3>
+      <p class="page-intro">${escapeHtml(pendingIngest.message || "")}</p>
+      ${rows}
+      <button type="button" class="btn-gold" data-action="approve-all-drafts">Approve all positions</button>
+      <button type="button" class="btn-outline" data-action="discard-all-drafts">Discard all</button>
+      <button type="button" class="btn-outline btn-steward-lg" data-steward-ask="Help draft organization chart positions from the uploaded org chart.">Ask Steward</button>
+    </section>`;
+  }
+
   async function importOrgChartFile(file) {
-    const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
-    const uid = global.SMTN170Auth?.actorId?.();
-    if (!sb || !uid) throw new Error("Sign in to import an org chart.");
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const storagePath = `org-charts/imports/${uid}/${Date.now()}-${safeName}`;
-    const bucket = global.SMTN170Supabase?.storageBucket?.() || "squadron-files";
-    const { error: upErr } = await sb.storage.from(bucket).upload(storagePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-    if (upErr) throw new Error(upErr.message);
-    const now = new Date().toISOString();
-    const { error: dbErr } = await sb.from("uploaded_files").insert({
-      name: file.name,
+    if (!global.SMTN170FileIngestion?.uploadAndIngest) {
+      throw new Error("File ingestion module not loaded.");
+    }
+    const result = await global.SMTN170FileIngestion.uploadAndIngest(file, {
+      category: "org_chart",
       folder: "org_chart",
-      storage_path: storagePath,
-      mime_type: file.type,
-      size_bytes: file.size,
-      uploaded_by: uid,
-      last_worked_by: uid,
-      last_worked_at: now,
-      updated_at: now,
     });
-    if (dbErr) throw new Error(dbErr.message);
     importedFiles = await fetchImportedOrgCharts();
-    importNotice =
-      "Uploaded. Steward can help draft positions from this file after document parsing is enabled.";
-    return storagePath;
+    importNotice = result.message || "Org chart uploaded.";
+    pendingIngest = result.needsReview ? result : null;
+    if (result.needsReview && result.drafts?.length) {
+      state.draftPositions = result.drafts;
+    }
+    return result;
+  }
+
+  async function approveDraftPosition(idx) {
+    if (!pendingIngest?.drafts?.[idx]) return;
+    const one = pendingIngest.drafts[idx];
+    await global.SMTN170FileIngestion.saveDraftOrgPositions([one]);
+    pendingIngest.drafts.splice(idx, 1);
+    if (!pendingIngest.drafts.length) pendingIngest = null;
+    await hydrateFromSupabase();
+    importNotice = "Position saved to organization chart.";
+    render();
+  }
+
+  async function discardDraftPosition(idx) {
+    if (!pendingIngest?.drafts) return;
+    pendingIngest.drafts.splice(idx, 1);
+    if (!pendingIngest.drafts.length) pendingIngest = null;
+    render();
   }
 
   async function hydrateFromSupabase() {

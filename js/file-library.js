@@ -4,6 +4,7 @@
 (function initFileLibrary(global) {
   const FOLDERS = [
     "General",
+    "Meeting Schedule",
     "Meeting Minutes",
     "Safety",
     "Operations",
@@ -130,8 +131,54 @@
     if (dbErr) throw dbErr;
 
     state.uploading = state.uploading.filter((u) => u.id !== item.id);
-    state.files.unshift(mapRow(row));
+    const mapped = mapRow(row);
+    state.files.unshift(mapped);
     renderList();
+
+    if (global.SMTN170FileIngestion?.ingestUploadedFile) {
+      try {
+        const folderKey = FOLDER_TO_CATEGORY[state.folder] || state.folder;
+        const ingestResult = await global.SMTN170FileIngestion.ingestUploadedFile({
+          ...row,
+          folder: folderKey,
+        });
+        showIngestNotice(ingestResult);
+      } catch (err) {
+        showIngestNotice({ message: err.message, ok: false });
+      }
+    }
+  }
+
+  const FOLDER_TO_CATEGORY = {
+    General: "general",
+    "Meeting Schedule": "meeting_schedule",
+    "Meeting Minutes": "meeting_minutes",
+    Safety: "safety",
+    Operations: "general",
+    "Emergency Services": "general",
+    "Aerospace Education": "training",
+    "Cadet Programs": "training",
+    Training: "training",
+    Finance: "forms",
+    Forms: "forms",
+  };
+
+  function showIngestNotice(result) {
+    const el = document.getElementById("flIngestNotice");
+    if (!el) return;
+    el.hidden = false;
+    el.innerHTML = `<p>${escapeHtml(result?.message || "Upload complete.")}</p>`;
+    if (result?.needsReview && result.drafts?.length) {
+      el.innerHTML += `<button type="button" class="btn-gold btn-sm" id="flCommitDrafts" style="margin-top:10px">Save ${result.drafts.length} draft record(s)</button>`;
+      document.getElementById("flCommitDrafts")?.addEventListener("click", async () => {
+        try {
+          await global.SMTN170FileIngestion.commitDrafts(result);
+          el.innerHTML = `<p>${escapeHtml(result.drafts.length)} record(s) saved to the portal.</p>`;
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    }
   }
 
   async function moveFile(id, folder) {
@@ -263,6 +310,7 @@
           <small>PDF, Word, Excel, images, ZIP · stored in squadron-files</small>
           <input type="file" id="flFileInput" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.webp,.zip" />
         </div>
+        <div class="ingest-review-panel" id="flIngestNotice" hidden role="status"></div>
         <div class="fl-file-list" id="flFileList"></div>
       </div>`;
 

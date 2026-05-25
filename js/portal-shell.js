@@ -287,7 +287,7 @@
     const link = document.createElement("link");
     link.id = "portalLayoutCss";
     link.rel = "stylesheet";
-    link.href = "./css/portal-layout.css?v=1";
+    link.href = "./css/portal-layout.css?v=2";
     document.head.appendChild(link);
   }
 

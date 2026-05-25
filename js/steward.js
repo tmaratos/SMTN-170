@@ -473,6 +473,49 @@
     renderDataStatus(!!result.data_connected);
   }
 
+  async function buildFileContextForMessage(trimmed) {
+    if (!global.SMTN170FileIngestion?.listUploadedFiles) return "";
+    const lower = trimmed.toLowerCase();
+    const wantsFiles =
+      /what files|uploaded files|files are uploaded|files in the portal|squadron files/i.test(lower);
+    const wantsOrg =
+      /org chart|organization chart|use this org|draft positions/i.test(lower);
+    const wantsIngest =
+      /update the site from uploaded|ingest|index uploaded|process uploaded/i.test(lower);
+
+    if (!wantsFiles && !wantsOrg && !wantsIngest) return "";
+
+    const files = await global.SMTN170FileIngestion.listUploadedFiles(25);
+    if (!files.length) {
+      return "\n\n[Portal file index: no uploaded_files records yet.]";
+    }
+
+    const lines = files.map((f) => {
+      const cat = global.SMTN170FileIngestion.detectFileCategory(f.name, f.mime_type, f.folder);
+      return `- ${f.name} (${cat}, folder: ${f.folder || "general"}, ${f.created_at || f.updated_at || ""})`;
+    });
+
+    let extra = `\n\n[Portal uploaded_files — ${files.length} recent file(s):\n${lines.join("\n")}]`;
+
+    if (wantsOrg) {
+      const org = files.find(
+        (f) => global.SMTN170FileIngestion.detectFileCategory(f.name, f.mime_type, f.folder) === "org_chart"
+      );
+      if (org) {
+        extra += `\n[Latest org_chart upload: "${org.name}". Text/CSV can create draft org_positions after review; PDF/image needs OCR or manual entry.]`;
+      }
+    }
+
+    if (wantsIngest) {
+      const last = global.SMTN170FileIngestion.getLastResult?.();
+      if (last?.needsReview && last.drafts?.length) {
+        extra += `\n[Pending ingestion: ${last.drafts.length} draft ${last.type || "record"}(s) awaiting review on this device.]`;
+      }
+    }
+
+    return extra;
+  }
+
   async function sendMessage(text) {
     const trimmed = (text || "").trim();
     if (!trimmed || state.isThinking) return;
@@ -490,6 +533,9 @@
     const optimisticId = "tmp-u-" + Date.now();
 
     try {
+      const fileContext = await buildFileContextForMessage(trimmed);
+      const outbound = trimmed + fileContext;
+
       state.messages.push({
         id: optimisticId,
         role: "user",
@@ -505,7 +551,7 @@
           : undefined;
 
       const result = await global.SMTN170StewardApi.invoke({
-        message: trimmed,
+        message: outbound,
         conversation_id: convId,
         active_mode: activeMode,
         context_area: activeMode,
@@ -758,7 +804,7 @@
       el.dataset.stewardBound = "1";
       el.addEventListener("click", (e) => {
         e.preventDefault();
-        openSteward();
+        (global.openSteward || openSteward)();
       });
     });
   }
@@ -868,16 +914,22 @@
     openSteward(text);
   }
 
-  function openSteward(promptText) {
+  async function openSteward(promptText = "") {
     if (!document.getElementById("stewardRoot")) {
       injectWidget();
+      bindPanelEvents();
     } else {
       bindPanelEvents();
       bindOpenTriggers();
     }
     openPanel();
+    try {
+      await loadAndRender();
+    } catch (err) {
+      console.error("[Steward] load", err);
+    }
     if ((promptText || "").trim()) {
-      setTimeout(() => sendMessage(String(promptText).trim()), 280);
+      await sendMessage(String(promptText).trim());
     }
   }
 
