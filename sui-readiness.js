@@ -28,18 +28,41 @@
     return global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
   }
 
-  async function fetchItems() {
+  function formatSupabaseError(error) {
+    if (!error) return "Unknown error";
+    const parts = [error.message || String(error)];
+    if (error.code) parts.push(`Code: ${error.code}`);
+    if (error.details) parts.push(`Details: ${error.details}`);
+    if (error.hint) parts.push(`Hint: ${error.hint}`);
+    return parts.join(" · ");
+  }
+
+  async function ensureClient() {
+    if (global.TN170AuthGuard?.waitForSupabaseSdk) {
+      await global.TN170AuthGuard.waitForSupabaseSdk();
+    }
+    await global.SMTN170Auth?.init?.();
     const sb = getClient();
-    if (!sb) return { rows: [], error: "Supabase client not ready", configured: false };
+    if (!sb) return null;
+    const { data, error } = await sb.auth.getSession();
+    if (error) console.error("[inspection] session", formatSupabaseError(error));
+    if (!data?.session) return null;
+    return sb;
+  }
+
+  async function fetchItems() {
+    const sb = await ensureClient();
+    if (!sb) return { rows: [], waiting: true };
     const { data, error } = await sb
       .from("inspection_items")
       .select("id, title, work_unit, status, due_date, notes, created_at, updated_at")
       .order("due_date", { ascending: true, nullsFirst: false });
     if (error) {
-      console.error("[inspection]", error.message, error);
-      return { rows: [], error: error.message, configured: true };
+      const msg = formatSupabaseError(error);
+      console.error("[inspection] inspection_items", msg, error);
+      return { rows: [], error: msg };
     }
-    return { rows: data || [], configured: true };
+    return { rows: data || [] };
   }
 
   async function addItem(title, workUnit, dueDate) {
@@ -155,15 +178,17 @@
 
     if (!root) return;
 
-    if (!res.configured) {
+    if (res.waiting) {
       root.innerHTML = `<p class="page-intro">Loading inspection prep…</p>`;
       return;
     }
 
     if (res.error) {
-      root.innerHTML = `<p class="page-intro">Inspection items could not be loaded: ${escapeHtml(res.error)}</p>
-        <p class="page-intro">Confirm <code>inspection_items</code> exists and RLS allows your account.</p>
-        <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
+      root.innerHTML = `<article class="card-warning dash-block" role="alert">
+        <h2 class="card-warning-title">Could not load inspection items</h2>
+        <p>${escapeHtml(res.error)}</p>
+      </article>
+      <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
       global.SMTN170Steward?.rebind?.();
       return;
     }

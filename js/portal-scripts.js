@@ -11,7 +11,7 @@
     "sui-readiness": ["./sui-readiness.js?v=7"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js"],
     profile: ["./js/profile-page.js?v=7"],
-    tasks: ["./js/tasks-page.js?v=7"],
+    tasks: ["./js/tasks-page.js?v=8"],
     dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js?v=7"],
     calendar: ["./flight-review.js"],
     resources: [],

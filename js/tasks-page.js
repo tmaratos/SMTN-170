@@ -26,17 +26,40 @@
     return global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
   }
 
-  async function fetchTasks() {
+  function formatSupabaseError(error) {
+    if (!error) return "Unknown error";
+    const parts = [error.message || String(error)];
+    if (error.code) parts.push(`Code: ${error.code}`);
+    if (error.details) parts.push(`Details: ${error.details}`);
+    if (error.hint) parts.push(`Hint: ${error.hint}`);
+    return parts.join(" · ");
+  }
+
+  async function ensureClient() {
+    if (global.TN170AuthGuard?.waitForSupabaseSdk) {
+      await global.TN170AuthGuard.waitForSupabaseSdk();
+    }
+    await global.SMTN170Auth?.init?.();
     const sb = getClient();
-    if (!sb) return { error: "Supabase client not ready", rows: [] };
+    if (!sb) return null;
+    const { data, error } = await sb.auth.getSession();
+    if (error) console.error("[tasks] session", formatSupabaseError(error));
+    if (!data?.session) return null;
+    return sb;
+  }
+
+  async function fetchTasks() {
+    const sb = await ensureClient();
+    if (!sb) return { waiting: true, rows: [] };
     const { data, error } = await sb
       .from("portal_tasks")
       .select("id, title, description, status, due_date, priority, category, created_at, updated_at")
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50);
     if (error) {
-      console.error("[tasks]", error.message, error);
-      return { error: error.message, rows: [] };
+      const msg = formatSupabaseError(error);
+      console.error("[tasks] portal_tasks", msg, error);
+      return { error: msg, rows: [] };
     }
     return { rows: data || [] };
   }
@@ -82,10 +105,17 @@
 
     const res = await fetchTasks();
 
+    if (res.waiting) {
+      root.innerHTML = `<p class="page-intro">Loading tasks…</p>`;
+      return;
+    }
+
     if (res.error) {
-      root.innerHTML = `<p class="page-intro">Tasks could not be loaded: ${escapeHtml(res.error)}</p>
-        <p class="page-intro">Confirm <code>portal_tasks</code> exists and RLS allows your account.</p>
-        <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
+      root.innerHTML = `<article class="card-warning dash-block" role="alert">
+        <h2 class="card-warning-title">Could not load tasks</h2>
+        <p>${escapeHtml(res.error)}</p>
+      </article>
+      <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
       global.SMTN170Steward?.rebind?.();
       return;
     }
