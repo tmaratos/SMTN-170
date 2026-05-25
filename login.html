@@ -39,19 +39,11 @@
     <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
 
-  <!-- 1. Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
-  <!-- 2. Config (window.SUPABASE_CONFIG) -->
-  <script src="./js/supabase-config.js?v=3"></script>
-  <!-- 3. Client -->
-  <script src="./js/supabase-client.js?v=3"></script>
-  <!-- profile helpers required by auth -->
-  <script src="./js/profile-service.js?v=1"></script>
-  <!-- 4. Auth -->
-  <script src="./js/auth.js?v=1"></script>
-  <!-- 5. Login page script -->
+  <script src="./js/supabase-config.js?v=4"></script>
+  <script src="./js/supabase-client.js?v=4"></script>
   <script>
-    (function () {
+    document.addEventListener("DOMContentLoaded", function () {
       const ADMIN_MSG =
         (window.TN170SupabaseConfig && window.TN170SupabaseConfig.adminMessage()) ||
         "Supabase is not configured. Please contact the portal administrator.";
@@ -77,35 +69,30 @@
         sessionStorage.removeItem("smtn170_had_session");
       }
 
-      if (!window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.isConfigured) {
+      const supa = window.TN170_SUPABASE;
+      if (!supa || !supa.isConfigured || !supa.isConfigured()) {
         showError(ADMIN_MSG);
         btn.disabled = true;
         return;
       }
 
-      (async function boot() {
+      const client = supa.client;
+      if (!client) {
+        const initErr = supa.getInitError && supa.getInitError();
+        showError((initErr && initErr.message) || ADMIN_MSG);
+        btn.disabled = true;
+        return;
+      }
+
+      (async function checkSession() {
         try {
-          await window.SMTN170Supabase.whenReady();
-          const initErr = window.SMTN170Supabase.getInitError && window.SMTN170Supabase.getInitError();
-          if (initErr) {
-            showError(initErr.message || ADMIN_MSG);
-            btn.disabled = true;
-            return;
-          }
-          if (!window.SMTN170Supabase.getClient()) {
-            showError(ADMIN_MSG);
-            btn.disabled = true;
-            return;
-          }
-          await window.SMTN170Auth.init();
-          const s = window.SMTN170Auth.loadSession();
-          if (s && s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.APPROVED) {
+          const { data } = await client.auth.getSession();
+          if (data && data.session) {
+            sessionStorage.setItem("smtn170_had_session", "1");
             location.replace("dashboard.html");
-          } else if (s && s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.AWAITING) {
-            location.replace("pending-approval.html");
           }
         } catch (e) {
-          console.warn("[TN-170] login boot", e);
+          console.warn("[TN-170] session check", e);
         }
       })();
 
@@ -119,26 +106,44 @@
         const password = document.getElementById("loginPassword").value;
 
         try {
-          if (!window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.isConfigured) {
+          const activeClient = window.TN170_SUPABASE && window.TN170_SUPABASE.client;
+          if (!activeClient) {
             showError(ADMIN_MSG);
             return;
           }
 
-          await window.SMTN170Supabase.whenReady();
+          const { data, error } = await activeClient.auth.signInWithPassword({
+            email,
+            password,
+          });
 
-          if (!window.SMTN170Supabase.getClient()) {
-            const initErr = window.SMTN170Supabase.getInitError && window.SMTN170Supabase.getInitError();
-            showError((initErr && initErr.message) || ADMIN_MSG);
+          if (error) {
+            showError(error.message);
             return;
           }
 
-          await window.SMTN170Auth.signIn(email, password);
-          const s = window.SMTN170Auth.loadSession();
-          if (s && s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.AWAITING) {
-            location.href = "pending-approval.html";
-          } else {
+          if (data && data.session) {
             sessionStorage.setItem("smtn170_had_session", "1");
+
+            try {
+              const userId = data.session.user.id;
+              const { data: profile } = await activeClient
+                .from("profiles")
+                .select("account_status")
+                .eq("id", userId)
+                .maybeSingle();
+
+              if (profile && profile.account_status === "awaiting_verification") {
+                location.href = "pending-approval.html";
+                return;
+              }
+            } catch (profileErr) {
+              console.warn("[TN-170] profile check after login", profileErr);
+            }
+
             location.href = "dashboard.html";
+          } else {
+            showError("Sign in did not return a session. Try again.");
           }
         } catch (err) {
           showError(err && err.message ? err.message : "Could not sign in. Check email and password.");
@@ -147,7 +152,7 @@
           btn.textContent = "Sign in";
         }
       });
-    })();
+    });
   </script>
 </body>
 </html>
