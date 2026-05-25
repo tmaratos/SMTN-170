@@ -39,13 +39,17 @@
     <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
 
-  <script src="./portal-config.js?v=3"></script>
-  <script src="./js/supabase-config.js?v=2"></script>
-  <script src="./js/supabase-client.js?v=2"></script>
+  <!-- 1. Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+  <!-- 2. Config (window.SUPABASE_CONFIG) -->
+  <script src="./js/supabase-config.js?v=3"></script>
+  <!-- 3. Client -->
+  <script src="./js/supabase-client.js?v=3"></script>
+  <!-- profile helpers required by auth -->
   <script src="./js/profile-service.js?v=1"></script>
-  <script src="./js/portal-auth.js?v=5"></script>
-  <script src="./js/auth-session.js?v=1"></script>
-  <script src="./js/portal-bootstrap.js?v=2"></script>
+  <!-- 4. Auth -->
+  <script src="./js/auth.js?v=1"></script>
+  <!-- 5. Login page script -->
   <script>
     (function () {
       const ADMIN_MSG =
@@ -73,28 +77,35 @@
         sessionStorage.removeItem("smtn170_had_session");
       }
 
-      if (!window.SUPABASE_CONFIG) {
+      if (!window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.isConfigured) {
         showError(ADMIN_MSG);
         btn.disabled = true;
         return;
       }
 
-      (async function checkExistingSession() {
+      (async function boot() {
         try {
-          if (window.SMTN170Supabase && window.SMTN170Supabase.whenReady) {
-            await window.SMTN170Supabase.whenReady();
+          await window.SMTN170Supabase.whenReady();
+          const initErr = window.SMTN170Supabase.getInitError && window.SMTN170Supabase.getInitError();
+          if (initErr) {
+            showError(initErr.message || ADMIN_MSG);
+            btn.disabled = true;
+            return;
           }
-          if (window.SMTN170Auth && window.SMTN170Auth.init) {
-            await window.SMTN170Auth.init();
+          if (!window.SMTN170Supabase.getClient()) {
+            showError(ADMIN_MSG);
+            btn.disabled = true;
+            return;
           }
-          const s = window.SMTN170Auth && window.SMTN170Auth.loadSession && window.SMTN170Auth.loadSession();
+          await window.SMTN170Auth.init();
+          const s = window.SMTN170Auth.loadSession();
           if (s && s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.APPROVED) {
             location.replace("dashboard.html");
           } else if (s && s.accountStatus === window.SMTN170Auth.ACCOUNT_STATUS.AWAITING) {
             location.replace("pending-approval.html");
           }
         } catch (e) {
-          console.warn("[TN-170] session check", e);
+          console.warn("[TN-170] login boot", e);
         }
       })();
 
@@ -112,23 +123,12 @@
             showError(ADMIN_MSG);
             return;
           }
-          if (!window.SMTN170Supabase || typeof window.SMTN170Supabase.whenReady !== "function") {
-            showError(ADMIN_MSG);
-            return;
-          }
 
           await window.SMTN170Supabase.whenReady();
 
-          if (!window.SMTN170Supabase.isConfigured || !window.SMTN170Supabase.isConfigured()) {
-            showError(ADMIN_MSG);
-            return;
-          }
-          if (!window.SMTN170Supabase.getClient || !window.SMTN170Supabase.getClient()) {
-            showError(ADMIN_MSG);
-            return;
-          }
-          if (!window.SMTN170Auth || !window.SMTN170Auth.signIn) {
-            showError(ADMIN_MSG);
+          if (!window.SMTN170Supabase.getClient()) {
+            const initErr = window.SMTN170Supabase.getInitError && window.SMTN170Supabase.getInitError();
+            showError((initErr && initErr.message) || ADMIN_MSG);
             return;
           }
 

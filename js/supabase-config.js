@@ -1,43 +1,28 @@
 /**
- * Supabase connection — browser-safe anon key only (RLS protects data).
+ * TN-170 Supabase — publishable (anon) key only. Never put service role here.
  */
-(function initSupabaseConfig(global) {
-  const url = "https://hmfbeqnlcchkjyzqnlni.supabase.co";
-  const anonKey = "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai";
-  const storageBucket = "squadron-files";
+window.SUPABASE_CONFIG = {
+  url: "https://hmfbeqnlcchkjyzqnlni.supabase.co",
+  anonKey: "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai",
+  storageBucket: "squadron-files",
+  isConfigured: true,
+};
 
-  const isConfigured = !!(
-    url &&
-    anonKey &&
-    anonKey.length > 10 &&
-    !String(url).includes("YOUR_PROJECT")
-  );
+/** Legacy bridge for modules that read SMTN170_SUPABASE_CONFIG */
+window.SMTN170_SUPABASE_CONFIG = {
+  SUPABASE_URL: window.SUPABASE_CONFIG.url,
+  SUPABASE_ANON_KEY: window.SUPABASE_CONFIG.anonKey,
+  STORAGE_BUCKET: window.SUPABASE_CONFIG.storageBucket,
+};
 
-  global.SUPABASE_CONFIG = {
-    url,
-    anonKey,
-    storageBucket,
-    isConfigured,
-  };
-
-  /** Legacy shape used by existing portal modules */
-  global.SMTN170_SUPABASE_CONFIG = {
-    SUPABASE_URL: url,
-    SUPABASE_ANON_KEY: anonKey,
-    STORAGE_BUCKET: storageBucket,
-  };
-
-  global.TN170SupabaseConfig = {
-    get() {
-      return global.SUPABASE_CONFIG || null;
-    },
-    isConfigured() {
-      const cfg = global.SUPABASE_CONFIG;
-      if (cfg && typeof cfg.isConfigured === "boolean") return cfg.isConfigured;
-      return false;
-    },
-    adminMessage() {
-      return "Supabase is not configured. Please contact the portal administrator.";
-    },
-  };
-})(window);
+window.TN170SupabaseConfig = {
+  get() {
+    return window.SUPABASE_CONFIG || null;
+  },
+  isConfigured() {
+    return !!(window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.isConfigured);
+  },
+  adminMessage() {
+    return "Supabase is not configured. Please contact the portal administrator.";
+  },
+};

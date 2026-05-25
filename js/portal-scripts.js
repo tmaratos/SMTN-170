@@ -21,10 +21,11 @@
 
   const chain = [
     "./portal-config.js?v=3",
-    "./js/supabase-config.js?v=2",
-    "./js/supabase-client.js?v=2",
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js",
+    "./js/supabase-config.js?v=3",
+    "./js/supabase-client.js?v=3",
     "./js/profile-service.js?v=1",
-    "./js/portal-auth.js?v=5",
+    "./js/auth.js?v=1",
     "./js/auth-session.js?v=1",
     "./portal-nav.js?v=11",
     "./js/portal-shell.js?v=5",

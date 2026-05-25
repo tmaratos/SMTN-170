@@ -7,10 +7,10 @@
 
   function config() {
     const c = global.SUPABASE_CONFIG;
-    if (c?.url) {
+    if (c?.url && c?.anonKey) {
       return { SUPABASE_URL: c.url, SUPABASE_ANON_KEY: c.anonKey };
     }
-    return global.SMTN170_SUPABASE_CONFIG || {};
+    return {};
   }
 
   function isConfigured() {
@@ -25,8 +25,8 @@
   }
 
   function functionsUrl() {
-    const base = (config().SUPABASE_URL || "").replace(/\/$/, "");
-    if (!base || base.includes("YOUR_PROJECT")) return null;
+    const base = (global.SUPABASE_CONFIG?.url || config().SUPABASE_URL || "").replace(/\/$/, "");
+    if (!base) return null;
     return `${base}/functions/v1/steward-core`;
   }
 
@@ -38,7 +38,7 @@
   async function invoke(body) {
     const url = functionsUrl();
     const token = await getAccessToken();
-    const anon = config().SUPABASE_ANON_KEY;
+    const anon = global.SUPABASE_CONFIG?.anonKey || config().SUPABASE_ANON_KEY;
 
     if (!url || !token || !anon) {
       throw new Error("Sign in with Supabase configured to use Steward.");
