@@ -1,9 +1,9 @@
-/**
+﻿/**
  * TN-170 Firebase web config — paste your Firebase project keys here.
  * These are safe for the browser (not service account keys).
  */
 window.TN170_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDZaerVKws3XFCRwBmvxEuwQdZfpbL1Gk0",
+  apiKey: "AIzaSyDaervKws3XFCRwBmvxEuwQdZfpbL1Gk0",
   authDomain: "tn-170-portal.firebaseapp.com",
   projectId: "tn-170-portal",
   storageBucket: "tn-170-portal.firebasestorage.app",
