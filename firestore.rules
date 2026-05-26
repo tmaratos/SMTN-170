@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/profiles/$(uid())).data;
+    }
+
+    function isApproved() {
+      return signedIn()
+        && profile().status in ['approved', 'active'];
+    }
+
+    function isAdmin() {
+      return isApproved()
+        && profile().role in ['commander', 'command_staff', 'admin'];
+    }
+
+    function safeProfilePatch() {
+      let allowed = ['firstName', 'lastName', 'preferredName', 'rank', 'capId', 'phone', 'dutyPosition', 'profilePhotoUrl', 'updatedAt'];
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && userId == uid();
+      allow write: if false;
+    }
+
+    match /profiles/{userId} {
+      allow read: if signedIn() && userId == uid();
+      allow create: if signedIn() && userId == uid();
+      allow update: if signedIn() && userId == uid() && safeProfilePatch();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /uploadedFiles/{docId} {
+      allow read: if isApproved();
+      allow create: if isApproved() && request.resource.data.ownerId == uid();
+      allow update, delete: if isApproved();
+    }
+
+    match /importJobs/{docId} {
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved();
+    }
+
+    match /parsedDocuments/{docId} {
+      allow read: if isApproved();
+      allow create: if isApproved();
+    }
+
+    match /meetings/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved();
+      allow delete: if isAdmin();
+    }
+
+    match /tasks/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved();
+      allow delete: if isAdmin();
+    }
+
+    match /flightReviews/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved();
+      allow delete: if isAdmin();
+    }
+
+    match /inspectionItems/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved();
+      allow delete: if isAdmin();
+    }
+
+    match /orgPositions/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved();
+      allow delete: if isAdmin();
+    }
+
+    match /stewardConversations/{docId} {
+      allow read, write: if isApproved() && resource.data.profileId == uid();
+      allow create: if isApproved() && request.resource.data.profileId == uid();
+    }
+
+    match /stewardMessages/{docId} {
+      allow read, write: if isApproved() && request.resource.data.profileId == uid();
+      allow create: if isApproved() && request.resource.data.profileId == uid();
+    }
+
+    match /auditLog/{docId} {
+      allow read: if isAdmin();
+      allow create: if isApproved();
+    }
+  }
+}

@@ -340,8 +340,8 @@
   }
 
   async function init() {
-    await global.SMTN170Supabase?.whenReady?.();
-    await global.SMTN170Auth?.syncSessionFromSupabase?.();
+    await global.SMTN170Firebase?.whenReady?.();
+    await global.SMTN170Auth?.syncSessionFromFirebase?.();
     await refreshJobs();
     const last = global.SMTN170FileIngestion?.getLastResult?.();
     if (last?.needsReview) state.pending = last;

@@ -1,5 +1,5 @@
 /**
- * TN-170 dashboard — Supabase-backed summary for the home workspace.
+ * TN-170 dashboard — Firebase-backed summary for the home workspace.
  */
 (function initPortalDashboard(global) {
   function mapMeeting(row) {

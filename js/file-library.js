@@ -1,5 +1,5 @@
 /**
- * TN-170 Squadron File Library — simple shared drive (Supabase storage + uploaded_files).
+ * TN-170 Squadron File Library — simple shared drive (Firebase Storage + uploadedFiles).
  */
 (function initFileLibrary(global) {
   const FOLDERS = [
@@ -363,7 +363,7 @@
 
     root.innerHTML = `
       <div class="fl-root">
-        <p class="page-intro">Upload squadron files here — stored securely in Supabase. Smart import extracts meeting schedules and org chart data for review, then writes to the portal database. Open PDFs, Word, Excel, images, and text in the built-in viewer.</p>
+        <p class="page-intro">Upload squadron files here — stored securely in Firebase. Smart import extracts meeting schedules and org chart data for review, then writes to the portal database. Open PDFs, Word, Excel, images, and text in the built-in viewer.</p>
         <div data-steward-context="files"></div>
         <div class="fl-toolbar">
           <div class="fl-folders" role="group" aria-label="Folders">${folderBtns}</div>
@@ -427,10 +427,10 @@
   }
 
   async function init() {
-    await global.SMTN170Supabase?.whenReady?.();
-    await global.SMTN170Auth?.syncSessionFromSupabase?.();
+    await global.SMTN170Firebase?.whenReady?.();
+    await global.SMTN170Auth?.syncSessionFromFirebase?.();
     state.files = await fetchFiles();
-    if (!state.files.length && !global.SMTN170Supabase?.isConfigured?.()) {
+    if (!state.files.length && !global.SMTN170Firebase?.isConfigured?.()) {
       state.files = [];
     }
     render();

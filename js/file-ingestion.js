@@ -116,53 +116,17 @@
 
   let lastResult = null;
 
-  function importProcessorUrl() {
-    const base = (global.SUPABASE_CONFIG?.url || "").replace(/\/$/, "");
-    if (!base) return null;
-    return `${base}/functions/v1/import-processor`;
-  }
-
-  async function getAccessToken() {
-    const sb = getClient();
-    if (!sb) return null;
-    const { data } = await sb.auth.getSession();
-    return data?.session?.access_token || null;
-  }
-
-  /** Call import-processor Edge Function (server-side extraction + parsing). */
+  /** Call importProcessor Cloud Function (server-side extraction + parsing). */
   async function invokeImportProcessor(payload) {
-    const url = importProcessorUrl();
-    const token = await getAccessToken();
-    const anon = global.SUPABASE_CONFIG?.anonKey;
-    if (!url || !token || !anon) {
-      throw new Error("Sign in with Supabase configured to use Smart Import.");
+    if (!global.SMTN170ImportClient?.invoke) {
+      throw new Error("Sign in with Firebase configured to use Smart Import.");
     }
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        apikey: anon,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload || {}),
+    return global.SMTN170ImportClient.invoke({
+      uploadedFileId: payload?.uploaded_file_id || payload?.uploadedFileId,
+      filePath: payload?.file_path || payload?.filePath,
+      fileName: payload?.file_name || payload?.fileName,
+      requestedTarget: payload?.requested_target || payload?.requestedTarget,
     });
-
-    const text = await res.text();
-    let data = {};
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { error: text || `Import processor unavailable (${res.status})` };
-    }
-    if (!res.ok || data.ok === false) {
-      const msg =
-        data.error ||
-        data.message ||
-        `Import processor failed (${res.status})`;
-      throw new Error(msg);
-    }
-    return data;
   }
 
   function mapProcessorResponse(processorData, fileRecord) {
@@ -219,7 +183,7 @@
   };
 
   function getClient() {
-    return global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+    return global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
   }
 
   function ext(name) {
@@ -486,7 +450,7 @@
     const rec = normalizeFileRecord(fileRecord);
     const storagePath = rec?.file_path || rec?.storage_path;
     if (!sb || !storagePath) return null;
-    const bucket = global.SMTN170Supabase?.storageBucket?.() || "squadron-files";
+    const bucket = global.SMTN170Firebase?.storageBucket?.() || "squadron-files";
     const { data, error } = await sb.storage.from(bucket).download(storagePath);
     if (error) {
       console.warn("[import] download", error.message);
@@ -1170,7 +1134,7 @@
       "general";
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const storagePath = `${uid}/${Date.now()}-${safeName}`;
-    const bucket = global.SMTN170Supabase?.storageBucket?.() || "squadron-files";
+    const bucket = global.SMTN170Firebase?.storageBucket?.() || "squadron-files";
 
     const { error: upErr } = await sb.storage.from(bucket).upload(storagePath, file, {
       cacheControl: "3600",

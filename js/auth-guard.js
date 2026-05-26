@@ -1,57 +1,11 @@
 /**
- * TN-170 — single Supabase client + page auth gate (no redirect listeners).
+ * TN-170 — Firebase auth gate for protected portal pages (no redirect loops).
  */
 (function initAuthGuard(global) {
-  const SUPABASE_URL = "https://hmfbeqnlcchkjyzqnlni.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_4xtWm2-5zUTdvKaJBsEPtQ_0rDyyRai";
   const LOGIN = "login.html";
   const DASHBOARD = "dashboard.html";
 
   let authChecked = false;
-  let client = null;
-
-  function getSupabase() {
-    if (client) return client;
-    if (global.TN170SupabaseClient) {
-      client = global.TN170SupabaseClient;
-      return client;
-    }
-    if (!global.supabase || typeof global.supabase.createClient !== "function") {
-      return null;
-    }
-    client = global.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storage: global.localStorage,
-      },
-    });
-    global.TN170SupabaseClient = client;
-    if (global.SMTN170Supabase) {
-      global.SMTN170Supabase.getClient = () => client;
-    }
-    return client;
-  }
-
-  function waitForSupabaseSdk(maxMs) {
-    return new Promise((resolve) => {
-      if (global.supabase?.createClient) {
-        resolve(getSupabase());
-        return;
-      }
-      const start = Date.now();
-      const t = setInterval(() => {
-        if (global.supabase?.createClient) {
-          clearInterval(t);
-          resolve(getSupabase());
-        } else if (Date.now() - start > (maxMs || 8000)) {
-          clearInterval(t);
-          resolve(null);
-        }
-      }, 50);
-    });
-  }
 
   function showLoading(msg) {
     let el = document.getElementById("portalSessionLoading");
@@ -74,23 +28,34 @@
     if (app) app.hidden = false;
   }
 
+  async function waitForFirebase(maxMs) {
+    const start = Date.now();
+    while (Date.now() - start < (maxMs || 10000)) {
+      await global.SMTN170Firebase?.whenReady?.();
+      const client = global.SMTN170Firebase?.getClient?.();
+      if (client) return client;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    return null;
+  }
+
   async function ensureProtectedSession() {
     if (authChecked && global.TN170_AUTH_SESSION_OK) return true;
     if (!authChecked) showLoading("Loading workspace…");
-    const sb = (await waitForSupabaseSdk()) || getSupabase();
-    if (!sb) {
+    const client = await waitForFirebase();
+    if (!client) {
       console.log("SESSION_MISSING_REDIRECT");
-      console.log("REDIRECT REASON: Supabase client not available");
+      console.log("REDIRECT REASON: Firebase client not available");
       authChecked = true;
       global.location.href = LOGIN;
       return false;
     }
-    const { data, error } = await sb.auth.getSession();
+    const { data, error } = await client.auth.getSession();
     if (error) console.log("PROFILE_LOAD_ERROR", error.message);
     authChecked = true;
     if (!data?.session) {
       console.log("SESSION_MISSING_REDIRECT");
-      console.log("REDIRECT REASON: no Supabase session on protected page");
+      console.log("REDIRECT REASON: no Firebase session on protected page");
       global.location.href = LOGIN;
       return false;
     }
@@ -103,12 +68,12 @@
 
   async function runLoginPage() {
     if (authChecked) return;
-    const sb = (await waitForSupabaseSdk()) || getSupabase();
-    if (!sb) {
+    const client = await waitForFirebase();
+    if (!client) {
       authChecked = true;
       return;
     }
-    const { data, error } = await sb.auth.getSession();
+    const { data, error } = await client.auth.getSession();
     if (error) console.log("PROFILE_LOAD_ERROR", error.message);
     const hasSession = !!data?.session;
     console.log("LOGIN PAGE SESSION:", hasSession ? "yes" : "no");
@@ -134,8 +99,8 @@
 
   async function logout() {
     console.log("LOGOUT_CLICKED");
-    const sb = getSupabase();
-    if (sb) await sb.auth.signOut();
+    const client = global.SMTN170Firebase?.getClient?.();
+    if (client) await client.auth.signOut();
     console.log("SIGNOUT_COMPLETE");
     global.TN170_AUTH_SESSION_OK = false;
     global.location.href = LOGIN;
@@ -143,14 +108,17 @@
 
   function loadPortalScripts(page) {
     const s = document.createElement("script");
-    s.src = "./js/portal-scripts.js?v=7";
+    s.src = "./js/portal-scripts.js?v=8";
     if (page) s.dataset.page = page;
     document.body.appendChild(s);
   }
 
+  function getFirebaseClient() {
+    return global.SMTN170Firebase?.getClient?.() || null;
+  }
+
   global.TN170AuthGuard = {
-    getSupabase,
-    waitForSupabaseSdk,
+    waitForFirebase,
     ensureProtectedSession,
     runLoginPage,
     runDashboardPage,
@@ -159,5 +127,9 @@
     showLoading,
     hideLoading,
     isAuthChecked: () => authChecked,
+    getFirebaseClient,
+    /** @deprecated use getFirebaseClient */
+    getSupabase: getFirebaseClient,
+    waitForSupabaseSdk: waitForFirebase,
   };
 })(window);

@@ -1,98 +1,17 @@
 /**
- * Steward Phase 3 — thin frontend client for steward-core Edge Function.
- * No operational logic here; UI shell only.
+ * Steward Phase 3 — thin frontend client for stewardCore Cloud Function.
+ * Re-exports js/steward-client.js (Firebase httpsCallable).
  */
 (function initStewardApi(global) {
-  const CAP_SEARCH_MARKER = "CAP_SEARCH_URL:";
-
-  function config() {
-    const c = global.SUPABASE_CONFIG;
-    if (c?.url && c?.anonKey) {
-      return { SUPABASE_URL: c.url, SUPABASE_ANON_KEY: c.anonKey };
-    }
-    return {};
-  }
-
-  function isConfigured() {
-    return global.TN170SupabaseConfig?.isConfigured?.() || global.SMTN170Supabase?.isConfigured?.() || false;
-  }
-
-  async function getAccessToken() {
-    const sb = global.SMTN170Supabase?.getClient?.();
-    if (!sb) return null;
-    const { data } = await sb.auth.getSession();
-    return data?.session?.access_token || null;
-  }
-
-  function functionsUrl() {
-    const base = (global.SUPABASE_CONFIG?.url || config().SUPABASE_URL || "").replace(/\/$/, "");
-    if (!base) return null;
-    return `${base}/functions/v1/steward-core`;
-  }
-
-  /**
-   * Invoke Steward Core Edge Function.
-   * @param {object} body
-   * @returns {Promise<object>}
-   */
-  async function invoke(body) {
-    const url = functionsUrl();
-    const token = await getAccessToken();
-    const anon = global.SUPABASE_CONFIG?.anonKey || config().SUPABASE_ANON_KEY;
-
-    if (!url || !token || !anon) {
-      throw new Error("Sign in with Supabase configured to use Steward.");
-    }
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        apikey: anon,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body || {}),
-    });
-
-    const text = await res.text();
-    let data = {};
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { error: text || `Steward unavailable (${res.status})` };
-    }
-    if (!res.ok || data.ok === false) {
-      const msg =
-        data.error ||
-        data.message ||
-        (typeof data.details === "string" ? data.details : null) ||
-        `Steward unavailable (${res.status})`;
-      throw new Error(msg);
-    }
-    return data;
-  }
-
-  function openCapUrl(url) {
-    if (!url) return;
-    global.open(url, "_blank", "noopener,noreferrer");
-  }
-
-  function parseCapUrlFromText(text) {
-    const m = (text || "").match(/CAP_SEARCH_URL:(https?:\/\/[^\s]+)/);
-    return m ? m[1] : null;
-  }
-
-  function stripCapMarker(text) {
-    return (text || "").replace(/\n*CAP_SEARCH_URL:https?:\/\/[^\s]+/g, "").trim();
-  }
+  const client = () => global.SMTN170StewardClient || global.SMTN170StewardApi;
 
   global.SMTN170StewardApi = {
-    CAP_SEARCH_MARKER,
-    isConfigured,
-    invoke,
-    openCapUrl,
-    parseCapUrlFromText,
-    stripCapMarker,
-    functionsUrl,
+    CAP_SEARCH_MARKER: "CAP_SEARCH_URL:",
+    isConfigured: () => client()?.isConfigured?.() ?? false,
+    invoke: (body) => client().invoke(body),
+    openCapUrl: (url) => client().openCapUrl(url),
+    parseCapUrlFromText: (text) => client().parseCapUrlFromText(text),
+    stripCapMarker: (text) => client().stripCapMarker(text),
+    functionsUrl: () => null,
   };
 })(window);

@@ -1,6 +1,6 @@
 /**
  * TN-170 portal — shared constants (roles, categories, Steward prompts).
- * Operational records load from Supabase per page.
+ * Operational records load from Firebase per page.
  */
 (function initPortalData(global) {
   const ROLES = {

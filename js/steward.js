@@ -1,6 +1,6 @@
 /**
  * Steward for CAP — Phase 3 UI shell (GitHub Pages).
- * Brain runs in Supabase Edge Function steward-core via steward-api.js.
+ * Brain runs in Firebase Cloud Function stewardCore via steward-client.js.
  */
 (function initSteward(global) {
   const DISCLAIMER =
@@ -719,7 +719,13 @@
     if (!state.conversationId) await ensureActiveConversation();
 
     if (!canUseStewardCore()) {
-      alert("Sign in with Supabase configured to use Steward. Deploy the steward-core Edge Function if you have not already.");
+      state.messages.push({
+        id: "err-" + Date.now(),
+        role: "steward",
+        text: "Sign in with Firebase configured to use Steward. Deploy the stewardCore Cloud Function if you have not already.",
+        at: new Date().toISOString(),
+      });
+      renderMessages();
       return;
     }
 
@@ -779,7 +785,7 @@
       state.messages.push({
         id: "err-" + Date.now(),
         role: "steward",
-        text: err.message || "Steward could not respond. Check your connection and Edge Function deployment.",
+        text: err.message || "Steward could not respond. Check your connection and Cloud Function deployment.",
         at: new Date().toISOString(),
       });
       renderMessages();
@@ -1075,7 +1081,7 @@
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
               </form>
-              <p class="steward-composer-foot">${escapeHtml(DISCLAIMER)} Files are stored in Supabase; schedule and org data import after review in Upload &amp; Files.</p>
+              <p class="steward-composer-foot">${escapeHtml(DISCLAIMER)} Files are stored in Firebase; schedule and org data import after review in Upload &amp; Files.</p>
             </footer>
           </div>
         </div>
@@ -1088,7 +1094,7 @@
   }
 
   async function loadAndRender() {
-    await global.SMTN170Auth?.syncSessionFromSupabase?.();
+    await global.SMTN170Auth?.syncSessionFromFirebase?.();
     await ensureActiveConversation();
     await loadWorkspaceContext();
     state.loaded = true;
@@ -1100,7 +1106,7 @@
 
   async function init() {
     injectStewardCss();
-    await global.SMTN170Supabase?.whenReady?.();
+    await global.SMTN170Firebase?.whenReady?.();
     if (!document.getElementById("stewardRoot")) injectWidget();
     else {
       renderPrompts();

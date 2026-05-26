@@ -1,5 +1,5 @@
 /**
- * TN-170 Meeting Schedule — guided step builder + Supabase schedules table.
+ * TN-170 Meeting Schedule — guided step builder + Firestore meetings collection.
  */
 (function initScheduleBuilder(global) {
   const STEPS = ["month", "template", "weeks", "preview", "save"];
@@ -96,7 +96,7 @@
     };
     if (!sb) {
       localStorage.setItem("smtn170_schedule_" + state.monthKey, JSON.stringify(row));
-      alert("Schedule saved locally (connect Supabase for squadron workspace).");
+      alert("Schedule saved locally (connect Firebase for squadron workspace).");
       return;
     }
     const { error } = await sb.from("schedules").upsert(row, { onConflict: "month_key" });

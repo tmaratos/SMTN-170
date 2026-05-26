@@ -151,7 +151,7 @@
 
     try {
       await global.SMTN170Auth.updateOwnProfile(payload);
-      await global.SMTN170Auth?.syncSessionFromSupabase?.();
+      await global.SMTN170Auth?.syncSessionFromFirebase?.();
       const row = getProfileRow();
       renderForm(row, "Your profile was saved.", "success");
       global.SMTN170ProfileBanner?.refresh?.();

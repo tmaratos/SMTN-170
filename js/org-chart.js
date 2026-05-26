@@ -1,5 +1,5 @@
 /**
- * TN-170 Organization Chart — squadron staff structure (Supabase org_positions).
+ * TN-170 Organization Chart — squadron staff structure (Firestore orgPositions).
  * All approved Senior Members may view and update; audit via last_worked_by.
  */
 (function initOrgChartModule(global) {

@@ -27,7 +27,7 @@
   }
 
   async function syncProfile() {
-    await auth()?.syncSessionFromSupabase?.();
+    await auth()?.syncSessionFromFirebase?.();
     return loadProfile();
   }
 
@@ -50,7 +50,7 @@
       return;
     }
     console.log("LOGOUT_CLICKED");
-    const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (sb) await sb.auth.signOut();
     console.log("SIGNOUT_COMPLETE");
     global.location.href = LOGIN;

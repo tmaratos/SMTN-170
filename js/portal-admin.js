@@ -1,5 +1,5 @@
 /**
- * TN-170 admin — Commander & Command Staff (Supabase profiles).
+ * TN-170 admin — Commander & Command Staff (Firebase profiles).
  */
 (function initPortalAdmin(global) {
   function escapeHtml(t) {
@@ -26,7 +26,7 @@
 
   async function setAccountStatus(userId, status) {
     const sb = global.SMTN170Supabase?.getClient?.();
-    if (!sb) throw new Error("Supabase is not configured.");
+    if (!sb) throw new Error("Firebase is not configured.");
     const { error } = await sb
       .from("profiles")
       .update({ status })
@@ -65,12 +65,12 @@
 
     root.innerHTML = `
       <p class="page-intro">Commander and Command Staff tools for the private Senior Member operations portal. Roles identify members for audit — they do not hide operational pages from approved Senior Members.</p>
-      <p class="role-banner">Admin-only: approve users, change roles, delete records, global settings, and Supabase configuration.</p>
+      <p class="role-banner">Admin-only: approve users, change roles, delete records, global settings, and Firebase configuration.</p>
 
       <section class="card-warning panel">
         <h2>Pending approvals</h2>
         <p>Members with <code>awaiting_approval</code> can sign in but only see the pending approval page until approved.</p>
-        ${!pendingRes.configured ? '<p class="dash-empty">Connect Supabase to load pending members.</p>' : ""}
+        ${!pendingRes.configured ? '<p class="dash-empty">Connect Firebase to load pending members.</p>' : ""}
         ${pendingRes.error ? `<p class="dash-empty">${escapeHtml(pendingRes.error)}</p>` : ""}
         <table class="admin-table">
           <thead><tr><th>Name</th><th>Email</th><th>Rank</th><th>Requested</th><th>Actions</th></tr></thead>
@@ -84,16 +84,16 @@
           <p>Assign Commander, Command Staff, Senior Member, or Senior Member Limited. Approved Senior Members only.</p>
           <label for="adminRoleSelect">Role</label>
           <select id="adminRoleSelect" style="width:100%;margin:8px 0 12px;padding:12px;border-radius:10px;border:1px solid var(--tn-line);background:rgba(1,8,20,.8);color:#fff">${roleOptions}</select>
-          <p class="page-intro" style="margin:0">Role changes are applied in Supabase when member management is enabled for this squadron.</p>
+          <p class="page-intro" style="margin:0">Role changes are applied in Firestore when member management is enabled for this squadron.</p>
         </article>
         <article class="panel">
           <h2>Global settings</h2>
           <p>Squadron display options and default filing categories for the operations workspace.</p>
         </article>
         <article class="panel">
-          <h2>Supabase configuration</h2>
-          <p>Project connection, RLS policies, and webhooks. Service keys are never exposed in the browser.</p>
-          <p class="page-intro" style="margin-top:8px">See <code>docs/SUPABASE_SETUP.md</code> for deployment steps.</p>
+          <h2>Firebase configuration</h2>
+          <p>Project connection, security rules, and Cloud Functions. Service account keys are never exposed in the browser.</p>
+          <p class="page-intro" style="margin-top:8px">Paste web config keys in <code>js/firebase-config.js</code>, then deploy rules and functions.</p>
         </article>
         <article class="panel">
           <h2>File categories</h2>
@@ -112,7 +112,7 @@
           <li>Login controls portal entry; approval controls workspace access.</li>
           <li>All approved Senior Members share the same operational workspace.</li>
           <li>Audit fields: created_by, updated_by, last_worked_by on operational tables.</li>
-          <li>See <code>docs/SUPABASE_SECURITY_MODEL.md</code> for RLS reference.</li>
+          <li>See <code>firestore.rules</code> for security rules reference.</li>
         </ul>
       </article>`;
 
@@ -127,7 +127,7 @@
             alert("Member approved.");
           } else if (action === "deny") {
             await setAccountStatus(userId, auth.ACCOUNT_STATUS.AWAITING);
-            alert("Request noted. Adjust status in Supabase if needed.");
+            alert("Request noted. Adjust status in the Firebase console if needed.");
           }
           render();
         } catch (err) {

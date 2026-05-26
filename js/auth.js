@@ -1,6 +1,6 @@
 /**
- * TN-170 auth — Supabase session + profiles (login entry: js/auth.js).
- * Requires: Supabase CDN, supabase-config.js, supabase-client.js, profile-service.js
+ * TN-170 auth — Firebase session + profiles (login entry: js/auth.js).
+ * Requires: firebase-config.js, firebase-client.js, firebase-data.js, profile-service.js
  */
 (function initPortalAuth(global) {
   const LOGIN_PATH = "login.html";
@@ -25,7 +25,7 @@
     "change_roles",
     "delete_records",
     "global_settings",
-    "supabase_config",
+    "firebase_config",
   ]);
 
   let session = null;
@@ -71,8 +71,8 @@
     return data;
   }
 
-  async function syncSessionFromSupabase() {
-    const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+  async function syncSessionFromFirebase() {
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) {
       session = null;
       profile = null;
@@ -121,7 +121,7 @@
     const { error } = await sb.from("profiles").update(patch).eq("id", uid);
     if (error) throw new Error(error.message || "Could not save profile.");
 
-    await syncSessionFromSupabase();
+    await syncSessionFromFirebase();
     global.dispatchEvent(new CustomEvent("smtn170:profile-updated", { detail: { profile } }));
     global.dispatchEvent(new CustomEvent("smtn170:auth-changed", { detail: { session } }));
     return profile;
@@ -178,12 +178,12 @@
     if (!sb) {
       throw new Error(
         global.TN170SupabaseConfig?.adminMessage?.() ||
-          "Supabase is not configured. Please contact the portal administrator."
+          "Firebase is not configured. Please contact the portal administrator."
       );
     }
     const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
     if (error) throw error;
-    await syncSessionFromSupabase();
+    await syncSessionFromFirebase();
     return session;
   }
 
@@ -192,7 +192,7 @@
     if (!sb) {
       throw new Error(
         global.TN170SupabaseConfig?.adminMessage?.() ||
-          "Supabase is not configured. Please contact the portal administrator."
+          "Firebase is not configured. Please contact the portal administrator."
       );
     }
     const { error } = await sb.auth.signUp({
@@ -203,7 +203,7 @@
       },
     });
     if (error) throw error;
-    await syncSessionFromSupabase();
+    await syncSessionFromFirebase();
     return { session };
   }
 
@@ -292,17 +292,17 @@
   }
 
   async function init() {
-    const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
-    if (!sb && global.SMTN170Supabase?.whenReady) {
-      await global.SMTN170Supabase.whenReady();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
+    if (!sb && global.SMTN170Firebase?.whenReady) {
+      await global.SMTN170Firebase.whenReady();
     }
-    await syncSessionFromSupabase();
+    await syncSessionFromFirebase();
     initialized = true;
     applyNavVisibility();
     global.dispatchEvent(new CustomEvent("smtn170:auth-ready", { detail: { session } }));
   }
 
-  /** Local-only fallback when Supabase URL is not configured (development). */
+  /** Local-only fallback when Firebase is not configured (development). */
   function login(email, accountStatus, role) {
     profile = {
       id: "local-user",
@@ -327,7 +327,8 @@
     init,
     loadSession,
     getProfile,
-    syncSessionFromSupabase,
+    syncSessionFromFirebase,
+    syncSessionFromSupabase: syncSessionFromFirebase,
     updateOwnProfile,
     getRoleLabel,
     getWelcomeGreeting,

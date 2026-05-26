@@ -1,18 +1,18 @@
 /**
  * Standard script chain for protected portal pages.
- * Include once before </body>: <script src="./js/portal-scripts.js?v=7" data-page="dashboard"></script>
+ * Include once before </body>: <script src="./js/portal-scripts.js?v=8" data-page="dashboard"></script>
  */
 (function loadPortalScripts() {
   const PAGE_SCRIPTS = {
     schedule: ["./js/portal-data.js", "./js/schedule-builder.js"],
-    documents: ["./js/import-center.js?v=3", "./js/file-library.js?v=8"],
-    orgchart: ["./js/file-ingestion.js?v=6", "./js/org-chart.js?v=8"],
+    documents: ["./js/import-center.js?v=3", "./js/file-library.js?v=9"],
+    orgchart: ["./js/file-ingestion.js?v=7", "./js/org-chart.js?v=9"],
     "flight-review": ["./flight-review.js"],
-    "sui-readiness": ["./sui-readiness.js?v=8"],
+    "sui-readiness": ["./sui-readiness.js?v=9"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js"],
-    profile: ["./js/profile-page.js?v=9"],
-    tasks: ["./js/tasks-page.js?v=8"],
-    dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js?v=7"],
+    profile: ["./js/profile-page.js?v=10"],
+    tasks: ["./js/tasks-page.js?v=9"],
+    dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js?v=8"],
     calendar: ["./flight-review.js"],
     resources: [],
     exports: ["./flight-review.js"],
@@ -20,24 +20,28 @@
 
   const chain = [
     "./portal-config.js?v=3",
-    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
-    "./js/auth-guard.js?v=7",
-    "./js/supabase-config.js?v=7",
-    "./js/supabase-client.js?v=7",
+    "./js/firebase-config.js?v=1",
+    "./js/firebase-client.js?v=1",
+    "./js/firebase-data.js?v=1",
+    "./js/firebase-storage.js?v=1",
+    "./js/firebase-auth.js?v=1",
+    "./js/import-client.js?v=1",
+    "./js/steward-client.js?v=1",
+    "./js/auth-guard.js?v=8",
     "./js/profile-service.js?v=1",
-    "./js/auth.js?v=9",
-    "./js/auth-session.js?v=7",
+    "./js/auth.js?v=10",
+    "./js/auth-session.js?v=8",
     "./portal-nav.js?v=15",
     "./js/portal-shell.js?v=10",
     "./js/portal-pages.js?v=3",
-    "./js/steward-api.js?v=2",
+    "./js/steward-api.js?v=3",
     "./js/steward-launcher.js?v=1",
-    "./js/steward.js?v=15",
-    "./js/doc-viewer.js?v=2",
-    "./js/file-ingestion.js?v=6",
-    "./app.js?v=7",
+    "./js/steward.js?v=16",
+    "./js/doc-viewer.js?v=3",
+    "./js/file-ingestion.js?v=7",
+    "./app.js?v=8",
     "./js/profile-banner.js?v=1",
-    "./js/portal-bootstrap.js?v=7",
+    "./js/portal-bootstrap.js?v=8",
   ];
 
   const page = document.currentScript?.dataset?.page || document.body?.dataset?.portalPage || "";
@@ -56,6 +60,7 @@
     const s = document.createElement("script");
     s.src = urls[i];
     s.onload = () => loadSequentially(urls, i + 1);
+    s.onerror = () => loadSequentially(urls, i + 1);
     document.body.appendChild(s);
   }
 
