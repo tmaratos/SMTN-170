@@ -6,9 +6,20 @@
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <meta name="theme-color" content="#ffffff" />
+  <meta name="color-scheme" content="light" />
   <title>Monthly Schedule (Print) | TN-170</title>
-  <link rel="stylesheet" href="./css/print-export.css?v=5" />
-  <link rel="stylesheet" href="./css/print-contrast.css?v=1" />
+  <!--
+    Load the SAME stylesheet chain (in the same order) as `schedule.html`'s
+    Preview tab so the print viewer renders byte-identical to what the user
+    sees inside the builder. `report-builders.css` is mostly scoped to
+    `#scheduleBuilderRoot`/`#orgChartApp` and therefore harmless on this
+    standalone print page, but loading it here keeps the cascade chain
+    aligned and exposes the same `:root` design tokens. `print-contrast.css`
+    must remain LAST so its high-contrast `!important` overrides win.
+  -->
+  <link rel="stylesheet" href="./css/print-export.css?v=6" />
+  <link rel="stylesheet" href="./css/report-builders.css?v=4" />
+  <link rel="stylesheet" href="./css/print-contrast.css?v=2" />
 </head>
 <body data-portal-page="schedule-print">
   <div class="print-toolbar" role="toolbar" aria-label="Print actions">
@@ -28,8 +39,8 @@
   <script src="./js/firebase-client.js?v=2"></script>
   <script src="./js/firebase-data.js?v=2"></script>
   <script src="./js/auth-guard.js?v=14"></script>
-  <script src="./js/report-renderers.js?v=4"></script>
-  <script src="./js/schedule-print.js?v=3"></script>
+  <script src="./js/report-renderers.js?v=5"></script>
+  <script src="./js/schedule-print.js?v=4"></script>
   <script>
     document.getElementById("printBtn")?.addEventListener("click", function () {
       window.print();

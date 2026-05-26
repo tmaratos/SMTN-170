@@ -595,10 +595,31 @@ body.ocb-print-body {
   font-style: italic;
 }
 
-.sched-cell.hl-green  { background: var(--print-green-soft); }
-.sched-cell.hl-cyan   { background: var(--print-cyan-soft); }
-.sched-cell.hl-yellow { background: var(--print-yellow-soft); }
-.sched-cell.hl-none   { background: transparent; }
+/* Highlight backgrounds carry an explicit color-adjust hint at the top
+   level (not only inside @media print) so the on-screen Preview tab and
+   the standalone print viewer both render the fills identically before
+   the user ever opens the print dialog. */
+.sched-cell.hl-green {
+  background: var(--print-green-soft);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+.sched-cell.hl-cyan {
+  background: var(--print-cyan-soft);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+.sched-cell.hl-yellow {
+  background: var(--print-yellow-soft);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+.sched-cell.hl-none {
+  background: transparent;
+}
 
 .sched-cell--multi {
   padding: 0 !important;
@@ -615,10 +636,27 @@ body.ocb-print-body {
   border-top: 0.6pt dashed #888;
 }
 
-.sched-entry.hl-green  { background: var(--print-green-soft); }
-.sched-entry.hl-cyan   { background: var(--print-cyan-soft); }
-.sched-entry.hl-yellow { background: var(--print-yellow-soft); }
-.sched-entry.hl-none   { background: transparent; }
+.sched-entry.hl-green {
+  background: var(--print-green-soft);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+.sched-entry.hl-cyan {
+  background: var(--print-cyan-soft);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+.sched-entry.hl-yellow {
+  background: var(--print-yellow-soft);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
+}
+.sched-entry.hl-none {
+  background: transparent;
+}
 
 .sched-doc__footer {
   margin-top: 12pt;
