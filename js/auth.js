@@ -124,60 +124,19 @@
     return approved && admin;
   }
 
-  async function fetchProfile(userId) {
-    const fb = global.SMTN170Firebase;
-    if (!fb || !userId) return null;
-
-    await fb.ensureFullClient?.();
-    const mod = fb.getFirestoreModule?.();
-    const db = fb.getFirestore?.();
-    const dataLayer = global.SMTN170FirebaseData;
-
-    if (mod && db) {
-      console.log("PROFILE_PATH_CHECKED", `profiles/${userId}`);
-      const snap = await mod.getDoc(mod.doc(db, "profiles", userId));
-      console.log("PROFILE_EXISTS", snap.exists());
-      if (!snap.exists()) return null;
-      return dataLayer?.fromFirestore?.(snap.data(), snap.id) || { id: snap.id, ...snap.data() };
-    }
-
-    const sb = global.TN170FirebaseClient || fb.getClient?.();
-    if (!sb?.from) return null;
-    const { data, error } = await sb.from("profiles").select("*").eq("id", userId).maybeSingle();
-    if (error) {
-      console.warn("[TN-170] profile fetch", error.message);
-      return null;
-    }
-    return data;
-  }
-
-  function applyProfileRow(row, user) {
-    if (!row || !user?.uid) return null;
-    profile = row;
-    session = mapProfile(row) || session;
-    const profileOut = {
-      uid: user.uid,
-      email: user.email || row.email || "",
-      ...row,
-      id: user.uid,
-    };
-    global.TN170_CURRENT_PROFILE = profileOut;
-    return profileOut;
-  }
-
-  function cachedProfileForUid(uid) {
-    const cached = global.TN170_CURRENT_PROFILE;
-    if (!cached || !uid) return null;
-    const cachedUid = cached.uid || cached.id;
-    if (cachedUid !== uid) return null;
-    return cached;
-  }
-
+  /**
+   * Shared profile loader. Reads `profiles/{auth.currentUser.uid}` directly via
+   * getDoc and returns `{ uid, email, ...snap.data() }` (raw camelCase fields).
+   * Also exposes `window.TN170_CURRENT_USER` / `window.TN170_CURRENT_PROFILE`
+   * so other modules can read the current profile synchronously.
+   */
   async function getCurrentUserProfile() {
     const fb = global.SMTN170Firebase;
     if (!fb) {
       global.TN170_CURRENT_USER = null;
       global.TN170_CURRENT_PROFILE = null;
+      session = null;
+      profile = null;
       return null;
     }
 
@@ -193,17 +152,20 @@
       return null;
     }
 
-    const currentUser = { uid: user.uid, email: user.email || "" };
-    global.TN170_CURRENT_USER = currentUser;
+    global.TN170_CURRENT_USER = { uid: user.uid, email: user.email || "" };
 
-    const cached = cachedProfileForUid(user.uid);
-    if (cached) {
-      const row = { ...cached, id: user.uid };
-      return applyProfileRow(row, user);
+    const mod = fb.getFirestoreModule?.();
+    const db = fb.getFirestore?.();
+    if (!mod || !db) {
+      console.warn("[TN-170] Firestore not ready for profile load");
+      return null;
     }
 
-    const row = await fetchProfile(user.uid);
-    if (!row) {
+    console.log("PROFILE_PATH_CHECKED", `profiles/${user.uid}`);
+    const snap = await mod.getDoc(mod.doc(db, "profiles", user.uid));
+    console.log("PROFILE_EXISTS", snap.exists());
+
+    if (!snap.exists()) {
       global.TN170_CURRENT_PROFILE = null;
       profile = null;
       session = {
@@ -223,7 +185,17 @@
       return null;
     }
 
-    return applyProfileRow(row, user);
+    const data = snap.data() || {};
+    const profileOut = {
+      uid: user.uid,
+      email: user.email || data.email || "",
+      ...data,
+      id: user.uid,
+    };
+    profile = profileOut;
+    session = mapProfile(profileOut) || session;
+    global.TN170_CURRENT_PROFILE = profileOut;
+    return profileOut;
   }
 
   async function syncSessionFromFirebase() {
@@ -262,15 +234,29 @@
     return session;
   }
 
+  /**
+   * Save the editable fields of the signed-in user's profile.
+   * Whitelist-only — protected fields (role/status/approved/isAdmin/
+   * accountStatus/portalRole/…) are stripped before write.
+   */
   async function updateOwnProfile(formData) {
-    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
-    const uid = session?.userId;
-    if (!sb || !uid) throw new Error("You must be signed in to update your profile.");
+    const fb = global.SMTN170Firebase;
+    if (!fb) throw new Error("Firebase is not configured.");
+    await fb.whenReady?.({ authOnly: false });
+    await fb.ensureFullClient?.();
+
+    const authInstance = fb.getAuth?.();
+    const uid = authInstance?.currentUser?.uid || session?.userId;
+    if (!uid) throw new Error("You must be signed in to update your profile.");
+
+    const mod = fb.getFirestoreModule?.();
+    const db = fb.getFirestore?.();
+    if (!mod || !db) throw new Error("Firestore is not ready.");
 
     const patch = Profile()?.pickEditablePayload?.(formData) || {};
+    patch.updatedAt = new Date().toISOString();
 
-    const { error } = await sb.from("profiles").update(patch).eq("id", uid);
-    if (error) throw new Error(error.message || "Could not save profile.");
+    await mod.updateDoc(mod.doc(db, "profiles", uid), patch);
 
     await syncSessionFromFirebase();
     global.dispatchEvent(new CustomEvent("smtn170:profile-updated", { detail: { profile } }));

@@ -1,6 +1,6 @@
 /**
  * Standard script chain for protected portal pages.
- * Include once before </body>: <script src="./js/portal-scripts.js?v=12" data-page="dashboard"></script>
+ * Include once before </body>: <script src="./js/portal-scripts.js?v=13" data-page="dashboard"></script>
  * Or after auth-guard: TN170AuthGuard.loadPortalScripts("dashboard")
  */
 (function loadPortalScripts(global) {
@@ -11,7 +11,7 @@
     "flight-review": ["./flight-review.js"],
     "sui-readiness": ["./sui-readiness.js?v=9"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js?v=2"],
-    profile: ["./js/profile-page.js?v=12"],
+    profile: ["./js/profile-page.js?v=13"],
     tasks: ["./js/tasks-page.js?v=9"],
     dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js?v=8"],
     calendar: ["./flight-review.js"],
@@ -24,15 +24,15 @@
     "./js/firebase-config.js?v=3",
     "./js/firebase-client.js?v=2",
     "./js/firebase-data.js?v=2",
-    "./js/auth-guard.js?v=13",
-    "./js/profile-service.js?v=2",
-    "./js/auth.js?v=13",
+    "./js/auth-guard.js?v=14",
+    "./js/profile-service.js?v=3",
+    "./js/auth.js?v=14",
     "./js/auth-session.js?v=8",
     "./portal-nav.js?v=19",
     "./js/portal-shell.js?v=12",
     "./js/portal-pages.js?v=3",
     "./js/steward-launcher.js?v=5",
-    "./js/profile-banner.js?v=1",
+    "./js/profile-banner.js?v=2",
     "./js/portal-bootstrap.js?v=11",
   ];
 

@@ -155,14 +155,17 @@
     global.TN170_CURRENT_PROFILE = null;
   }
 
+  /**
+   * Return the raw profile document (camelCase fields straight from Firestore)
+   * augmented with uid/id/email. Intentionally does NOT use SMTN170FirebaseData
+   * because auth-guard runs BEFORE that data layer loads on most pages.
+   */
   function normalizeProfileDoc(raw, userId) {
     if (!raw) return null;
-    const dataLayer = global.SMTN170FirebaseData;
-    const row = dataLayer?.fromFirestore?.(raw, userId) || { id: userId, ...raw };
     return {
       uid: userId,
-      email: row.email || "",
-      ...row,
+      email: raw.email || "",
+      ...raw,
       id: userId,
     };
   }
@@ -423,7 +426,7 @@
     const base = "./js/portal-scripts.js";
     if (document.querySelector(`script[src^="${base}"]`)) return;
     const s = document.createElement("script");
-    s.src = `${base}?v=12`;
+    s.src = `${base}?v=13`;
     if (page) s.dataset.page = page;
     document.body.appendChild(s);
   }

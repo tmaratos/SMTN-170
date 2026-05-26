@@ -1,8 +1,23 @@
 /**
  * My Profile — editable form (own profile only).
+ *
+ * Load flow:
+ *   1. Wait for Firebase Auth to resolve.
+ *   2. No user → redirect to login.html.
+ *   3. Load profiles/{auth.currentUser.uid} via getDoc directly.
+ *      Does NOT wait forever on global events / SMTN170Auth init.
+ *   4. 6-second timeout → swap the loader for a visible error + Retry button.
+ *   5. Profile exists → render form with values populated; no "Complete your
+ *      profile" banner is rendered by this page.
+ *   6. Profile missing → render completion form (same form, empty values).
+ *
+ * Save flow:
+ *   Writes ONLY firstName, lastName, preferredName, rank, capId, phone,
+ *   dutyPosition and updatedAt. role/status/approved/isAdmin/accountStatus/
+ *   portalRole are filtered out before write (Firestore rules also enforce).
  */
 (function initProfilePage(global) {
-  const LOAD_TIMEOUT_MS = 12000;
+  const LOAD_TIMEOUT_MS = 6000;
 
   function escapeHtml(t) {
     const d = document.createElement("div");
@@ -13,118 +28,80 @@
   function formatUpdated(iso) {
     if (!iso) return "—";
     try {
-      return new Date(iso).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      });
+      const d = iso?.toDate ? iso.toDate() : new Date(iso);
+      return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
     } catch {
-      return iso;
+      return String(iso);
     }
   }
 
-  function withTimeout(promise, ms, message) {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(message || "Request timed out.")), ms);
-      }),
-    ]);
+  function trim(v) {
+    return v == null ? "" : String(v).trim();
   }
 
-  function rowFromSession(session) {
-    if (!session) return null;
-    return {
-      id: session.userId,
-      email: session.email,
-      first_name: session.firstName || "",
-      last_name: session.lastName || "",
-      preferred_name: session.preferredName || "",
-      rank: session.rank || "",
-      cap_id: session.capId || "",
-      phone: session.phone || "",
-      duty_position: session.dutyPosition || "",
-      profile_photo_url: session.profilePhotoUrl || "",
-      role: session.role,
-      status: session.status || session.accountStatus,
-      updated_at: session.updatedAt || null,
-    };
-  }
-
-  function rowFromProfile(profile) {
-    if (!profile) return null;
-    return {
-      id: profile.id || profile.uid,
-      email: profile.email,
-      first_name: profile.first_name || "",
-      last_name: profile.last_name || "",
-      preferred_name: profile.preferred_name || "",
-      rank: profile.rank || "",
-      cap_id: profile.cap_id || "",
-      phone: profile.phone || "",
-      duty_position: profile.duty_position || "",
-      profile_photo_url: profile.profile_photo_url || "",
-      role: profile.role,
-      status: profile.status || profile.account_status || profile.accountStatus,
-      updated_at: profile.updated_at || null,
-    };
-  }
-
-  async function fetchProfileRow() {
-    const auth = global.SMTN170Auth;
-    const fb = global.SMTN170Firebase;
-    await fb?.whenReady?.({ authOnly: false });
-    const uid = fb?.getAuth?.()?.currentUser?.uid || global.TN170_CURRENT_USER?.uid || null;
-    const path = uid ? `profiles/${uid}` : "(none)";
-    console.log("[profile] uid", uid || "(none)");
-    console.log("[profile] profile path", path);
-
-    if (!auth?.getCurrentUserProfile) {
-      console.log("[profile] snap exists", false);
-      return rowFromProfile(auth?.getProfile?.()) || rowFromSession(auth?.loadSession?.());
+  function readProfile(data, user) {
+    if (!data) {
+      return user ? { email: user.email || "" } : null;
     }
-
-    const profileOut = await withTimeout(
-      auth.getCurrentUserProfile(),
-      LOAD_TIMEOUT_MS,
-      "Profile load timed out. Check your connection and try again."
-    );
-    const exists = !!profileOut;
-    console.log("[profile] snap exists", exists);
-
-    if (profileOut) return rowFromProfile(profileOut);
-    return rowFromProfile(auth.getProfile?.()) || rowFromSession(auth.loadSession?.());
+    const svc = global.SMTN170Profile;
+    return {
+      firstName: svc?.getFirstName?.(data) || trim(data.firstName ?? data.first_name),
+      lastName: svc?.getLastName?.(data) || trim(data.lastName ?? data.last_name),
+      preferredName: svc?.getPreferredName?.(data) || trim(data.preferredName ?? data.preferred_name),
+      rank: svc?.getRank?.(data) || trim(data.rank),
+      capId: svc?.getCapId?.(data) || trim(data.capId ?? data.cap_id),
+      phone: svc?.getPhone?.(data) || trim(data.phone),
+      dutyPosition: svc?.getDutyPosition?.(data) || trim(data.dutyPosition ?? data.duty_position),
+      profilePhotoUrl: svc?.getProfilePhotoUrl?.(data) || trim(data.profilePhotoUrl ?? data.profile_photo_url),
+      role: data.role || "",
+      status: data.status || data.accountStatus || data.account_status || "",
+      email: trim(data.email) || (user?.email || ""),
+      updatedAt: data.updatedAt || data.updated_at || null,
+    };
   }
 
-  function showLoadError(message) {
+  function getStatusLabel(status) {
+    const s = String(status || "").toLowerCase().trim();
+    if (!s) return "—";
+    if (s === "active" || s === "approved") return "Active";
+    if (s === "pending" || s === "awaiting_approval" || s === "awaiting_verification") return "Awaiting approval";
+    if (s === "denied") return "Denied";
+    return s.replace(/_/g, " ");
+  }
+
+  function getRoleLabel(role) {
+    return global.SMTN170Auth?.getRoleLabel?.(role) || role || "—";
+  }
+
+  function setRoot(html) {
     const root = document.getElementById("profilePage");
-    if (!root) return;
-    root.innerHTML = `
-      <div class="profile-alert profile-alert--error card-warning" role="alert">
-        <p>${escapeHtml(message || "Could not load your profile.")}</p>
-        <button type="button" class="btn-gold btn-lg" id="profileRetryBtn">Try again</button>
-      </div>`;
+    if (root) root.innerHTML = html;
+  }
+
+  function showLoader() {
+    setRoot('<p class="page-intro" id="profileLoader">Loading your profile…</p>');
+  }
+
+  function showError(message) {
+    setRoot(`
+      <div class="profile-alert profile-alert--error card-warning" id="profileErrorBox" role="alert">
+        <p>${escapeHtml(message)}</p>
+        <button type="button" class="btn-gold btn-lg" id="profileRetryBtn">Retry</button>
+      </div>`);
     document.getElementById("profileRetryBtn")?.addEventListener("click", () => {
-      profileRendered = false;
+      rendered = false;
       init();
     });
   }
 
-  function getAccessStatusLabel(row) {
-    const svc = global.SMTN170Profile;
-    if (svc?.isProfileStatusApproved?.(row)) return "Active";
-    if (svc?.isProfileStatusAwaiting?.(row)) return "Awaiting approval";
-    const s = svc?.getProfileStatus?.(row) || row?.status || "";
-    return s ? s.replace(/_/g, " ") : "—";
-  }
-
-  function renderForm(row, message, messageType) {
+  function renderForm(profile, user, banner) {
+    console.log("[profile] render profile form");
+    const data = profile || {};
     const root = document.getElementById("profilePage");
     if (!root) return;
-    console.log("[profile] render called");
 
-    const auth = global.SMTN170Auth;
-    const roleLabel = auth?.getRoleLabel?.(row?.role) || row?.role || "—";
-    const statusLabel = getAccessStatusLabel(row);
+    const message = banner?.message;
+    const messageType = banner?.type;
     const alertClass =
       messageType === "error"
         ? "profile-alert profile-alert--error card-warning"
@@ -134,58 +111,47 @@
 
     root.innerHTML = `
       ${message ? `<div class="${alertClass}" role="alert">${escapeHtml(message)}</div>` : ""}
-      <form id="profileForm" class="profile-form card-info">
+      <form id="profileForm" class="profile-form card-info" novalidate>
         <h2 class="profile-form-title">Your information</h2>
         <p class="page-intro">Update how your name appears in the portal. Your login email does not change here.</p>
-
-        <div class="profile-photo-row">
-          <div class="profile-photo-preview" id="profilePhotoPreview">
-            ${row?.profile_photo_url ? `<img src="${escapeHtml(row.profile_photo_url)}" alt="" />` : '<span aria-hidden="true">Photo</span>'}
-          </div>
-          <div>
-            <label for="profilePhotoUrl">Profile photo link</label>
-            <input type="url" id="profilePhotoUrl" name="profile_photo_url" value="${escapeHtml(row?.profile_photo_url || "")}" placeholder="https://… (optional)" />
-            <p class="profile-hint">Optional link to a profile photo hosted elsewhere.</p>
-          </div>
-        </div>
 
         <div class="profile-grid">
           <div>
             <label for="profileFirst">First name</label>
-            <input type="text" id="profileFirst" name="first_name" required value="${escapeHtml(row?.first_name || "")}" autocomplete="given-name" />
+            <input type="text" id="profileFirst" name="firstName" required value="${escapeHtml(data.firstName || "")}" autocomplete="given-name" />
           </div>
           <div>
             <label for="profileLast">Last name</label>
-            <input type="text" id="profileLast" name="last_name" required value="${escapeHtml(row?.last_name || "")}" autocomplete="family-name" />
+            <input type="text" id="profileLast" name="lastName" required value="${escapeHtml(data.lastName || "")}" autocomplete="family-name" />
           </div>
         </div>
 
         <label for="profilePreferred">Preferred name <span class="profile-optional">(optional)</span></label>
-        <input type="text" id="profilePreferred" name="preferred_name" value="${escapeHtml(row?.preferred_name || "")}" placeholder="What should we call you?" />
+        <input type="text" id="profilePreferred" name="preferredName" value="${escapeHtml(data.preferredName || "")}" placeholder="What should we call you?" />
 
         <div class="profile-grid">
           <div>
             <label for="profileRank">Rank</label>
-            <input type="text" id="profileRank" name="rank" value="${escapeHtml(row?.rank || "")}" placeholder="e.g. Capt, 1st Lt, Maj" />
+            <input type="text" id="profileRank" name="rank" value="${escapeHtml(data.rank || "")}" placeholder="e.g. Capt, 1st Lt, Maj" />
           </div>
           <div>
             <label for="profileCapId">CAP ID</label>
-            <input type="text" id="profileCapId" name="cap_id" value="${escapeHtml(row?.cap_id || "")}" placeholder="Your CAP member number" />
+            <input type="text" id="profileCapId" name="capId" value="${escapeHtml(data.capId || "")}" placeholder="Your CAP member number" />
           </div>
         </div>
 
         <label for="profilePhone">Phone</label>
-        <input type="tel" id="profilePhone" name="phone" value="${escapeHtml(row?.phone || "")}" autocomplete="tel" />
+        <input type="tel" id="profilePhone" name="phone" value="${escapeHtml(data.phone || "")}" autocomplete="tel" />
 
         <label for="profileDuty">Duty position</label>
-        <input type="text" id="profileDuty" name="duty_position" value="${escapeHtml(row?.duty_position || "")}" placeholder="e.g. Operations Officer" />
+        <input type="text" id="profileDuty" name="dutyPosition" value="${escapeHtml(data.dutyPosition || "")}" placeholder="e.g. Operations Officer" />
 
         <fieldset class="profile-readonly">
           <legend>Account (read-only)</legend>
-          <p><strong>Email</strong><br>${escapeHtml(row?.email || "—")}</p>
-          <p><strong>Portal role</strong><br>${escapeHtml(roleLabel)}</p>
-          <p><strong>Access status</strong><br>${escapeHtml(statusLabel)}</p>
-          <p><strong>Last updated</strong><br>${escapeHtml(formatUpdated(row?.updated_at))}</p>
+          <p><strong>Email</strong><br>${escapeHtml(data.email || user?.email || "—")}</p>
+          <p><strong>Portal role</strong><br>${escapeHtml(getRoleLabel(data.role))}</p>
+          <p><strong>Access status</strong><br>${escapeHtml(getStatusLabel(data.status))}</p>
+          <p><strong>Last updated</strong><br>${escapeHtml(formatUpdated(data.updatedAt))}</p>
         </fieldset>
 
         <div class="profile-actions">
@@ -198,95 +164,194 @@
         <span><strong>Open Steward</strong> Questions about the portal or your squadron duties.</span>
       </button>`;
 
-    document.getElementById("profileForm")?.addEventListener("submit", onSubmit);
+    document.getElementById("profileForm")?.addEventListener("submit", (e) => onSubmit(e, user));
     global.SMTN170StewardLauncher?.rebind?.();
+    global.SMTN170ProfileBanner?.refresh?.();
   }
 
-  async function onSubmit(e) {
+  async function onSubmit(e, user) {
     e.preventDefault();
     const btn = document.getElementById("profileSaveBtn");
+    if (!user?.uid) {
+      renderForm(null, user, { message: "Sign-in expired. Refresh and sign in again.", type: "error" });
+      return;
+    }
     const form = e.target;
     const fd = new FormData(form);
-    const payload = global.SMTN170Profile?.pickEditablePayload
-      ? global.SMTN170Profile.pickEditablePayload(Object.fromEntries(fd.entries()))
-      : Object.fromEntries(
-          global.SMTN170Profile.EDITABLE_FIELDS.map((key) => [key, fd.get(key)])
-        );
+    const raw = {
+      firstName: fd.get("firstName"),
+      lastName: fd.get("lastName"),
+      preferredName: fd.get("preferredName"),
+      rank: fd.get("rank"),
+      capId: fd.get("capId"),
+      phone: fd.get("phone"),
+      dutyPosition: fd.get("dutyPosition"),
+    };
+    const patch =
+      global.SMTN170Profile?.pickEditablePayload?.(raw) ||
+      Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v == null ? null : String(v).trim() || null]));
+    patch.updatedAt = new Date().toISOString();
 
-    btn.disabled = true;
-    btn.textContent = "Saving…";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+    }
 
     try {
-      await global.SMTN170Auth.updateOwnProfile(payload);
-      await global.SMTN170Auth?.syncSessionFromFirebase?.();
-      const row = await fetchProfileRow();
-      renderForm(row, "Your profile was saved.", "success");
+      const fb = global.SMTN170Firebase;
+      const mod = fb?.getFirestoreModule?.();
+      const db = fb?.getFirestore?.();
+      if (!mod || !db) throw new Error("Firestore is not ready. Refresh and try again.");
+
+      await mod.updateDoc(mod.doc(db, "profiles", user.uid), patch);
+
+      const snap = await mod.getDoc(mod.doc(db, "profiles", user.uid));
+      const profile = snap.exists() ? readProfile(snap.data(), user) : readProfile(null, user);
+      global.TN170_CURRENT_USER = { uid: user.uid, email: user.email || "" };
+      global.TN170_CURRENT_PROFILE = snap.exists() ? { uid: user.uid, email: user.email || "", ...snap.data() } : null;
+
+      try {
+        await global.SMTN170Auth?.syncSessionFromFirebase?.();
+      } catch (err) {
+        console.warn("[profile] session resync after save", err?.message || err);
+      }
+
+      rendered = true;
+      renderForm(profile, user, { message: "Your profile was saved.", type: "success" });
       global.SMTN170ProfileBanner?.refresh?.();
       global.SMTN170PortalNav?.init?.();
+      global.dispatchEvent(new CustomEvent("smtn170:profile-updated", { detail: { profile } }));
     } catch (err) {
       const msg = err?.message || err?.details || String(err) || "Could not save profile.";
-      const row = await fetchProfileRow().catch(() => null);
-      renderForm(row || rowFromSession(global.SMTN170Auth?.loadSession?.()), msg, "error");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Save profile";
+      console.warn("[profile] save error", msg);
+      const fallback =
+        readProfile(global.TN170_CURRENT_PROFILE, user) || readProfile(null, user);
+      renderForm(fallback, user, { message: msg, type: "error" });
     }
   }
 
-  let profileRendered = false;
+  /**
+   * Resolve the signed-in user without depending on SMTN170Auth or portal
+   * bootstrap globals. Resolves immediately when Firebase Auth already has a
+   * currentUser; otherwise subscribes to one onAuthStateChange event.
+   */
+  async function resolveAuthUser() {
+    const fb = global.SMTN170Firebase;
+    if (!fb) throw new Error("Firebase is not configured.");
+    await fb.whenReady?.({ authOnly: false });
+    await fb.ensureFullClient?.();
+    const authInstance = fb.getAuth?.();
+    if (!authInstance) throw new Error("Firebase auth is not available.");
+    if (authInstance.currentUser) return authInstance.currentUser;
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const handle = fb.onAuthStateChange?.((_event, session) => {
+        if (settled) return;
+        settled = true;
+        handle?.data?.subscription?.unsubscribe?.();
+        if (!session?.user?.id) {
+          resolve(null);
+          return;
+        }
+        resolve(authInstance.currentUser || { uid: session.user.id, email: session.user.email || "" });
+      });
+      if (!handle) {
+        resolve(authInstance.currentUser || null);
+      }
+    });
+  }
+
+  let rendered = false;
   let initInFlight = false;
 
   async function init() {
     const root = document.getElementById("profilePage");
-    if (!root || profileRendered || initInFlight) return;
+    if (!root || rendered || initInFlight) return;
     initInFlight = true;
 
-    if (!document.getElementById("profileForm")) {
-      root.innerHTML = '<p class="page-intro">Loading your profile…</p>';
-    }
+    console.log("[profile] boot start");
+    showLoader();
+
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      initInFlight = false;
+      showError("Profile load timed out. Refresh the page or sign out and sign back in.");
+    }, LOAD_TIMEOUT_MS);
 
     try {
-      if (!global.SMTN170Auth) {
-        showLoadError("Portal auth is not available. Refresh the page.");
-        return;
-      }
+      const fb = global.SMTN170Firebase;
+      if (!fb) throw new Error("Firebase is not available.");
 
-      if (!global.SMTN170Auth.loadSession?.()) {
-        await withTimeout(
-          global.SMTN170Auth.init?.({ skipEvent: true }),
-          LOAD_TIMEOUT_MS,
-          "Sign-in check timed out. Refresh and try again."
-        );
-      }
+      const user = await resolveAuthUser();
+      if (timedOut) return;
 
-      const row = await fetchProfileRow();
-      if (!row?.id && !row?.email) {
-        console.log("[profile] SESSION_MISSING_REDIRECT");
+      console.log("[profile] auth user", user?.uid || null, user?.email || null);
+      if (!user?.uid) {
+        clearTimeout(timer);
+        console.log("[profile] no auth user, redirecting to login.html");
         global.location.href = "login.html";
         return;
       }
 
-      profileRendered = true;
-      renderForm(row);
+      const path = `profiles/${user.uid}`;
+      console.log("[profile] profile path", path);
+
+      const mod = fb.getFirestoreModule?.();
+      const db = fb.getFirestore?.();
+      if (!mod || !db) throw new Error("Firestore is not ready.");
+
+      const snap = await mod.getDoc(mod.doc(db, "profiles", user.uid));
+      if (timedOut) return;
+      const exists = snap.exists();
+      console.log("[profile] profile exists", exists);
+
+      clearTimeout(timer);
+
+      const data = exists ? snap.data() : null;
+      const profile = readProfile(data, user);
+
+      if (exists) {
+        global.TN170_CURRENT_USER = { uid: user.uid, email: user.email || "" };
+        global.TN170_CURRENT_PROFILE = { uid: user.uid, email: user.email || "", ...data };
+        console.log("[profile] loaded fields", {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          preferredName: profile.preferredName,
+          rank: profile.rank,
+          capId: profile.capId,
+          dutyPosition: profile.dutyPosition,
+          role: profile.role,
+          status: profile.status,
+        });
+      } else {
+        global.TN170_CURRENT_USER = { uid: user.uid, email: user.email || "" };
+        global.TN170_CURRENT_PROFILE = null;
+        console.log("[profile] no profile doc — rendering empty completion form");
+      }
+
+      rendered = true;
+      renderForm(profile, user);
+      global.SMTN170ProfileBanner?.refresh?.();
     } catch (err) {
+      if (timedOut) return;
+      clearTimeout(timer);
       console.warn("[profile] load error", err?.message || err);
-      showLoadError(err?.message || "Could not load your profile.");
+      showError(err?.message || "Could not load your profile.");
     } finally {
       initInFlight = false;
     }
   }
 
-  global.addEventListener("smtn170:auth-ready", () => {
-    if (document.getElementById("profilePage") && !document.getElementById("profileForm")) {
-      init();
-    }
-  });
+  global.SMTN170ProfilePage = { init };
 
-  global.SMTN170ProfilePage = { init, renderForm };
-
-  if (document.getElementById("profilePage")) {
-    if (global.TN170_AUTH_SESSION_OK) {
-      queueMicrotask(() => init());
-    }
+  function start() {
+    if (document.getElementById("profilePage")) init();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
   }
 })(window);

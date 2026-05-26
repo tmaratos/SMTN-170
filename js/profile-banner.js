@@ -1,5 +1,7 @@
 /**
- * Complete Your Profile banner — shown when first/last name missing.
+ * Complete Your Profile banner — only shown when an approved user's profile
+ * is missing one of the required fields:
+ *   (firstName OR preferredName) AND lastName AND rank AND capId AND dutyPosition.
  */
 (function initProfileBanner(global) {
   const BANNER_ID = "profileCompleteBanner";
@@ -10,10 +12,23 @@
     return d.innerHTML;
   }
 
+  function currentProfile() {
+    return global.TN170_CURRENT_PROFILE || global.SMTN170Auth?.getProfile?.() || null;
+  }
+
+  function isApproved(row) {
+    const svc = global.SMTN170Profile;
+    if (svc?.isProfileStatusApproved) return svc.isProfileStatusApproved(row);
+    if (global.SMTN170Auth?.isApproved) return global.SMTN170Auth.isApproved();
+    const status = String(row?.status || row?.accountStatus || row?.account_status || "").toLowerCase();
+    return status === "active" || status === "approved";
+  }
+
   function shouldShow() {
-    const row = global.SMTN170Auth?.getProfile?.();
-    if (!row || !global.SMTN170Auth?.isApproved?.()) return false;
-    return global.SMTN170Profile?.isProfileIncomplete?.(row);
+    const row = currentProfile();
+    if (!row) return false;
+    if (!isApproved(row)) return false;
+    return global.SMTN170Profile?.isProfileIncomplete?.(row) ?? false;
   }
 
   function renderBanner() {

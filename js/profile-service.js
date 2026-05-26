@@ -1,5 +1,9 @@
 /**
  * TN-170 profile display and completeness helpers.
+ *
+ * Profile data in Firestore is camelCase (firstName, lastName, capId, dutyPosition…).
+ * Some legacy callers still pass snake_case rows from older code paths, so every
+ * field reader here tolerates BOTH formats.
  */
 (function initProfileService(global) {
   const PROFILE_STATUS = {
@@ -10,19 +14,73 @@
     DENIED: "denied",
   };
 
+  /** Editable camelCase fields written from the profile page. */
   const EDITABLE_FIELDS = [
-    "first_name",
-    "last_name",
-    "preferred_name",
+    "firstName",
+    "lastName",
+    "preferredName",
     "rank",
-    "cap_id",
+    "capId",
     "phone",
-    "duty_position",
-    "profile_photo_url",
+    "dutyPosition",
+  ];
+
+  /** Server-managed fields users must NEVER be able to overwrite from the profile page. */
+  const PROTECTED_FIELDS = [
+    "role",
+    "status",
+    "approved",
+    "isAdmin",
+    "accountStatus",
+    "portalRole",
+    "approvedAt",
+    "approvedBy",
+    "deniedAt",
+    "deniedBy",
+    "createdAt",
+    "createdFromInviteId",
   ];
 
   function trim(v) {
     return v == null ? "" : String(v).trim();
+  }
+
+  /** Read a profile field tolerating both camelCase and snake_case keys. */
+  function readField(row, ...keys) {
+    if (!row) return "";
+    for (const k of keys) {
+      const v = row[k];
+      if (v != null && String(v).trim() !== "") return String(v);
+    }
+    return "";
+  }
+
+  function getFirstName(row) {
+    return trim(readField(row, "firstName", "first_name"));
+  }
+  function getLastName(row) {
+    return trim(readField(row, "lastName", "last_name"));
+  }
+  function getPreferredName(row) {
+    return trim(readField(row, "preferredName", "preferred_name"));
+  }
+  function getCapId(row) {
+    return trim(readField(row, "capId", "cap_id"));
+  }
+  function getDutyPosition(row) {
+    return trim(readField(row, "dutyPosition", "duty_position"));
+  }
+  function getPhone(row) {
+    return trim(readField(row, "phone"));
+  }
+  function getProfilePhotoUrl(row) {
+    return trim(readField(row, "profilePhotoUrl", "profile_photo_url"));
+  }
+  function getRank(row) {
+    return normalizeRank(readField(row, "rank"));
+  }
+  function getUpdatedAt(row) {
+    return readField(row, "updatedAt", "updated_at");
   }
 
   /** Normalize rank for display (no trailing period duplication). */
@@ -44,8 +102,8 @@
   }
 
   function fullName(row) {
-    const first = trim(row?.first_name);
-    const last = trim(row?.last_name);
+    const first = getFirstName(row);
+    const last = getLastName(row);
     if (first && last) return `${first} ${last}`;
     if (first) return first;
     if (last) return last;
@@ -54,15 +112,15 @@
 
   /**
    * Display name for UI and audit.
-   * 1. preferred_name
+   * 1. preferred name
    * 2. rank + first + last
    * 3. email
    */
   function computeDisplayName(row) {
-    const preferred = trim(row?.preferred_name);
+    const preferred = getPreferredName(row);
     if (preferred) return preferred;
 
-    const rank = normalizeRank(row?.rank);
+    const rank = getRank(row);
     const name = fullName(row);
     if (rank && name && !nameIncludesRank(rank, name)) return `${rank} ${name}`;
     if (name) return name;
@@ -73,30 +131,35 @@
     return "";
   }
 
-  /**
-   * Greeting line for dashboard: "Welcome back, Capt M. Ellis." or "Welcome back, Tristan." or "Welcome back."
-   */
+  /** Greeting line for dashboard: "Welcome back, Capt M. Ellis." */
   function computeWelcomeGreeting(row) {
-    const preferred = trim(row?.preferred_name);
-    if (preferred) {
-      return { label: preferred, full: `Welcome back, ${preferred}.` };
-    }
+    const preferred = getPreferredName(row);
+    if (preferred) return { label: preferred, full: `Welcome back, ${preferred}.` };
 
-    const rank = normalizeRank(row?.rank);
+    const rank = getRank(row);
     const name = fullName(row);
     if (rank && name && !nameIncludesRank(rank, name)) {
       return { label: `${rank} ${name}`, full: `Welcome back, ${rank} ${name}.` };
     }
-    if (name) {
-      return { label: name, full: `Welcome back, ${name}.` };
-    }
+    if (name) return { label: name, full: `Welcome back, ${name}.` };
 
     return { label: "", full: "Welcome back." };
   }
 
+  /**
+   * "Complete your profile" gate.
+   * Complete when (firstName OR preferredName) AND lastName AND rank AND capId AND dutyPosition.
+   */
   function isProfileIncomplete(row) {
     if (!row) return true;
-    return !trim(row.first_name) || !trim(row.last_name);
+    const hasName = !!(getFirstName(row) || getPreferredName(row));
+    return !(
+      hasName &&
+      getLastName(row) &&
+      getRank(row) &&
+      getCapId(row) &&
+      getDutyPosition(row)
+    );
   }
 
   /** Read profiles/{uid}.status (canonical approval field). */
@@ -123,35 +186,50 @@
 
   function mapSessionFromProfile(row) {
     if (!row) return null;
-    const displayName = computeDisplayName(row);
     const status = getProfileStatus(row) || PROFILE_STATUS.AWAITING;
     return {
-      userId: row.id,
-      email: row.email,
-      firstName: trim(row.first_name),
-      lastName: trim(row.last_name),
-      preferredName: trim(row.preferred_name),
-      rank: normalizeRank(row.rank),
-      capId: trim(row.cap_id),
-      phone: trim(row.phone),
-      dutyPosition: trim(row.duty_position),
-      profilePhotoUrl: trim(row.profile_photo_url),
-      displayName,
+      userId: row.id || row.uid,
+      email: trim(row.email),
+      firstName: getFirstName(row),
+      lastName: getLastName(row),
+      preferredName: getPreferredName(row),
+      rank: getRank(row),
+      capId: getCapId(row),
+      phone: getPhone(row),
+      dutyPosition: getDutyPosition(row),
+      profilePhotoUrl: getProfilePhotoUrl(row),
+      displayName: computeDisplayName(row),
       role: row.role,
       status,
       accountStatus: status,
       roleLabel: null,
       unit: "TN-170 Oak Ridge Composite Squadron",
-      updatedAt: row.updated_at,
+      updatedAt: getUpdatedAt(row),
     };
   }
 
+  /**
+   * Build a server-safe camelCase update patch from a raw form/object.
+   * Accepts BOTH camelCase and snake_case input keys; output is always camelCase.
+   * Strips every server-managed field (role/status/approved/etc.) so users
+   * cannot escalate their own access by tampering with the form.
+   */
   function pickEditablePayload(formData) {
+    if (!formData) return {};
+    const src = {
+      firstName: formData.firstName ?? formData.first_name,
+      lastName: formData.lastName ?? formData.last_name,
+      preferredName: formData.preferredName ?? formData.preferred_name,
+      rank: formData.rank,
+      capId: formData.capId ?? formData.cap_id,
+      phone: formData.phone,
+      dutyPosition: formData.dutyPosition ?? formData.duty_position,
+    };
     const out = {};
     EDITABLE_FIELDS.forEach((key) => {
-      if (formData[key] !== undefined) {
-        out[key] = trim(formData[key]) || null;
-      }
+      if (src[key] === undefined) return;
+      const value = trim(src[key]);
+      out[key] = value === "" ? null : value;
     });
     return out;
   }
@@ -159,6 +237,7 @@
   global.SMTN170Profile = {
     PROFILE_STATUS,
     EDITABLE_FIELDS,
+    PROTECTED_FIELDS,
     normalizeRank,
     computeDisplayName,
     computeWelcomeGreeting,
@@ -170,5 +249,14 @@
     mapSessionFromProfile,
     pickEditablePayload,
     fullName,
+    getFirstName,
+    getLastName,
+    getPreferredName,
+    getCapId,
+    getDutyPosition,
+    getPhone,
+    getRank,
+    getProfilePhotoUrl,
+    getUpdatedAt,
   };
 })(window);
