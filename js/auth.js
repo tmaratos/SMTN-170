@@ -262,6 +262,7 @@
   }
 
   async function logout() {
+    global.StewardSiteIndex?.clearCache?.();
     const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (sb) await sb.auth.signOut();
     session = null;

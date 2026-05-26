@@ -268,6 +268,7 @@
 
   async function logout() {
     console.log("LOGOUT_CLICKED");
+    global.StewardSiteIndex?.clearCache?.();
     const client = global.SMTN170Firebase?.getClient?.();
     if (client?.auth) await client.auth.signOut();
     console.log("SIGNOUT_COMPLETE");

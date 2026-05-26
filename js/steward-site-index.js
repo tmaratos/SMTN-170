@@ -1,10 +1,50 @@
 /**
  * TN-170 Steward — portal site awareness index (client-side, no secrets).
- * Builds from STEWARD_PAGE_META, optional same-origin HTML fetch, and DOM parsing.
+ * Full index builds only on prompt-triggered site/navigation questions; current page context is always cheap/DOM-only.
  */
 (function initStewardSiteIndex(global) {
-  const CACHE_KEY = "smtn170_steward_site_index_v1";
-  const CACHE_TTL_MS = 30 * 60 * 1000;
+  const CACHE_PREFIX = "stewardSiteIndex:";
+  const CACHE_TTL_MS = 10 * 60 * 1000;
+  const LEGACY_CACHE_KEY = "smtn170_steward_site_index_v1";
+
+  const SITE_INDEX_PHRASES = [
+    "where is",
+    "where can i",
+    "where do i",
+    "where are",
+    "how do i",
+    "how do you",
+    "how can i",
+    "how to get to",
+    "how to find",
+    "how to open",
+    "take me to",
+    "go to",
+    "navigate to",
+    "navigate",
+    "open the",
+    "show me the",
+    "show me where",
+    "find the",
+    "find page",
+    "which page",
+    "what page",
+    "portal page",
+    "portal pages",
+    "site map",
+    "pages on",
+    "pages in",
+    "pages available",
+    "menu",
+    "navigation",
+    "sidebar",
+    "what can i do on",
+    "what is on",
+    "help me find",
+    "direct me to",
+    "link to",
+    "get to the",
+  ];
 
   const PAGE_REGISTRY = {
     "dashboard.html": {
@@ -211,6 +251,10 @@
 
   let buildPromise = null;
 
+  function cacheKey() {
+    return `${CACHE_PREFIX}${getUserRole()}`;
+  }
+
   function currentPath() {
     const path = (global.location?.pathname || "").split("/").pop();
     return path || "dashboard.html";
@@ -254,6 +298,20 @@
     return clean;
   }
 
+  function normalizeQuery(query) {
+    return String(query || "")
+      .toLowerCase()
+      .replace(/[^\w\s&/-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function shouldBuildSiteIndexForMessage(message) {
+    const q = normalizeQuery(message);
+    if (!q) return false;
+    return SITE_INDEX_PHRASES.some((phrase) => q.includes(phrase));
+  }
+
   function parseStewardElements(doc) {
     const actions = [];
     doc.querySelectorAll("[data-steward-action]").forEach((el) => {
@@ -265,6 +323,33 @@
       });
     });
     return actions.filter((a) => a.action || a.label);
+  }
+
+  function readVisibleNavFromDom() {
+    const items = [];
+    document.querySelectorAll("#portalNav a.portal-nav-link, #portalNav button.portal-nav-link").forEach((el) => {
+      const label = sanitizeText(el.textContent, 60);
+      const target = sanitizeText(el.getAttribute("href") || el.getAttribute("data-steward-target") || "", 80);
+      if (label) items.push({ label, target: target || null, section: null });
+    });
+    if (items.length) return items;
+    return buildNavIndex();
+  }
+
+  function buildCurrentPageContext() {
+    const meta = readCurrentPageMeta();
+    const path = meta?.path || currentPath();
+    const docTitle = sanitizeText((document.title || "").replace(/\s*\|.*$/i, "").trim(), 80);
+    const title = meta?.title || docTitle || path;
+
+    return {
+      path,
+      title,
+      section: meta?.section || null,
+      summary: meta?.summary || null,
+      primaryActions: meta?.primaryActions || [],
+      visibleNav: readVisibleNavFromDom().slice(0, 20),
+    };
   }
 
   function parseHtmlDocument(html, path) {
@@ -330,6 +415,19 @@
     return base;
   }
 
+  function compactPage(page) {
+    return {
+      title: page.title,
+      path: page.path,
+      section: page.section,
+      summary: page.summary,
+      headings: page.headings || [],
+      buttons: page.buttons || [],
+      relatedPages: page.relatedPages || [],
+      keywords: page.keywords || [],
+    };
+  }
+
   function filterPagesForRole(pages) {
     return pages.filter((p) => !(p.adminOnly && !canAccessAdmin()));
   }
@@ -343,11 +441,50 @@
     }));
   }
 
-  async function build(options) {
+  function loadCache() {
+    try {
+      const raw = sessionStorage.getItem(cacheKey());
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data?.index || Date.now() - (data.at || 0) > CACHE_TTL_MS) return null;
+      global.STEWARD_SITE_INDEX = data.index;
+      return data.index;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveCache(index) {
+    try {
+      sessionStorage.setItem(cacheKey(), JSON.stringify({ at: Date.now(), index }));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function clearCache() {
+    global.STEWARD_SITE_INDEX = null;
+    buildPromise = null;
+    try {
+      const keys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.startsWith(CACHE_PREFIX) || key === LEGACY_CACHE_KEY)) keys.push(key);
+      }
+      keys.forEach((k) => sessionStorage.removeItem(k));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function buildFullSiteIndex(options) {
     if (!isApprovedUser() && !options?.force) {
       global.STEWARD_SITE_INDEX = null;
       return null;
     }
+
+    const cached = !options?.refresh ? loadCache() : null;
+    if (cached) return cached;
 
     if (buildPromise && !options?.refresh) return buildPromise;
 
@@ -372,7 +509,6 @@
             });
             return { path, snapshot: live };
           }
-          if (options?.fetchPages === false) return { path, snapshot: null };
           const snapshot = await fetchPageSnapshot(path);
           return { path, snapshot };
         })
@@ -380,8 +516,11 @@
 
       const pages = filterPagesForRole(
         snapshots
-          .map(({ path, snapshot }) => mergePageEntry(path, PAGE_REGISTRY[path], snapshot))
-          .filter((p) => !(p.adminOnly && !canAccessAdmin()))
+          .map(({ path, snapshot }) => compactPage(mergePageEntry(path, PAGE_REGISTRY[path], snapshot)))
+          .filter((p) => {
+            const reg = PAGE_REGISTRY[p.path];
+            return !(reg?.adminOnly && !canAccessAdmin());
+          })
       );
 
       const index = {
@@ -394,11 +533,7 @@
       };
 
       global.STEWARD_SITE_INDEX = index;
-      try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), index }));
-      } catch {
-        /* ignore */
-      }
+      saveCache(index);
       buildPromise = null;
       return index;
     })();
@@ -406,30 +541,9 @@
     return buildPromise;
   }
 
-  function loadCache() {
-    try {
-      const raw = sessionStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      const data = JSON.parse(raw);
-      if (!data?.index || Date.now() - (data.at || 0) > CACHE_TTL_MS) return null;
-      global.STEWARD_SITE_INDEX = data.index;
-      return data.index;
-    } catch {
-      return null;
-    }
-  }
-
   function get() {
     if (global.STEWARD_SITE_INDEX) return global.STEWARD_SITE_INDEX;
     return loadCache();
-  }
-
-  function normalizeQuery(query) {
-    return String(query || "")
-      .toLowerCase()
-      .replace(/[^\w\s&/-]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
   }
 
   function scorePage(page, query) {
@@ -474,7 +588,6 @@
 
   function findAction(query) {
     const index = get();
-    if (!index) return null;
     const q = normalizeQuery(query);
 
     for (const route of KEYWORD_ROUTES) {
@@ -489,6 +602,8 @@
       }
     }
 
+    if (!index) return null;
+
     let best = null;
     index.pages.forEach((page) => {
       (page.stewardActions || []).forEach((a) => {
@@ -500,9 +615,9 @@
   }
 
   function explainCurrentPage() {
-    const index = get();
     const path = currentPath();
-    const page = index?.pages?.find((p) => p.path === path) || readCurrentPageMeta() || PAGE_REGISTRY[path];
+    const page =
+      get()?.pages?.find((p) => p.path === path) || readCurrentPageMeta() || PAGE_REGISTRY[path];
     if (!page) return { path, summary: "Unknown portal page." };
     return {
       path: page.path || path,
@@ -541,7 +656,13 @@
           .filter((x) => x.score > 0)
           .sort((a, b) => b.score - a.score)
           .slice(0, 4)
-          .map((x) => ({ path: x.page.path, title: x.page.title, score: x.score }))
+          .map((x) => ({
+            path: x.page.path,
+            title: x.page.title,
+            section: x.page.section,
+            summary: x.page.summary,
+            score: x.score,
+          }))
       : [];
 
     const navTarget = q ? getNavigationTarget(q) : null;
@@ -567,26 +688,16 @@
     };
   }
 
-  function initAfterAuth() {
-    if (!isApprovedUser()) return;
-    build().catch((err) => console.warn("[StewardSiteIndex] build", err));
-  }
-
-  global.addEventListener("smtn170:auth-ready", initAfterAuth);
   global.addEventListener("smtn170:auth-changed", () => {
-    if (isApprovedUser()) initAfterAuth();
-    else {
-      global.STEWARD_SITE_INDEX = null;
-      try {
-        sessionStorage.removeItem(CACHE_KEY);
-      } catch {
-        /* ignore */
-      }
-    }
+    if (!isApprovedUser()) clearCache();
   });
 
   global.StewardSiteIndex = {
-    build,
+    shouldBuildSiteIndexForMessage,
+    buildCurrentPageContext,
+    buildFullSiteIndex,
+    build: buildFullSiteIndex,
+    clearCache,
     get,
     findPageByKeyword,
     findAction,

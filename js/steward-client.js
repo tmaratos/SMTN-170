@@ -44,34 +44,37 @@
     return { user, token };
   }
 
-  function buildSiteIndexSummary(message) {
-    const api = global.StewardSiteIndex;
-    if (!api?.buildSummaryForWorker) return null;
-    try {
-      return api.buildSummaryForWorker(message);
-    } catch {
-      return null;
-    }
-  }
-
   function normalizePayload(body) {
     const src = body || {};
     const confirmation = src.confirmation;
     const payload = {
       message: src.message,
-      pagePath: src.pagePath || src.page_path || global.location?.pathname || "",
-      pageTitle: src.pageTitle || src.page_title || (typeof document !== "undefined" ? document.title : ""),
     };
+
+    const currentPageContext =
+      src.currentPageContext ||
+      src.current_page_context ||
+      (src.pagePath || src.page_path || src.pageTitle || src.page_title
+        ? {
+            path: (src.pagePath || src.page_path || global.location?.pathname || "").split("/").pop() || "dashboard.html",
+            title: src.pageTitle || src.page_title || (typeof document !== "undefined" ? document.title : ""),
+            visibleNav: [],
+          }
+        : global.StewardSiteIndex?.buildCurrentPageContext?.() || {
+            path: (global.location?.pathname || "").split("/").pop() || "dashboard.html",
+            title: typeof document !== "undefined" ? document.title : "",
+            visibleNav: [],
+          });
+    payload.currentPageContext = currentPageContext;
+
     const conversationId = src.conversationId || src.conversation_id;
     if (conversationId) payload.conversationId = conversationId;
     const pendingActionId = src.pendingActionId || src.pending_action_id;
     if (pendingActionId) payload.pendingActionId = pendingActionId;
     if (src.actionPayload && typeof src.actionPayload === "object") payload.actionPayload = src.actionPayload;
     if (confirmation === true || confirmation === false) payload.confirmation = confirmation;
-    const summary =
-      src.siteIndexSummary ||
-      src.site_index_summary ||
-      (src.message ? buildSiteIndexSummary(src.message) : null);
+
+    const summary = src.siteIndexSummary || src.site_index_summary || null;
     if (summary) payload.siteIndexSummary = summary;
     return payload;
   }
@@ -86,7 +89,6 @@
         throw new Error("Firebase is not configured");
       }
 
-      await global.StewardSiteIndex?.build?.().catch(() => {});
       const { token } = await ensureAuthToken();
       const payload = normalizePayload(body);
       if (!payload.message && payload.confirmation == null) {

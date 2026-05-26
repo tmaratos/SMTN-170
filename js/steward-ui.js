@@ -616,11 +616,25 @@
     renderDataStatus(!!result.data_connected || !!result.dataConnected);
   }
 
-  function pageContext() {
-    return {
-      pagePath: global.location?.pathname || "",
-      pageTitle: document.title || "",
+  function stewardPagePayload(message) {
+    const siteApi = global.StewardSiteIndex;
+    const currentPageContext = siteApi?.buildCurrentPageContext?.() || {
+      path: (global.location?.pathname || "").split("/").pop() || "dashboard.html",
+      title: document.title || "",
+      visibleNav: [],
     };
+    const payload = { currentPageContext };
+    if (siteApi?.shouldBuildSiteIndexForMessage?.(message)) {
+      return { ...payload, needsFullSiteIndex: true };
+    }
+    return payload;
+  }
+
+  async function resolveSiteIndexForMessage(message) {
+    const siteApi = global.StewardSiteIndex;
+    if (!siteApi?.shouldBuildSiteIndexForMessage?.(message)) return null;
+    await siteApi.buildFullSiteIndex?.().catch(() => {});
+    return siteApi.buildSummaryForWorker?.(message) || null;
   }
 
   async function sendMessage(text) {
@@ -655,16 +669,21 @@
       renderMessages();
       if (input) input.value = "";
 
-      await global.StewardSiteIndex?.build?.().catch(() => {});
-
-      const localNav = global.StewardSiteIndex?.isNavigationIntent?.(trimmed)
-        ? tryLocalNavigation(trimmed)
+      const sitePayload = stewardPagePayload(trimmed);
+      const siteIndexSummary = sitePayload.needsFullSiteIndex
+        ? await resolveSiteIndexForMessage(trimmed)
         : null;
+
+      const localNav =
+        sitePayload.needsFullSiteIndex || global.StewardSiteIndex?.isNavigationIntent?.(trimmed)
+          ? tryLocalNavigation(trimmed)
+          : null;
 
       const result = await getClientApi().invoke({
         message: trimmed,
         conversationId: state.conversationId,
-        ...pageContext(),
+        currentPageContext: sitePayload.currentPageContext,
+        ...(siteIndexSummary ? { siteIndexSummary } : {}),
       });
 
       if (localNav && !result.navigateTo && !result.navigate_to) {
@@ -893,8 +912,9 @@
     if (!state.pendingConfirmation || !canUseStewardCore()) return;
     setThinking(true);
     try {
+      const sitePayload = stewardPagePayload("");
       const result = await getClientApi().invoke({
-        ...pageContext(),
+        currentPageContext: sitePayload.currentPageContext,
         conversationId: state.conversationId,
         pendingActionId: state.pendingConfirmation.action_id || state.pendingConfirmation.id,
         actionPayload: state.pendingConfirmation.payload || null,
@@ -921,8 +941,9 @@
     if (!canUseStewardCore()) return;
     setThinking(true);
     try {
+      const sitePayload = stewardPagePayload("");
       const result = await getClientApi().invoke({
-        ...pageContext(),
+        currentPageContext: sitePayload.currentPageContext,
         conversationId: state.conversationId,
         pendingActionId: state.pendingConfirmation?.action_id || state.pendingConfirmation?.id,
         actionPayload: state.pendingConfirmation?.payload || null,

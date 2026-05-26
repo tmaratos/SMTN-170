@@ -201,6 +201,21 @@
     });
   }
 
+  function injectAccountBlock() {
+    const sidebar = document.getElementById("portalSidebar");
+    if (!sidebar || !global.SMTN170Auth?.loadSession?.()) return;
+    let slot = document.getElementById("portalNavAccount");
+    if (!slot) {
+      slot = document.createElement("div");
+      slot.id = "portalNavAccount";
+      slot.className = "portal-nav-account-slot";
+      sidebar.appendChild(slot);
+    }
+    const html = renderAccountBlock();
+    if (html) slot.innerHTML = html;
+    bindLogout();
+  }
+
   function init() {
     const active = currentKey();
     const nav = document.getElementById("portalNav");
@@ -209,7 +224,7 @@
       el.innerHTML = renderNav(active);
     });
     updateBrandSubtitle();
-    bindLogout();
+    injectAccountBlock();
     global.SMTN170Auth?.applyNavVisibility?.();
     global.SMTN170Steward?.rebind?.();
   }
