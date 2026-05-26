@@ -62,8 +62,11 @@
       pagePath: src.pagePath || src.page_path || global.location?.pathname || "",
       pageTitle: src.pageTitle || src.page_title || (typeof document !== "undefined" ? document.title : ""),
     };
+    const conversationId = src.conversationId || src.conversation_id;
+    if (conversationId) payload.conversationId = conversationId;
     const pendingActionId = src.pendingActionId || src.pending_action_id;
     if (pendingActionId) payload.pendingActionId = pendingActionId;
+    if (src.actionPayload && typeof src.actionPayload === "object") payload.actionPayload = src.actionPayload;
     if (confirmation === true || confirmation === false) payload.confirmation = confirmation;
     const summary =
       src.siteIndexSummary ||

@@ -665,6 +665,7 @@
 
       const result = await getClientApi().invoke({
         message: trimmed,
+        conversationId: state.conversationId,
         ...pageContext(),
       });
 
@@ -896,7 +897,9 @@
     try {
       const result = await getClientApi().invoke({
         ...pageContext(),
+        conversationId: state.conversationId,
         pendingActionId: state.pendingConfirmation.action_id || state.pendingConfirmation.id,
+        actionPayload: state.pendingConfirmation.payload || null,
         confirmation: true,
       });
       pushStewardReplyFromApi(result);
@@ -922,7 +925,9 @@
     try {
       const result = await getClientApi().invoke({
         ...pageContext(),
+        conversationId: state.conversationId,
         pendingActionId: state.pendingConfirmation?.action_id || state.pendingConfirmation?.id,
+        actionPayload: state.pendingConfirmation?.payload || null,
         confirmation: false,
       });
       pushStewardReplyFromApi(result);
