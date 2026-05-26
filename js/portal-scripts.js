@@ -1,9 +1,9 @@
 /**
  * Standard script chain for protected portal pages.
- * Include once before </body>: <script src="./js/portal-scripts.js?v=11" data-page="dashboard"></script>
+ * Include once before </body>: <script src="./js/portal-scripts.js?v=12" data-page="dashboard"></script>
  * Or after auth-guard: TN170AuthGuard.loadPortalScripts("dashboard")
  */
-(function loadPortalScripts() {
+(function loadPortalScripts(global) {
   const PAGE_SCRIPTS = {
     schedule: ["./js/portal-data.js", "./js/schedule-builder.js"],
     documents: ["./js/resource-links.js?v=1"],
@@ -77,4 +77,4 @@
   }
 
   loadSequentially(chain, 0);
-})();
+})(window);

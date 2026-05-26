@@ -13,8 +13,8 @@
   <script type="application/json" id="steward-page-meta">
   {"pageId":"profile","title":"My Profile","path":"profile.html","section":"Account","summary":"View and update your TN-170 portal profile, role, and contact details.","primaryActions":["Edit profile","Save changes"],"forms":["profileForm"],"buttons":["Save profile"],"relatedPages":["dashboard.html"],"keywords":["profile","account","name","rank","contact"]}
   </script>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
-  <link rel="stylesheet" href="./portal-nav.css?v=7" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=7" />
+  <link rel="stylesheet" href="./portal-nav.css?v=8" />
   <link rel="stylesheet" href="./css/portal-layout.css?v=2" />
 </head>
 <body data-portal-page="profile">
@@ -48,7 +48,7 @@
   <script src="./js/auth-guard.js?v=13"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async function () {
-      const ok = await window.TN170AuthGuard.ensureProtectedSession();
+      const ok = await window.TN170AuthGuard.runDashboardPage();
       if (ok) {
         window.TN170AuthGuard.loadPortalScripts("profile");
       }

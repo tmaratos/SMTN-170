@@ -2,6 +2,8 @@
  * My Profile — editable form (own profile only).
  */
 (function initProfilePage(global) {
+  const LOAD_TIMEOUT_MS = 12000;
+
   function escapeHtml(t) {
     const d = document.createElement("div");
     d.textContent = t == null ? "" : String(t);
@@ -20,12 +22,16 @@
     }
   }
 
-  function getProfileRow() {
-    const profile = global.SMTN170Auth?.getProfile?.();
-    if (profile) return profile;
-    const cached = global.TN170_CURRENT_PROFILE;
-    if (cached) return cached;
-    const session = global.SMTN170Auth?.loadSession?.();
+  function withTimeout(promise, ms, message) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(message || "Request timed out.")), ms);
+      }),
+    ]);
+  }
+
+  function rowFromSession(session) {
     if (!session) return null;
     return {
       id: session.userId,
@@ -44,26 +50,63 @@
     };
   }
 
-  async function waitForProfileData() {
-    let row = getProfileRow();
-    if (row) return row;
+  function rowFromProfile(profile) {
+    if (!profile) return null;
+    return {
+      id: profile.id || profile.uid,
+      email: profile.email,
+      first_name: profile.first_name || "",
+      last_name: profile.last_name || "",
+      preferred_name: profile.preferred_name || "",
+      rank: profile.rank || "",
+      cap_id: profile.cap_id || "",
+      phone: profile.phone || "",
+      duty_position: profile.duty_position || "",
+      profile_photo_url: profile.profile_photo_url || "",
+      role: profile.role,
+      status: profile.status || profile.account_status || profile.accountStatus,
+      updated_at: profile.updated_at || null,
+    };
+  }
 
-    if (!global.SMTN170Auth?.loadSession?.()) {
-      await global.SMTN170Auth?.init?.({ skipEvent: true });
+  async function fetchProfileRow() {
+    const auth = global.SMTN170Auth;
+    const fb = global.SMTN170Firebase;
+    await fb?.whenReady?.({ authOnly: false });
+    const uid = fb?.getAuth?.()?.currentUser?.uid || global.TN170_CURRENT_USER?.uid || null;
+    const path = uid ? `profiles/${uid}` : "(none)";
+    console.log("[profile] uid", uid || "(none)");
+    console.log("[profile] profile path", path);
+
+    if (!auth?.getCurrentUserProfile) {
+      console.log("[profile] snap exists", false);
+      return rowFromProfile(auth?.getProfile?.()) || rowFromSession(auth?.loadSession?.());
     }
-    row = getProfileRow();
-    if (row) return row;
 
-    await new Promise((resolve) => {
-      if (getProfileRow()) {
-        resolve();
-        return;
-      }
-      const done = () => resolve();
-      global.addEventListener("smtn170:auth-ready", done, { once: true });
-      setTimeout(done, 5000);
+    const profileOut = await withTimeout(
+      auth.getCurrentUserProfile(),
+      LOAD_TIMEOUT_MS,
+      "Profile load timed out. Check your connection and try again."
+    );
+    const exists = !!profileOut;
+    console.log("[profile] snap exists", exists);
+
+    if (profileOut) return rowFromProfile(profileOut);
+    return rowFromProfile(auth.getProfile?.()) || rowFromSession(auth.loadSession?.());
+  }
+
+  function showLoadError(message) {
+    const root = document.getElementById("profilePage");
+    if (!root) return;
+    root.innerHTML = `
+      <div class="profile-alert profile-alert--error card-warning" role="alert">
+        <p>${escapeHtml(message || "Could not load your profile.")}</p>
+        <button type="button" class="btn-gold btn-lg" id="profileRetryBtn">Try again</button>
+      </div>`;
+    document.getElementById("profileRetryBtn")?.addEventListener("click", () => {
+      profileRendered = false;
+      init();
     });
-    return getProfileRow();
   }
 
   function getAccessStatusLabel(row) {
@@ -77,6 +120,7 @@
   function renderForm(row, message, messageType) {
     const root = document.getElementById("profilePage");
     if (!root) return;
+    console.log("[profile] render called");
 
     const auth = global.SMTN170Auth;
     const roleLabel = auth?.getRoleLabel?.(row?.role) || row?.role || "—";
@@ -175,13 +219,14 @@
     try {
       await global.SMTN170Auth.updateOwnProfile(payload);
       await global.SMTN170Auth?.syncSessionFromFirebase?.();
-      const row = getProfileRow();
+      const row = await fetchProfileRow();
       renderForm(row, "Your profile was saved.", "success");
       global.SMTN170ProfileBanner?.refresh?.();
       global.SMTN170PortalNav?.init?.();
     } catch (err) {
       const msg = err?.message || err?.details || String(err) || "Could not save profile.";
-      renderForm(getProfileRow(), msg, "error");
+      const row = await fetchProfileRow().catch(() => null);
+      renderForm(row || rowFromSession(global.SMTN170Auth?.loadSession?.()), msg, "error");
     } finally {
       btn.disabled = false;
       btn.textContent = "Save profile";
@@ -189,22 +234,46 @@
   }
 
   let profileRendered = false;
+  let initInFlight = false;
 
   async function init() {
     const root = document.getElementById("profilePage");
-    if (!root || profileRendered) return;
+    if (!root || profileRendered || initInFlight) return;
+    initInFlight = true;
+
     if (!document.getElementById("profileForm")) {
       root.innerHTML = '<p class="page-intro">Loading your profile…</p>';
     }
-    const row = await waitForProfileData();
-    if (!row) {
-      console.log("SESSION_MISSING_REDIRECT");
-      global.location.href = "login.html";
-      return;
+
+    try {
+      if (!global.SMTN170Auth) {
+        showLoadError("Portal auth is not available. Refresh the page.");
+        return;
+      }
+
+      if (!global.SMTN170Auth.loadSession?.()) {
+        await withTimeout(
+          global.SMTN170Auth.init?.({ skipEvent: true }),
+          LOAD_TIMEOUT_MS,
+          "Sign-in check timed out. Refresh and try again."
+        );
+      }
+
+      const row = await fetchProfileRow();
+      if (!row?.id && !row?.email) {
+        console.log("[profile] SESSION_MISSING_REDIRECT");
+        global.location.href = "login.html";
+        return;
+      }
+
+      profileRendered = true;
+      renderForm(row);
+    } catch (err) {
+      console.warn("[profile] load error", err?.message || err);
+      showLoadError(err?.message || "Could not load your profile.");
+    } finally {
+      initInFlight = false;
     }
-    console.log("PROFILE_LOAD_OK");
-    profileRendered = true;
-    renderForm(row);
   }
 
   global.addEventListener("smtn170:auth-ready", () => {
@@ -214,4 +283,10 @@
   });
 
   global.SMTN170ProfilePage = { init, renderForm };
+
+  if (document.getElementById("profilePage")) {
+    if (global.TN170_AUTH_SESSION_OK) {
+      queueMicrotask(() => init());
+    }
+  }
 })(window);
