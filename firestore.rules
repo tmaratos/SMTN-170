@@ -185,6 +185,18 @@ service cloud.firestore {
       allow delete: if isApprovalAdmin();
     }
 
+    match /orgCharts/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved();
+      allow delete: if isApprovalAdmin();
+    }
+
+    match /monthlySchedules/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved();
+      allow delete: if isApprovalAdmin();
+    }
+
     match /stewardConversations/{docId} {
       allow read, write: if isApproved() && resource.data.profileId == uid();
       allow create: if isApproved() && request.resource.data.profileId == uid();
