@@ -7,12 +7,12 @@
   const PAGE_SCRIPTS = {
     schedule: [
       "./js/portal-data.js",
-      "./js/report-renderers.js?v=2",
+      "./js/report-renderers.js?v=3",
       "./js/schedule-builder.js?v=3",
     ],
     documents: ["./js/resource-links.js?v=1"],
     orgchart: [
-      "./js/report-renderers.js?v=2",
+      "./js/report-renderers.js?v=3",
       "./js/orgchart-builder.js?v=1",
     ],
     "flight-review": ["./flight-review.js"],

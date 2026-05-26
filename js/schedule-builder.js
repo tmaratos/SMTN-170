@@ -1117,7 +1117,7 @@
     w.document.write(`<!DOCTYPE html><html lang="en"><head>
       <meta charset="UTF-8" />
       <title>${escapeHtml(state.schedule?.title || "Monthly Schedule")}</title>
-      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=2" />
+      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=3" />
     </head><body class="sb-print-body">
       <main class="print-page">${html}</main>
       <script>setTimeout(function(){ window.print(); }, 350);<\/script>

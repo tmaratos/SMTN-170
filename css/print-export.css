@@ -1,34 +1,77 @@
 /**
  * TN-170 — Print/Export shared styles for standalone document views.
- * Used by orgchart-print.html and schedule-print.html. Browser native
- * window.print() + @media print only — no paid PDF libraries.
+ *
+ * Loaded by:
+ *   - schedule.html / orgchart.html  (so the Preview tab inside the builder
+ *     renders the SAME visual document the user will print)
+ *   - schedule-print.html / orgchart-print.html (standalone print windows)
+ *
+ * Strategy: the on-screen `.print-page` card and the printed page share the
+ * same `.sched-doc` / `.org-chart-doc` rules, so the Preview tab and the
+ * printer output are pixel-equivalent. The @media print block only strips
+ * portal chrome (sidebar, toolbar, buttons) and forces colour preservation.
+ *
+ * Browser native window.print() + @media print only — no paid PDF libraries.
  */
 
 :root {
-  --print-ink: #000;
-  --print-paper: #fff;
-  --print-rule: #1a1a1a;
-  --print-muted: #444;
-  --print-red: #c0392b;
+  --print-ink: #0b0b0b;
+  --print-paper: #ffffff;
+  --print-rule: #111111;
+  --print-rule-soft: #2a2a2a;
+  --print-muted: #4b5563;
+  --print-red: #b91c1c;
+  --print-tint: #f1f3f5;
+  --print-row-tint: #f6f7f8;
+  --print-gold: #b78a3b;
+  --print-yellow: #ffec88;
+  --print-yellow-soft: #fff4c4;
+  --print-green: #b4e4b4;
+  --print-green-soft: #ddf4dd;
+  --print-cyan: #b6e6f0;
+  --print-cyan-soft: #d6eff6;
+  --print-plain: #f0f0f0;
 }
 
+/* ---------- Page chrome (only on the standalone *-print.html viewer) ----------
+ *
+ * The schedule.html / orgchart.html builder pages ALSO load this stylesheet so
+ * the Preview tab can render the same `.print-page`/`.sched-doc`/`.org-chart-doc`
+ * markup as the standalone print viewers. To avoid clobbering the portal's
+ * deep-navy theme, the page-level background, ink colour, and serif font are
+ * scoped to:
+ *   - body[data-portal-page$="-print"]  (covers schedule-print.html and
+ *     orgchart-print.html which set data-portal-page="schedule-print" /
+ *     "orgchart-print")
+ *   - body.print-export-body            (manual opt-in helper)
+ *   - body.sb-print-body / body.ocb-print-body (the temporary print window
+ *     spawned by the builders' "Open Print Window" helper)
+ */
 html,
 body {
-  background: #f3f4f6;
-  color: var(--print-ink);
-  font-family: "Georgia", "Times New Roman", serif;
   margin: 0;
   padding: 0;
+}
+
+body[data-portal-page$="-print"],
+body.print-export-body,
+body.sb-print-body,
+body.ocb-print-body {
+  background: #e9eaee;
+  color: var(--print-ink);
+  font-family: "Georgia", "Times New Roman", serif;
 }
 
 .print-page {
   background: var(--print-paper);
   color: var(--print-ink);
-  max-width: 1100px;
+  max-width: 1180px;
   margin: 24px auto;
-  padding: 32px 40px;
+  padding: 28px 36px 32px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
   border-radius: 4px;
+  /* On screen, this container mirrors a real printed page so the Preview tab
+     and the standalone *-print.html viewer look identical to the print output. */
 }
 
 .print-page__loading {
@@ -42,7 +85,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: #111827;
+  background: #0f172a;
   color: #fff;
   padding: 10px 20px;
   display: flex;
@@ -79,56 +122,65 @@ body {
   filter: brightness(1.1);
 }
 
-/* ---- Org Chart document ---- */
+/* ============================================================ */
+/* === Org Chart document ==================================== */
+/* ============================================================ */
 
 .org-chart-doc {
   color: var(--print-ink);
   background: var(--print-paper);
+  font-family: "Georgia", "Times New Roman", serif;
 }
 
 .org-chart-doc__title {
   text-align: center;
-  margin-bottom: 24px;
+  margin: 0 0 26px;
+  padding: 0 0 14px;
+  border-bottom: 1.2pt solid var(--print-rule);
 }
 
 .org-chart-doc__title h1 {
-  font-size: 1.6rem;
+  font-size: 22pt;
   margin: 0 0 4px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  color: var(--print-ink);
 }
 
 .org-chart-doc__title h2 {
-  font-size: 1.2rem;
+  font-size: 14pt;
   margin: 0 0 4px;
   font-weight: 600;
+  color: var(--print-ink);
 }
 
 .org-chart-doc__title h3 {
-  font-size: 1.05rem;
+  font-size: 12pt;
   margin: 0;
   font-weight: 600;
   font-style: italic;
+  color: var(--print-muted);
 }
 
 .org-chart-doc__updated {
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 9.5pt;
   color: var(--print-muted);
   margin-top: 8px;
+  font-style: italic;
 }
 
 .org-row {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin: 12px 0;
+  gap: 18px;
+  margin: 14px 0;
   flex-wrap: wrap;
   position: relative;
 }
 
 .org-row--commander {
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .org-row--staff {
@@ -136,39 +188,52 @@ body {
 }
 
 .org-box {
-  border: 1.5px solid var(--print-rule);
+  border: 1.5pt solid var(--print-rule);
   background: var(--print-paper);
-  padding: 8px 10px;
-  min-width: 150px;
-  max-width: 180px;
+  padding: 10px 12px;
+  min-width: 160px;
+  max-width: 190px;
   text-align: center;
   font-family: "Georgia", "Times New Roman", serif;
   position: relative;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
 }
 
 .org-box--command {
-  border-width: 2.5px;
-  min-width: 220px;
-  max-width: 260px;
-  padding: 12px 14px;
-  background: #f8fafc;
+  border-width: 2.5pt;
+  border-color: var(--print-rule);
+  box-shadow: inset 0 0 0 2pt var(--print-gold);
+  min-width: 240px;
+  max-width: 280px;
+  padding: 14px 16px;
+  background: #fffaf0;
 }
 
 .org-box__title {
   font-weight: 700;
-  font-size: 0.92rem;
-  line-height: 1.2;
+  font-size: 10.5pt;
+  line-height: 1.25;
   margin: 0 0 4px;
+  letter-spacing: 0.01em;
 }
 
 .org-box--command .org-box__title {
-  font-size: 1rem;
+  font-size: 12.5pt;
+  letter-spacing: 0.02em;
 }
 
 .org-box__member {
-  font-size: 0.82rem;
+  font-size: 10pt;
   margin: 0;
-  line-height: 1.25;
+  line-height: 1.3;
+  color: var(--print-ink);
+}
+
+.org-box--command .org-box__member {
+  font-size: 11.5pt;
+  font-weight: 600;
 }
 
 .org-box__member--vacant {
@@ -185,13 +250,13 @@ body {
 
 .org-connector-down {
   width: 0;
-  height: 22px;
-  border-left: 1.5px solid var(--print-rule);
+  height: 24px;
+  border-left: 1.5pt solid var(--print-rule);
   margin: 0 auto;
 }
 
 .org-connector-h {
-  height: 1.5px;
+  height: 1.5pt;
   background: var(--print-rule);
   margin: 0 auto;
   width: 80%;
@@ -199,8 +264,8 @@ body {
 
 .org-staff-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 14px;
   margin-top: 6px;
   position: relative;
 }
@@ -208,47 +273,54 @@ body {
 .org-staff-row::before {
   content: "";
   position: absolute;
-  top: -10px;
+  top: -12px;
   left: 8%;
   right: 8%;
-  height: 1.5px;
+  height: 1.5pt;
   background: var(--print-rule);
 }
 
 .org-staff-row .org-box::before {
   content: "";
   position: absolute;
-  top: -10px;
+  top: -12px;
   left: 50%;
-  height: 10px;
+  height: 12px;
   width: 0;
-  border-left: 1.5px solid var(--print-rule);
+  border-left: 1.5pt solid var(--print-rule);
 }
 
 .org-cadet-stack {
-  margin-top: 30px;
+  margin-top: 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .org-cadet-stack__heading {
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 11pt;
   text-align: center;
-  margin: 0 0 6px;
-  border-bottom: 1.5px solid var(--print-rule);
-  padding-bottom: 2px;
+  margin: 0 0 8px;
+  border-bottom: 1.2pt solid var(--print-rule);
+  padding: 4px 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--print-tint);
   align-self: stretch;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .org-cadet-stack .org-box {
-  width: 220px;
-  max-width: 220px;
+  width: 240px;
+  max-width: 240px;
 }
 
-/* ---- Meeting Schedule document ---- */
+/* ============================================================ */
+/* === Monthly Schedule document ============================== */
+/* ============================================================ */
 
 .sched-doc {
   color: var(--print-ink);
@@ -258,187 +330,425 @@ body {
 
 .sched-doc__title-row {
   text-align: center;
-  margin-bottom: 18px;
+  margin: 0 0 14px;
 }
 
 .sched-doc__title {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  font-size: 1.4rem;
+  font-size: 22pt;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 0 0 6pt;
+  letter-spacing: 0.005em;
+  color: var(--print-ink);
+  line-height: 1.15;
 }
 
 .sched-doc__subtitle {
-  font-size: 0.95rem;
+  font-size: 11pt;
+  font-weight: 600;
+  color: #2a2a2a;
+  margin: 0 0 10pt;
+  letter-spacing: 0.02em;
+}
+
+.sched-doc__subtitle-meta {
+  font-weight: 400;
+  font-style: italic;
   color: var(--print-muted);
-  margin: 0 0 8px;
+  margin-left: 6px;
+}
+
+/* Audience labels — large, padded, rounded pills with explicit color
+   preservation so they survive `Print → Save as PDF`. */
+.sched-doc__audience-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8pt;
+  justify-content: center;
+  margin: 0 0 10pt;
 }
 
 .sched-doc__legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
-  margin: 4px 0 0;
-  font-size: 0.85rem;
+  gap: 8pt;
+  margin: 0 0 6pt;
+  font-size: 9pt;
+  color: var(--print-muted);
 }
+
+.sched-doc__legend-key {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 8.5pt;
+  align-self: center;
+  margin-right: 4pt;
+}
+
+.sched-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4pt;
+  font-size: 9pt;
+}
+
+.sched-legend-swatch {
+  display: inline-block;
+  width: 12pt;
+  height: 12pt;
+  border-radius: 3pt;
+  border: 0.6pt solid var(--print-rule);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.sched-legend-swatch.sched-badge--yellow { background: var(--print-yellow); }
+.sched-legend-swatch.sched-badge--green  { background: var(--print-green); }
+.sched-legend-swatch.sched-badge--cyan   { background: var(--print-cyan); }
+.sched-legend-swatch.sched-badge--plain  { background: var(--print-plain); }
 
 .sched-badge {
   display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--print-ink);
-  font-weight: 600;
-  font-size: 0.8rem;
-  background: #fff;
+  padding: 4pt 12pt;
+  border-radius: 999pt;
+  border: 0.8pt solid var(--print-rule);
+  font-weight: 700;
+  font-size: 9.5pt;
+  letter-spacing: 0.02em;
+  color: #1a1a1a;
+  background: #ffffff;
+  line-height: 1.1;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
 }
 
-.sched-badge--yellow { background: #fff3cd; }
-.sched-badge--green  { background: #d4edda; }
-.sched-badge--cyan   { background: #d1ecf1; }
-.sched-badge--plain  { background: #fff; }
+.sched-badge--yellow { background: var(--print-yellow); }
+.sched-badge--green  { background: var(--print-green); }
+.sched-badge--cyan   { background: var(--print-cyan); }
+.sched-badge--plain  { background: var(--print-plain); }
 
 .sched-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
-  font-size: 0.85rem;
+  margin-top: 8pt;
+  font-size: 10pt;
+  table-layout: fixed;
 }
 
 .sched-table th,
 .sched-table td {
-  border: 1px solid var(--print-ink);
-  padding: 8px 10px;
+  border: 1.2pt solid var(--print-rule);
+  padding: 6pt 7pt;
   vertical-align: top;
   text-align: left;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
 }
 
 .sched-table thead th {
-  background: #f3f4f6;
+  background: #e8e8e8;
   text-align: center;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 11pt;
+  padding: 7pt;
+  letter-spacing: 0.01em;
 }
 
 .sched-table .row-label {
   font-weight: 700;
-  background: #f3f4f6;
-  width: 110px;
-  text-align: center;
+  background: var(--print-tint);
+  width: 95pt;
+  text-align: left;
   vertical-align: middle;
+  font-size: 10.5pt;
+  letter-spacing: 0.01em;
+  padding-left: 9pt;
 }
 
-.sched-cell .time-range {
-  color: var(--print-red);
-  font-weight: 600;
-  font-size: 0.82rem;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.sched-cell .activity-title {
+/* Uniform row is a single short string per cell — center it. */
+.sched-table tbody tr:first-child td:not(.row-label) {
+  text-align: center;
   font-weight: 700;
-  margin: 0;
-  font-size: 0.88rem;
+  font-size: 11pt;
+  vertical-align: middle;
+  background: #fafafa;
 }
 
-.sched-cell .activity-owner {
+.sched-cell .time-range,
+.sched-entry .time-range {
+  color: var(--print-red);
+  font-weight: 700;
+  font-size: 9.5pt;
+  display: block;
+  margin: 0 0 2pt;
+  letter-spacing: 0.01em;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.sched-cell .activity-title,
+.sched-entry .activity-title {
+  font-weight: 700;
+  margin: 0 0 3pt;
+  font-size: 10.5pt;
+  color: var(--print-ink);
+  line-height: 1.25;
+}
+
+.sched-cell .activity-owners,
+.sched-entry .activity-owners {
   list-style: disc;
-  margin: 4px 0 0 18px;
+  margin: 0 0 0 14pt;
   padding: 0;
-  font-size: 0.82rem;
+  font-size: 9.5pt;
+  color: var(--print-ink);
 }
 
-.sched-cell .activity-owner li {
-  margin: 0;
+.sched-cell .activity-owners li,
+.sched-entry .activity-owners li {
+  margin: 1pt 0;
+  line-height: 1.3;
 }
 
-.sched-cell .activity-notes {
-  margin: 4px 0 0;
-  font-size: 0.8rem;
+.sched-cell .activity-notes,
+.sched-entry .activity-notes {
+  margin: 4pt 0 0;
+  font-size: 9pt;
   color: var(--print-muted);
   font-style: italic;
 }
 
-.sched-cell.hl-green  { background: #d4edda; }
-.sched-cell.hl-cyan   { background: #d1ecf1; }
-.sched-cell.hl-yellow { background: #fff3cd; }
+.sched-cell.hl-green  { background: var(--print-green-soft); }
+.sched-cell.hl-cyan   { background: var(--print-cyan-soft); }
+.sched-cell.hl-yellow { background: var(--print-yellow-soft); }
 .sched-cell.hl-none   { background: transparent; }
 
 .sched-cell--multi {
-  padding: 0;
-  background: transparent;
+  padding: 0 !important;
+  background: transparent !important;
 }
 
 .sched-cell--multi .sched-entry {
-  padding: 8px 10px;
-  border-bottom: 1px dashed var(--print-ink);
+  padding: 6pt 7pt;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
-.sched-cell--multi .sched-entry:last-child {
-  border-bottom: 0;
+.sched-cell--multi .sched-entry + .sched-entry {
+  border-top: 0.6pt dashed #888;
 }
 
-.sched-entry.hl-green  { background: #d4edda; }
-.sched-entry.hl-cyan   { background: #d1ecf1; }
-.sched-entry.hl-yellow { background: #fff3cd; }
+.sched-entry.hl-green  { background: var(--print-green-soft); }
+.sched-entry.hl-cyan   { background: var(--print-cyan-soft); }
+.sched-entry.hl-yellow { background: var(--print-yellow-soft); }
 .sched-entry.hl-none   { background: transparent; }
 
-.sched-doc__footnote {
-  margin-top: 18px;
-  font-size: 0.85rem;
-  border-top: 1px solid var(--print-ink);
-  padding-top: 8px;
+.sched-doc__footer {
+  margin-top: 12pt;
+  display: flex;
+  flex-direction: column;
+  gap: 6pt;
 }
 
-.sched-doc__footnote strong { margin-right: 4px; }
+.sched-doc__extra,
+.sched-doc__notes {
+  padding: 7pt 10pt;
+  background: var(--print-row-tint);
+  border: 0.8pt solid var(--print-rule);
+  font-size: 9.5pt;
+  line-height: 1.35;
+  font-style: italic;
+  color: var(--print-ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.sched-doc__extra strong,
+.sched-doc__notes strong {
+  font-style: normal;
+  font-weight: 700;
+  margin-right: 4pt;
+  letter-spacing: 0.02em;
+}
+
+/* Legacy footnote class kept so older renderer output still styles. */
+.sched-doc__footnote {
+  margin-top: 10pt;
+  padding: 7pt 10pt;
+  background: var(--print-row-tint);
+  border: 0.8pt solid var(--print-rule);
+  font-size: 9.5pt;
+  font-style: italic;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.sched-doc__footnote strong {
+  font-style: normal;
+  font-weight: 700;
+  margin-right: 4pt;
+}
+
+/* ============================================================ */
+/* === @media print: color preservation + chrome stripping ==== */
+/* ============================================================ */
 
 @media print {
+  /* CRITICAL: force backgrounds & colors to actually render to paper/PDF.
+     Without this, Chromium prints highlights as white. */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
   html,
   body {
     background: #fff !important;
     color: #000 !important;
   }
 
+  /* Strip portal chrome / app UI. */
   .portal-sidebar,
   .portal-nav,
+  .portal-topbar,
+  .portal-backdrop,
+  .portal-menu-toggle,
+  .portal-menu-close,
+  .org-mobile-actions,
   .steward-fab,
+  .steward-launcher,
   [data-portal-footer],
   .print-toolbar,
+  .sb-tabs,
+  .ocb-tabs,
+  .sb-hero,
+  .ocb-hero,
+  .org-hero,
+  .sb-actions,
+  .ocb-actions,
+  .sb-notice,
+  .ocb-notice,
+  .sb-warnings,
+  .ocb-warnings,
+  .builder-controls,
   button {
     display: none !important;
   }
 
-  .print-page {
+  .print-page,
+  .sb-preview-page,
+  .ocb-preview-page {
     box-shadow: none !important;
     margin: 0 !important;
     padding: 0 !important;
     max-width: none !important;
     border-radius: 0 !important;
+    background: #fff !important;
   }
 
-  .org-chart-doc,
-  .sched-doc {
+  .portal-app,
+  .portal-main,
+  .portal-content,
+  .sb-preview-wrap,
+  .ocb-preview-wrap,
+  .sb-tabpanel,
+  .ocb-tabpanel,
+  .page-frame,
+  .page-stack {
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
     box-shadow: none !important;
   }
 
-  .org-box {
-    break-inside: avoid;
-    page-break-inside: avoid;
+  /* Force pill colors to actually print. */
+  .sched-badge,
+  .sched-legend-swatch,
+  .sched-cell,
+  .sched-entry,
+  .sched-table thead th,
+  .sched-table .row-label,
+  .sched-doc__extra,
+  .sched-doc__notes,
+  .sched-doc__footnote,
+  .org-cadet-stack__heading,
+  .org-box,
+  .org-box--command {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
-  .sched-table tr,
+  .sched-badge--yellow { background: var(--print-yellow) !important; }
+  .sched-badge--green  { background: var(--print-green)  !important; }
+  .sched-badge--cyan   { background: var(--print-cyan)   !important; }
+  .sched-badge--plain  { background: var(--print-plain)  !important; }
+
+  .sched-cell.hl-green,
+  .sched-entry.hl-green  { background: var(--print-green-soft)  !important; }
+  .sched-cell.hl-cyan,
+  .sched-entry.hl-cyan   { background: var(--print-cyan-soft)   !important; }
+  .sched-cell.hl-yellow,
+  .sched-entry.hl-yellow { background: var(--print-yellow-soft) !important; }
+
+  .sched-cell .time-range,
+  .sched-entry .time-range {
+    color: var(--print-red) !important;
+  }
+
+  .sched-table th,
   .sched-table td {
-    break-inside: avoid;
-    page-break-inside: avoid;
+    border: 1.2pt solid #000 !important;
+  }
+
+  /* Avoid page breaks splitting a schedule row or an org-chart box. */
+  tr,
+  .sched-table tr,
+  .sched-table td,
+  .org-box,
+  .org-row,
+  .sched-doc__title-row,
+  .org-chart-doc__title {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   @page {
     size: letter landscape;
-    margin: 0.4in;
+    margin: 0.45in;
   }
+}
+
+/* ============================================================ */
+/* === On-screen card refinements (mirror the print page) ===== */
+/* ============================================================ */
+
+/* When this CSS is loaded inside the schedule/orgchart builder pages, ensure
+   the Preview tab card matches the printed document exactly. The schedule
+   and org-chart builders mount the renderer output inside a `.print-page`
+   container — the styles above already apply. The block below just makes
+   sure the schedule-builder dark portal background doesn't bleed through. */
+.sb-preview-page,
+.ocb-preview-page {
+  background: var(--print-paper);
+  color: var(--print-ink);
+  padding: 28px 36px 32px;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.sb-preview-wrap,
+.ocb-preview-wrap {
+  /* Sit on a neutral light gray inside the portal so the white "paper" pops. */
+  background: #e9eaee;
+  padding: 18px;
+  border-radius: 8px;
 }

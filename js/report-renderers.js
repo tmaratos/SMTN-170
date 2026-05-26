@@ -337,6 +337,7 @@
 
     const cadetHtml = cadetBranch.length
       ? `
+        <div class="org-connector-down" aria-hidden="true"></div>
         <div class="org-cadet-stack">
           <p class="org-cadet-stack__heading">Cadet Programs Branch</p>
           ${cadetBranch
@@ -399,21 +400,24 @@
     const title = safe.title
       ? `<p class="activity-title">${escapeHtml(safe.title)}</p>`
       : "";
-    const owner = safe.owner
-      ? `<p class="activity-notes" style="font-style:normal;color:#444;">${escapeHtml(
-          safe.owner
-        )}</p>`
-      : "";
-    const bullets = safeArray(safe.bullets).filter(Boolean);
-    const bulletsHtml = bullets.length
-      ? `<ul class="activity-owner">${bullets
+    // Owner & bullets are rendered as a single bulleted list — the Google
+    // Docs reference shows "• Lt. Smith, J" as the first bullet, then any
+    // additional bullets the editor entered.
+    const items = [];
+    if (safe.owner) items.push(safe.owner);
+    safeArray(safe.bullets)
+      .map((b) => String(b || "").trim())
+      .filter(Boolean)
+      .forEach((b) => items.push(b));
+    const itemsHtml = items.length
+      ? `<ul class="activity-owners">${items
           .map((b) => `<li>${escapeHtml(b)}</li>`)
           .join("")}</ul>`
       : "";
     const notes = safe.notes
       ? `<p class="activity-notes">${escapeHtml(safe.notes)}</p>`
       : "";
-    return `${time}${title}${bulletsHtml}${owner}${notes}`;
+    return `${time}${title}${itemsHtml}${notes}`;
   }
 
   /**
@@ -474,7 +478,7 @@
     const year = Number(sched.year) || new Date().getFullYear();
     const monthName = MONTH_NAMES[(month - 1) % 12] || "";
     const titleLine =
-      sched.title || `Monthly Squadron Meeting Schedule — ${monthName} ${year}`;
+      sched.title || `${monthName} ${year} Monthly Squadron Meeting Schedule`;
     const audiences = normalizeAudienceLabels(sched.audienceLabels).filter(
       (a) => a.enabled && a.label
     );
@@ -491,12 +495,7 @@
       <tr>
         <td class="row-label">Uniform</td>
         ${weeks
-          .map(
-            (w) =>
-              `<td class="sched-cell"><p class="activity-title">${escapeHtml(
-                w.uniform || "—"
-              )}</p></td>`
-          )
+          .map((w) => `<td>${escapeHtml(w.uniform || "—")}</td>`)
           .join("")}
       </tr>`;
 
@@ -518,33 +517,37 @@
       )
       .join("");
 
-    const audienceLegend = audiences.length
-      ? audiences
+    const audienceRowHtml = audiences.length
+      ? `<div class="sched-doc__audience-row">${audiences
           .map((a) => {
             const cls = HIGHLIGHT_BADGE_CLASSES[a.highlightType] || "sched-badge--plain";
             return `<span class="sched-badge ${cls}">${escapeHtml(a.label)}</span>`;
           })
-          .join("")
+          .join("")}</div>`
       : "";
 
     const legendHtml = `
       <div class="sched-doc__legend">
-        <span class="sched-badge sched-badge--green">Main training</span>
-        <span class="sched-badge sched-badge--cyan">Safety / Special</span>
-        <span class="sched-badge sched-badge--yellow">Exam / Leadership</span>
-        ${audienceLegend}
+        <span class="sched-doc__legend-key">Highlight key</span>
+        <span class="sched-legend-item"><span class="sched-legend-swatch sched-badge--green"></span>Main training</span>
+        <span class="sched-legend-item"><span class="sched-legend-swatch sched-badge--cyan"></span>Safety / Special</span>
+        <span class="sched-legend-item"><span class="sched-legend-swatch sched-badge--yellow"></span>Exam / Leadership</span>
       </div>`;
 
     const extraHtml = sched.extracurricularActivities
-      ? `<p class="sched-doc__footnote"><strong>Extracurricular activities:</strong> ${escapeHtml(
+      ? `<div class="sched-doc__extra"><strong>Extracurricular activities:</strong> ${escapeHtml(
           sched.extracurricularActivities
-        )}</p>`
+        )}</div>`
       : "";
     const notesHtml = sched.notes
-      ? `<p class="sched-doc__footnote"><strong>Notes / announcements:</strong> ${escapeHtml(
+      ? `<div class="sched-doc__notes"><strong>Notes / announcements:</strong> ${escapeHtml(
           sched.notes
-        )}</p>`
+        )}</div>`
       : "";
+    const footerHtml =
+      extraHtml || notesHtml
+        ? `<footer class="sched-doc__footer">${extraHtml}${notesHtml}</footer>`
+        : "";
 
     const firstMeeting = sched.firstMeetingDate
       ? formatLongDate(sched.firstMeetingDate)
@@ -555,8 +558,13 @@
         <header class="sched-doc__title-row">
           <h1 class="sched-doc__title">${escapeHtml(titleLine)}</h1>
           <p class="sched-doc__subtitle">Oak Ridge Composite Squadron · TN 170${
-            firstMeeting ? " · First meeting " + escapeHtml(firstMeeting) : ""
+            firstMeeting
+              ? `<span class="sched-doc__subtitle-meta">First meeting ${escapeHtml(
+                  firstMeeting
+                )}</span>`
+              : ""
           }</p>
+          ${audienceRowHtml}
           ${legendHtml}
         </header>
         <table class="sched-table">
@@ -571,8 +579,7 @@
             ${blockRows}
           </tbody>
         </table>
-        ${extraHtml}
-        ${notesHtml}
+        ${footerHtml}
       </article>`;
   }
 
