@@ -31,9 +31,33 @@ service cloud.firestore {
       return isAdmin();
     }
 
+    function inviteNotExpired(data) {
+      return !('expiresAt' in data) || data.expiresAt == null || data.expiresAt > request.time;
+    }
+
+    function validInviteSignup(userId) {
+      let inviteId = request.resource.data.createdFromInviteId;
+      let invite = get(/databases/$(database)/documents/inviteLinks/$(inviteId));
+      return signedIn()
+        && userId == uid()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdFromInviteId == inviteId
+        && invite.data.status == 'unused'
+        && invite.data.email == request.auth.token.email
+        && inviteNotExpired(invite.data);
+    }
+
     function safeProfilePatch() {
       let allowed = ['firstName', 'lastName', 'preferredName', 'rank', 'capId', 'phone', 'dutyPosition', 'profilePhotoUrl', 'updatedAt'];
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+    }
+
+    function inviteMarkUsed() {
+      return signedIn()
+        && resource.data.status == 'unused'
+        && request.resource.data.status == 'used'
+        && request.resource.data.usedBy == uid()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedAt', 'usedBy']);
     }
 
     match /users/{userId} {
@@ -42,10 +66,20 @@ service cloud.firestore {
     }
 
     match /profiles/{userId} {
-      allow read: if signedIn() && userId == uid();
-      allow create: if signedIn() && userId == uid();
+      allow read: if signedIn() && (userId == uid() || isAdmin());
+      allow create: if validInviteSignup(userId);
       allow update: if signedIn() && userId == uid() && safeProfilePatch();
       allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /inviteLinks/{inviteId} {
+      allow read: if resource.data.status == 'unused' && inviteNotExpired(resource.data);
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.status == 'unused'
+        && request.resource.data.token == inviteId;
+      allow update: if inviteMarkUsed();
       allow delete: if isAdmin();
     }
 

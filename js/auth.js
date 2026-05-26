@@ -5,6 +5,7 @@
 (function initPortalAuth(global) {
   const LOGIN_PATH = "login.html";
   const PENDING_PATH = "pending-approval.html";
+  const DENIED_PATH = "access-denied.html";
 
   const ROLES = {
     COMMANDER: { id: "commander", label: "Commander" },
@@ -14,9 +15,11 @@
   };
 
   const ACCOUNT_STATUS = {
+    PENDING: "pending",
     AWAITING: "awaiting_approval",
     APPROVED: "approved",
     ACTIVE: "active",
+    DENIED: "denied",
   };
 
   const ADMIN_ROLES = [ROLES.COMMANDER.id, ROLES.COMMAND_STAFF.id, "admin", "Admin"];
@@ -159,6 +162,24 @@
     return Profile()?.isProfileStatusApproved?.(x) ?? false;
   }
 
+  function isPending(s) {
+    const x = s || profile || session;
+    return Profile()?.isProfileStatusAwaiting?.(x) ?? false;
+  }
+
+  function isDenied(s) {
+    const x = s || profile || session;
+    return Profile()?.isProfileStatusDenied?.(x) ?? false;
+  }
+
+  function getPostLoginPath() {
+    if (!session && !profile) return PENDING_PATH;
+    if (isDenied()) return DENIED_PATH;
+    if (isPending()) return PENDING_PATH;
+    if (isApproved()) return "dashboard.html";
+    return PENDING_PATH;
+  }
+
   function isAdmin(s) {
     const x = s || profile || session;
     return x && isApproved(x) && isAdminRole(x.role);
@@ -169,7 +190,7 @@
     if (!x) return false;
     if (ADMIN_ACTIONS.has(action)) return isAdmin(x);
     if (action === "view_portal") return isApproved(x);
-    if (action === "view_pending") return Profile()?.isProfileStatusAwaiting?.(x || profile);
+    if (action === "view_pending") return isPending(x);
     return isApproved(x);
   }
 
@@ -335,6 +356,9 @@
     isProfileIncomplete,
     isAuthenticated,
     isApproved,
+    isPending,
+    isDenied,
+    getPostLoginPath,
     isAdmin,
     can,
     signIn,

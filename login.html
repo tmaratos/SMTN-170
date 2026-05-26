@@ -35,14 +35,14 @@
       <button type="submit" class="btn-gold btn-lg" id="loginSubmit">Sign in</button>
     </form>
 
-    <p class="login-hint">First time? Ask Commander or Command Staff to approve your account after you register.</p>
+    <p class="login-hint">Have an invite link? Use the link provided by squadron leadership.</p>
     <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
 
   <script src="./js/firebase-config.js?v=1"></script>
   <script src="./js/firebase-client.js?v=1"></script>
   <script src="./js/firebase-auth.js?v=1"></script>
-  <script src="./js/auth-guard.js?v=8"></script>
+  <script src="./js/auth-guard.js?v=9"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async function () {
       const form = document.getElementById("loginForm");
@@ -91,7 +91,11 @@
 
           if (data && data.session) {
             console.log("LOGIN_SUCCESS_SESSION_FOUND");
-            window.location.href = "dashboard.html";
+            const uid = data.session.user?.id || data.user?.uid;
+            const dest = uid
+              ? await window.TN170AuthGuard.resolvePostLoginUrl(uid)
+              : "dashboard.html";
+            window.location.href = dest;
           } else {
             showError("Sign in did not return a session. Try again.");
           }

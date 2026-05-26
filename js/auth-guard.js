@@ -1,9 +1,11 @@
 /**
- * TN-170 — Firebase auth gate for protected portal pages (no redirect loops).
+ * TN-170 — Firebase auth gate with profile status routing (no redirect loops).
  */
 (function initAuthGuard(global) {
   const LOGIN = "login.html";
   const DASHBOARD = "dashboard.html";
+  const PENDING = "pending-approval.html";
+  const DENIED = "access-denied.html";
 
   let authChecked = false;
 
@@ -26,6 +28,10 @@
     if (el) el.hidden = true;
     const app = document.getElementById("portalApp");
     if (app) app.hidden = false;
+  }
+
+  function currentPage() {
+    return (global.location.pathname || "").split("/").pop() || "";
   }
 
   async function waitForFirebase(maxMs) {
@@ -61,6 +67,68 @@
     });
   }
 
+  async function fetchProfileDoc(userId) {
+    const fb = global.SMTN170Firebase;
+    await fb?.whenReady?.();
+    const mod = fb?.getFirestoreModule?.();
+    const db = fb?.getFirestore?.();
+    if (!mod || !db || !userId) return null;
+    const { doc, getDoc } = mod;
+    const snap = await getDoc(doc(db, "profiles", userId));
+    if (!snap.exists()) return null;
+    return snap.data();
+  }
+
+  function normalizeStatus(profile) {
+    return String(profile?.status || "").toLowerCase();
+  }
+
+  function isActiveStatus(status) {
+    return status === "active" || status === "approved";
+  }
+
+  function isPendingStatus(status) {
+    return status === "pending" || status === "awaiting_approval" || status === "awaiting_verification";
+  }
+
+  function isDeniedStatus(status) {
+    return status === "denied";
+  }
+
+  function destinationForProfile(profile) {
+    if (!profile) return PENDING;
+    const status = normalizeStatus(profile);
+    if (isDeniedStatus(status)) return DENIED;
+    if (isPendingStatus(status)) return PENDING;
+    if (isActiveStatus(status)) return DASHBOARD;
+    return PENDING;
+  }
+
+  async function resolvePostLoginUrl(userId) {
+    const profile = await fetchProfileDoc(userId);
+    return destinationForProfile(profile);
+  }
+
+  async function enforceProfileAccess(userId) {
+    const page = currentPage();
+    const profile = await fetchProfileDoc(userId);
+    const dest = destinationForProfile(profile);
+
+    if (dest === DASHBOARD) {
+      if (page === PENDING || page === DENIED || page === LOGIN) {
+        global.location.href = DASHBOARD;
+        return false;
+      }
+      return true;
+    }
+
+    if (page !== dest) {
+      global.location.href = dest;
+      return false;
+    }
+    return true;
+  }
+
   async function ensureProtectedSession() {
     if (authChecked && global.TN170_AUTH_SESSION_OK) return true;
     if (!authChecked) showLoading("Loading workspace…");
@@ -74,12 +142,14 @@
     }
     const session = await waitForAuthState();
     authChecked = true;
-    if (!session) {
+    if (!session?.user?.id) {
       console.log("SESSION_MISSING_REDIRECT");
       console.log("REDIRECT REASON: no Firebase session on protected page");
       global.location.href = LOGIN;
       return false;
     }
+    const allowed = await enforceProfileAccess(session.user.id);
+    if (!allowed) return false;
     console.log("SESSION_FOUND");
     console.log("AUTH_INIT_OK");
     global.TN170_AUTH_SESSION_OK = true;
@@ -95,12 +165,13 @@
       return;
     }
     const session = await waitForAuthState();
-    const hasSession = !!session;
+    const hasSession = !!session?.user?.id;
     console.log("LOGIN PAGE SESSION:", hasSession ? "yes" : "no");
     authChecked = true;
     if (hasSession) {
+      const dest = await resolvePostLoginUrl(session.user.id);
       console.log("REDIRECT REASON: login page found existing session");
-      global.location.href = DASHBOARD;
+      global.location.href = dest;
     }
   }
 
@@ -128,7 +199,7 @@
 
   function loadPortalScripts(page) {
     const s = document.createElement("script");
-    s.src = "./js/portal-scripts.js?v=8";
+    s.src = "./js/portal-scripts.js?v=9";
     if (page) s.dataset.page = page;
     document.body.appendChild(s);
   }
@@ -149,5 +220,8 @@
     hideLoading,
     isAuthChecked: () => authChecked,
     getFirebaseClient,
+    resolvePostLoginUrl,
+    fetchProfileDoc,
+    destinationForProfile,
   };
 })(window);

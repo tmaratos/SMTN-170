@@ -3,9 +3,11 @@
  */
 (function initProfileService(global) {
   const PROFILE_STATUS = {
+    PENDING: "pending",
     AWAITING: "awaiting_approval",
     APPROVED: "approved",
     ACTIVE: "active",
+    DENIED: "denied",
   };
 
   const EDITABLE_FIELDS = [
@@ -110,7 +112,12 @@
 
   function isProfileStatusAwaiting(rowOrStatus) {
     const s = typeof rowOrStatus === "string" ? trim(rowOrStatus).toLowerCase() : getProfileStatus(rowOrStatus);
-    return s === PROFILE_STATUS.AWAITING;
+    return s === PROFILE_STATUS.PENDING || s === PROFILE_STATUS.AWAITING;
+  }
+
+  function isProfileStatusDenied(rowOrStatus) {
+    const s = typeof rowOrStatus === "string" ? trim(rowOrStatus).toLowerCase() : getProfileStatus(rowOrStatus);
+    return s === PROFILE_STATUS.DENIED;
   }
 
   function mapSessionFromProfile(row) {
@@ -158,6 +165,7 @@
     getProfileStatus,
     isProfileStatusApproved,
     isProfileStatusAwaiting,
+    isProfileStatusDenied,
     mapSessionFromProfile,
     pickEditablePayload,
     fullName,

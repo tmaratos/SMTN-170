@@ -6,16 +6,16 @@
   <link rel="icon" href="./assets/favicon.ico" sizes="any" />
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
-  <title>Awaiting approval | TN-170</title>
+  <title>Access denied | TN-170</title>
 </head>
 <body class="login-v2">
   <main class="login-card-v2" style="max-width:520px;text-align:left">
     <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" class="login-patch" style="margin-bottom:16px" />
     <p class="login-motto">Not Without Effort.</p>
-    <h1 style="text-align:left">Awaiting approval</h1>
-    <p class="login-unit" style="text-align:left">Your profile has been submitted and is waiting for manual approval from squadron leadership.</p>
-    <p class="login-unit login-lead" style="text-align:left">You cannot access the portal until Commander or Command Staff approves your profile. You will receive the same workspace as all Senior Members once approved.</p>
-    <p id="pendingIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
+    <h1 style="text-align:left">Access denied</h1>
+    <p class="login-unit" style="text-align:left">Your profile was not approved for the TN-170 Senior Member portal.</p>
+    <p class="login-unit login-lead" style="text-align:left">If you believe this is an error, contact Commander or Command Staff.</p>
+    <p id="deniedIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
     <button type="button" class="btn-gold btn-lg" style="width:100%;margin-top:20px" onclick="logout()">Log out</button>
     <p class="portal-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
@@ -43,14 +43,14 @@
         location.href = "dashboard.html";
         return;
       }
-      if (window.SMTN170Auth?.isDenied?.(s)) {
-        location.href = "access-denied.html";
+      if (window.SMTN170Auth?.isPending?.(s)) {
+        location.href = "pending-approval.html";
         return;
       }
-      const el = document.getElementById("pendingIdentity");
+      const el = document.getElementById("deniedIdentity");
       if (el) {
         const name = window.SMTN170Profile?.computeDisplayName?.(window.SMTN170Auth?.getProfile?.() || s);
-        el.textContent = name ? `${name} · ${s.email}` : s.email || "Signed in";
+        el.textContent = name ? `${name} · ${s.email}` : s.email;
       }
     })();
   </script>

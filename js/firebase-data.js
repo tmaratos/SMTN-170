@@ -18,6 +18,7 @@
     steward_chat_messages: "stewardMessages",
     audit_log: "auditLog",
     resource_links: "resourceLinks",
+    invite_links: "inviteLinks",
     schedules: "schedules",
   };
 
@@ -74,6 +75,11 @@
     target_id: "targetId",
     pending_action: "pendingAction",
     last_reviewed_at: "lastReviewedAt",
+    role_default: "roleDefault",
+    created_from_invite_id: "createdFromInviteId",
+    used_at: "usedAt",
+    used_by: "usedBy",
+    expires_at: "expiresAt",
   };
 
   const CAMEL_MAP = Object.fromEntries(Object.entries(FIELD_MAP).map(([k, v]) => [v, k]));
@@ -161,6 +167,11 @@
       return this;
     }
 
+    in(field, values) {
+      this.filters.push({ op: "in", field, value: values });
+      return this;
+    }
+
     neq(field, value) {
       this.filters.push({ op: "!=", field, value });
       return this;
@@ -221,6 +232,7 @@
       this.filters.forEach((f) => {
         const field = toCamelKey(f.field);
         if (f.op === "null") constraints.push(where(field, "==", null));
+        else if (f.op === "in") constraints.push(where(field, "in", f.value));
         else constraints.push(where(field, f.op, f.value));
       });
       if (this.orderField) constraints.push(orderBy(toCamelKey(this.orderField), this.orderAsc ? "asc" : "desc"));
