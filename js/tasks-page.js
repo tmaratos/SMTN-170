@@ -116,7 +116,7 @@
         <p>${escapeHtml(res.error)}</p>
       </article>
       <button type="button" class="btn-gold" data-steward-open style="margin-top:16px">Open Steward</button>`;
-      global.SMTN170Steward?.rebind?.();
+      global.SMTN170StewardLauncher?.rebind?.();
       return;
     }
 
@@ -140,7 +140,7 @@
         ${renderAddForm()}
         <button type="button" class="btn-gold" data-steward-open style="margin-top:12px">Open Steward</button>`;
       bindTaskEvents(root);
-      global.SMTN170Steward?.rebind?.();
+      global.SMTN170StewardLauncher?.rebind?.();
       return;
     }
 
@@ -158,7 +158,7 @@
       <button type="button" class="btn-gold" data-steward-open>Create or manage tasks in Steward</button>`;
 
     bindTaskEvents(root);
-    global.SMTN170Steward?.rebind?.();
+    global.SMTN170StewardLauncher?.rebind?.();
   }
 
   function renderAddForm() {

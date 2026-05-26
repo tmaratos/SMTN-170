@@ -83,10 +83,12 @@
   const CAP_SEARCH_MARKER = "CAP_SEARCH_URL:";
 
   let activeMode = "chat";
+  let stewardActive = false;
+  let panelAbortController = null;
 
   const LOCAL_KEY = "smtn170_steward_phase1";
 
-  let state = {
+  const EMPTY_STATE = {
     conversationId: null,
     conversationTitle: "New operation",
     messages: [],
@@ -98,6 +100,8 @@
     workspaceContext: null,
     openedUrls: {},
   };
+
+  let state = { ...EMPTY_STATE };
 
   function titleFromMessage(text) {
     const clean = (text || "").trim().replace(/\s+/g, " ");
@@ -792,15 +796,24 @@
     });
   }
 
-  function closePanel() {
-    const panel = document.getElementById("stewardPanel");
-    const backdrop = document.getElementById("stewardBackdrop");
-    panel?.classList.remove("open");
-    panel?.setAttribute("aria-hidden", "true");
-    backdrop?.setAttribute("aria-hidden", "true");
+  function teardownPanel() {
+    stewardActive = false;
+    if (state.isThinking) setThinking(false);
+
+    panelAbortController?.abort();
+    panelAbortController = null;
+
+    document.getElementById("stewardPanelRoot")?.remove();
+
+    state = { ...EMPTY_STATE };
+    activeMode = "chat";
+
     document.body.classList.remove("steward-open", "steward-ctx-open");
     document.getElementById("stewardFab")?.setAttribute("aria-expanded", "false");
-    document.getElementById("stewardCtxToggle")?.setAttribute("aria-expanded", "false");
+  }
+
+  function closePanel() {
+    teardownPanel();
   }
 
   function togglePanel() {
@@ -810,102 +823,145 @@
   }
 
   function bindPanelEvents() {
-    const root = document.getElementById("stewardRoot");
+    const root = document.getElementById("stewardPanelRoot");
     if (!root || root.dataset.eventsBound === "1") return;
     root.dataset.eventsBound = "1";
 
-    document.getElementById("stewardFab")?.addEventListener("click", togglePanel);
-    document.getElementById("stewardClose")?.addEventListener("click", closePanel);
-    document.getElementById("stewardBackdrop")?.addEventListener("click", closePanel);
+    panelAbortController?.abort();
+    const ac = new AbortController();
+    panelAbortController = ac;
+    const opts = { signal: ac.signal };
 
-    document.getElementById("stewardArchiveChat")?.addEventListener("click", () => archiveCurrentChat());
+    document.getElementById("stewardClose")?.addEventListener("click", closePanel, opts);
+    document.getElementById("stewardBackdrop")?.addEventListener("click", closePanel, opts);
 
-    document.getElementById("stewardCtxToggle")?.addEventListener("click", () => toggleContextDrawer());
-    document.getElementById("stewardCtxScrim")?.addEventListener("click", () => toggleContextDrawer(false));
+    document.getElementById("stewardArchiveChat")?.addEventListener("click", () => archiveCurrentChat(), opts);
 
-    document.getElementById("stewardConvoTitle")?.addEventListener("change", async (e) => {
-      state.conversationTitle = e.target.value.trim() || "New operation";
-      await updateConversation({ title: state.conversationTitle });
-    });
+    document.getElementById("stewardCtxToggle")?.addEventListener("click", () => toggleContextDrawer(), opts);
+    document.getElementById("stewardCtxScrim")?.addEventListener("click", () => toggleContextDrawer(false), opts);
 
-    document.getElementById("stewardWorkspaceContext")?.addEventListener("click", (e) => {
-      if (e.target.closest("#stewardNewChat")) {
+    document.getElementById("stewardConvoTitle")?.addEventListener(
+      "change",
+      async (e) => {
+        state.conversationTitle = e.target.value.trim() || "New operation";
+        await updateConversation({ title: state.conversationTitle });
+      },
+      opts
+    );
+
+    document.getElementById("stewardWorkspaceContext")?.addEventListener(
+      "click",
+      (e) => {
+        if (e.target.closest("#stewardNewChat")) {
+          e.preventDefault();
+          startNewChat();
+          return;
+        }
+        const convoBtn = e.target.closest("[data-convo-id]");
+        if (convoBtn?.dataset.convoId) {
+          e.preventDefault();
+          switchConversation(convoBtn.dataset.convoId);
+        }
+      },
+      opts
+    );
+
+    document.getElementById("stewardForm")?.addEventListener(
+      "submit",
+      (e) => {
         e.preventDefault();
-        startNewChat();
-        return;
-      }
-      const convoBtn = e.target.closest("[data-convo-id]");
-      if (convoBtn?.dataset.convoId) {
-        e.preventDefault();
-        switchConversation(convoBtn.dataset.convoId);
-      }
-    });
+        sendMessage(document.getElementById("stewardInput")?.value);
+      },
+      opts
+    );
 
-    document.getElementById("stewardForm")?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      sendMessage(document.getElementById("stewardInput")?.value);
-    });
+    document.getElementById("stewardInput")?.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage(e.target.value);
+        }
+      },
+      opts
+    );
 
-    document.getElementById("stewardInput")?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage(e.target.value);
-      }
-    });
-
-    document.getElementById("stewardPrompts")?.addEventListener("click", (e) => {
-      const chip = e.target.closest(".steward-chip");
-      if (!chip || chip.disabled || chip.tagName === "A") return;
-      const prompt = chip.dataset.prompt || "";
-      if (prompt) sendMessage(prompt);
-    });
+    document.getElementById("stewardPrompts")?.addEventListener(
+      "click",
+      (e) => {
+        const chip = e.target.closest(".steward-chip");
+        if (!chip || chip.disabled || chip.tagName === "A") return;
+        const prompt = chip.dataset.prompt || "";
+        if (prompt) sendMessage(prompt);
+      },
+      opts
+    );
 
     const inputEl = document.getElementById("stewardInput");
-    inputEl?.addEventListener("input", () => {
-      inputEl.style.height = "auto";
-      inputEl.style.height = `${Math.min(inputEl.scrollHeight, 160)}px`;
-    });
+    inputEl?.addEventListener(
+      "input",
+      () => {
+        inputEl.style.height = "auto";
+        inputEl.style.height = `${Math.min(inputEl.scrollHeight, 160)}px`;
+      },
+      opts
+    );
 
-    document.getElementById("stewardModeTabs")?.addEventListener("click", (e) => {
-      const tab = e.target.closest("[data-steward-mode]");
-      if (!tab) return;
-      setActiveMode(tab.dataset.stewardMode);
-      toggleContextDrawer(false);
-    });
+    document.getElementById("stewardModeTabs")?.addEventListener(
+      "click",
+      (e) => {
+        const tab = e.target.closest("[data-steward-mode]");
+        if (!tab) return;
+        setActiveMode(tab.dataset.stewardMode);
+        toggleContextDrawer(false);
+      },
+      opts
+    );
 
-    document.getElementById("stewardMessages")?.addEventListener("click", (e) => {
-      const chip = e.target.closest(".steward-chip[data-prompt]");
-      if (chip?.dataset.prompt) {
-        e.preventDefault();
-        sendMessage(chip.dataset.prompt);
-        return;
-      }
-      const capBtn = e.target.closest("[data-cap-open-tab]");
-      if (capBtn) {
-        e.preventDefault();
-        const url = capBtn.getAttribute("data-cap-open-tab");
-        if (url) global.open(url, "_blank", "noopener,noreferrer");
-        return;
-      }
-    });
+    document.getElementById("stewardMessages")?.addEventListener(
+      "click",
+      (e) => {
+        const chip = e.target.closest(".steward-chip[data-prompt]");
+        if (chip?.dataset.prompt) {
+          e.preventDefault();
+          sendMessage(chip.dataset.prompt);
+          return;
+        }
+        const capBtn = e.target.closest("[data-cap-open-tab]");
+        if (capBtn) {
+          e.preventDefault();
+          const url = capBtn.getAttribute("data-cap-open-tab");
+          if (url) global.open(url, "_blank", "noopener,noreferrer");
+        }
+      },
+      opts
+    );
 
-    document.getElementById("stewardMessages")?.addEventListener("click", async (e) => {
-      if (e.target.closest("[data-steward-confirm]")) {
-        e.preventDefault();
-        await handleConfirmAction();
-        return;
-      }
-      if (e.target.closest("[data-steward-cancel]")) {
-        e.preventDefault();
-        await handleCancelAction();
-      }
-    });
+    document.getElementById("stewardMessages")?.addEventListener(
+      "click",
+      async (e) => {
+        if (e.target.closest("[data-steward-confirm]")) {
+          e.preventDefault();
+          await handleConfirmAction();
+          return;
+        }
+        if (e.target.closest("[data-steward-cancel]")) {
+          e.preventDefault();
+          await handleCancelAction();
+        }
+      },
+      opts
+    );
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && document.getElementById("stewardPanel")?.classList.contains("open")) {
-        closePanel();
-      }
-    });
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape" && document.getElementById("stewardPanel")?.classList.contains("open")) {
+          closePanel();
+        }
+      },
+      opts
+    );
   }
 
   async function handleConfirmAction() {
@@ -977,16 +1033,12 @@
     });
   }
 
-  function injectWidget() {
-    if (document.getElementById("stewardRoot")) return;
+  function injectPanel() {
+    if (document.getElementById("stewardPanelRoot")) return;
 
     const root = document.createElement("div");
-    root.id = "stewardRoot";
+    root.id = "stewardPanelRoot";
     root.innerHTML = `
-      <button type="button" class="steward-fab steward-fab--secondary" id="stewardFab" aria-expanded="false" aria-controls="stewardPanel" aria-label="Open Steward for CAP">
-        <span class="steward-fab-icon" aria-hidden="true">S</span>
-        <span class="steward-fab-label">Steward</span>
-      </button>
       <div class="steward-backdrop" id="stewardBackdrop" aria-hidden="true"></div>
       <section class="steward-panel" id="stewardPanel" role="dialog" aria-modal="true" aria-labelledby="stewardTitle" aria-hidden="true">
         <header class="steward-gpt-head">
@@ -1051,14 +1103,7 @@
     saveLocalFallback();
   }
 
-  async function init() {
-    injectStewardCss();
-    await global.SMTN170Firebase?.whenReady?.();
-    if (!document.getElementById("stewardRoot")) injectWidget();
-    else {
-      renderPrompts();
-      bindPanelEvents();
-    }
+  function init() {
     bindOpenTriggers();
   }
 
@@ -1071,13 +1116,15 @@
   }
 
   async function openSteward(promptText = "") {
-    if (!document.getElementById("stewardRoot")) {
-      injectWidget();
-      bindPanelEvents();
-    } else {
-      bindPanelEvents();
-      bindOpenTriggers();
+    stewardActive = true;
+    injectStewardCss();
+    await global.SMTN170Firebase?.whenReady?.();
+    global.SMTN170StewardLauncher?.injectFab?.();
+    if (!document.getElementById("stewardPanelRoot")) {
+      injectPanel();
     }
+    bindPanelEvents();
+    bindOpenTriggers();
     openPanel();
     try {
       await loadAndRender();
@@ -1089,12 +1136,11 @@
     }
   }
 
-  global.openSteward = openSteward;
-
   global.SMTN170Steward = {
     openPanel,
     openSteward,
     closePanel,
+    togglePanel,
     sendMessage,
     askFromDashboard,
     startNewChat,
@@ -1102,18 +1148,14 @@
     loadAndRender,
     rebind,
     init,
+    isActive: () => stewardActive,
   };
 
   global.addEventListener("smtn170:auth-changed", () => {
+    if (!stewardActive) return;
     state.loaded = false;
     if (document.getElementById("stewardPanel")?.classList.contains("open")) {
       loadAndRender();
     }
   });
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
 })(window);

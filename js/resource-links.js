@@ -284,7 +284,7 @@
     await loadAndRender();
     global.SMTN170Pages?.injectStewardContexts?.();
     global.SMTN170Pages?.bindStewardContextActions?.();
-    global.SMTN170Steward?.rebind?.();
+    global.SMTN170StewardLauncher?.rebind?.();
     global.SMTN170Firebase?.subscribeTable?.("resource_links", null, () => {
       loadAndRender().catch((e) => console.warn("[resource-links]", e));
     });

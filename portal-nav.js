@@ -234,7 +234,7 @@
     updateBrandSubtitle();
     injectAccountBlock();
     global.SMTN170Auth?.applyNavVisibility?.();
-    global.SMTN170Steward?.rebind?.();
+    global.SMTN170StewardLauncher?.rebind?.();
   }
 
   global.SMTN170PortalNav = {

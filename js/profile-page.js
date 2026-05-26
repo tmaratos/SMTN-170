@@ -132,7 +132,7 @@
       </button>`;
 
     document.getElementById("profileForm")?.addEventListener("submit", onSubmit);
-    global.SMTN170Steward?.rebind?.();
+    global.SMTN170StewardLauncher?.rebind?.();
   }
 
   async function onSubmit(e) {

@@ -769,7 +769,7 @@
       deptRoot.innerHTML = data.departments.length
         ? data.departments.map(renderDepartmentCard).join("")
         : `<article class="panel card-info"><h2>No flight review records yet</h2><p>Add your first department flight review record with Steward or during staff planning.</p><button type="button" class="btn-gold" data-steward-open style="margin-top:12px">Open Steward</button></article>`;
-      global.SMTN170Steward?.rebind?.();
+      global.SMTN170StewardLauncher?.rebind?.();
     }
 
     if (scheduleForm) {

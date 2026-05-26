@@ -22,7 +22,7 @@
         global.SMTN170Shell?.renderDashboardV2?.().catch((err) => console.warn("[TN-170] dashboard", err));
       }
       global.SMTN170PortalNav?.init?.();
-      global.SMTN170Steward?.rebind?.();
+      global.SMTN170StewardLauncher?.rebind?.();
       global.SMTN170Pages?.bindStewardContextActions?.();
       if (page === "admin") {
         global.SMTN170PortalAdmin?.render?.();

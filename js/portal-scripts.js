@@ -1,6 +1,6 @@
 /**
  * Standard script chain for protected portal pages.
- * Include once before </body>: <script src="./js/portal-scripts.js?v=9" data-page="dashboard"></script>
+ * Include once before </body>: <script src="./js/portal-scripts.js?v=10" data-page="dashboard"></script>
  */
 (function loadPortalScripts() {
   const PAGE_SCRIPTS = {
@@ -24,20 +24,17 @@
     "./js/firebase-client.js?v=2",
     "./js/firebase-data.js?v=2",
     "./js/firebase-auth.js?v=1",
-    "./js/steward-client.js?v=8",
     "./js/auth-guard.js?v=12",
-    "./js/steward-site-index.js?v=2",
     "./js/profile-service.js?v=2",
     "./js/auth.js?v=12",
     "./js/auth-session.js?v=8",
     "./portal-nav.js?v=17",
     "./js/portal-shell.js?v=11",
     "./js/portal-pages.js?v=3",
-    "./js/steward-launcher.js?v=4",
-    "./js/steward-ui.js?v=7",
+    "./js/steward-launcher.js?v=5",
     "./app.js?v=8",
     "./js/profile-banner.js?v=1",
-    "./js/portal-bootstrap.js?v=9",
+    "./js/portal-bootstrap.js?v=10",
   ];
 
   const page = document.currentScript?.dataset?.page || document.body?.dataset?.portalPage || "";

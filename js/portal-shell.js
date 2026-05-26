@@ -99,7 +99,7 @@
   }
 
   function bindDashboardSteward() {
-    global.SMTN170Steward?.rebind?.();
+    global.SMTN170StewardLauncher?.rebind?.();
   }
 
   async function renderDashboardV2() {
@@ -234,31 +234,6 @@
     global.SMTN170PortalNav?.bindLogout?.();
   }
 
-  function ensureSteward(callback) {
-    if (global.SMTN170Steward) {
-      global.SMTN170Steward.rebind?.();
-      callback?.();
-      return;
-    }
-    if (document.querySelector('script[src*="steward-ui.js"]')) {
-      const wait = setInterval(() => {
-        if (global.SMTN170Steward) {
-          clearInterval(wait);
-          global.SMTN170Steward.rebind?.();
-          callback?.();
-        }
-      }, 50);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "./js/steward-ui.js?v=1";
-    script.onload = () => {
-      global.SMTN170Steward?.rebind?.();
-      callback?.();
-    };
-    document.body.appendChild(script);
-  }
-
   function loadScriptOnce(src, cb) {
     const base = src.split("?")[0];
     if (document.querySelector(`script[src^="${base}"]`)) {
@@ -274,7 +249,7 @@
   function bootPortalAssets(done) {
     loadScriptOnce("./js/portal-pages.js?v=1", () => {
       global.SMTN170Pages?.init?.();
-      ensureSteward(done);
+      done?.();
     });
   }
 
@@ -304,7 +279,7 @@
     normalizeTopbarCopy();
     renderDashboardV2().catch((e) => console.warn("[TN-170] dashboard", e));
     bootPortalAssets(() => {
-      global.SMTN170Steward?.rebind?.();
+      global.SMTN170StewardLauncher?.rebind?.();
       bindDashboardSteward();
       global.SMTN170Pages?.bindStewardContextActions?.();
     });

@@ -757,7 +757,7 @@
     bindEvents();
     global.SMTN170Pages?.injectStewardContexts?.();
     global.SMTN170Pages?.bindStewardContextActions?.();
-    global.SMTN170Steward?.rebind?.();
+    global.SMTN170StewardLauncher?.rebind?.();
   }
 
   function bindImportInput() {
