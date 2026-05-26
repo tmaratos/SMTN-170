@@ -34,6 +34,26 @@ html {
   font-size: 17px;
 }
 
+.page-home {
+  font-size: 1.125rem;
+}
+
+.page-home .dash-hero-title {
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+}
+
+.page-home .dash-hero-lead,
+.page-home .dash-summary-list,
+.page-home .dash-quick-actions-lead {
+  font-size: 1.12rem;
+  color: #d8e4f8;
+}
+
+.page-home .card-info-title,
+.page-home .card-action-title {
+  font-size: 1.25rem;
+}
+
 html,
 body {
   margin: 0;
@@ -792,34 +812,49 @@ button.btn-gold {
   line-height: 1.5;
 }
 
-.dash-action-grid {
+.dash-action-grid,
+.dash-quick-actions-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  width: 100%;
 }
 
-.dash-action-tile {
-  min-height: 72px;
-  padding: 16px 14px;
+.dash-action-tile,
+.dash-quick-action-tile {
+  min-height: 88px;
+  padding: 18px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--tn-white);
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 1.05rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   text-align: center;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.dash-action-tile:hover {
-  background: rgba(31, 95, 214, 0.25);
-  transform: translateY(-2px);
+.dash-action-tile:hover,
+.dash-quick-action-tile:hover {
+  background: rgba(31, 95, 214, 0.3);
+  border-color: rgba(255, 210, 31, 0.45);
+}
+
+.dash-quick-actions {
+  padding: 26px 28px 30px;
+}
+
+.dash-quick-actions-lead {
+  margin: -4px 0 20px;
+  font-size: 1.05rem;
+  color: var(--tn-muted);
+  line-height: 1.5;
 }
 
 .dash-action-tile--steward {
@@ -2144,6 +2179,7 @@ body.steward-open {
   .dash-hero-band,
   .dash-columns,
   .dash-action-grid,
+  .dash-quick-actions-grid,
   .card-grid-3,
   .card-grid-2 {
     grid-template-columns: 1fr;

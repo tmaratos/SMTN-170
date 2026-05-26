@@ -102,29 +102,31 @@
     global.SMTN170StewardLauncher?.rebind?.();
   }
 
+  function renderQuickActionsSection() {
+    const tiles = global.SMTN170PortalNav?.renderQuickActionTiles?.() || "";
+    return `<section class="card-action dash-quick-actions" aria-labelledby="dashActions">
+      <h3 id="dashActions" class="card-action-title">Quick Actions</h3>
+      <p class="dash-quick-actions-lead">Tap a button to open a squadron page.</p>
+      <div class="dash-quick-actions-grid">${tiles}</div>
+    </section>`;
+  }
+
   function renderDashboardSkeleton(root, welcomeTitle, accountBlock) {
     root.innerHTML = `
-      <div class="dash-workspace">
+      <div class="dash-workspace dash-workspace--simple">
         <header class="dash-hero-band">
           <div class="card-info dash-hero-welcome">
             <p class="dash-hero-eyebrow">TN-170 Oak Ridge Composite Squadron</p>
             <h2 class="dash-hero-title">${escapeHtml(welcomeTitle)}</h2>
-            <p class="dash-hero-lead">Private Senior Member operations workspace for TN-170 — shared with all approved Senior Members.</p>
+            <p class="dash-hero-lead">Your squadron portal for meetings, tasks, and readiness.</p>
             ${accountBlock}
           </div>
           <div class="card-info dash-hero-summary">
             <h3 class="card-info-title">This week at a glance</h3>
-            <p class="dash-empty">Loading summary…</p>
+            <p class="dash-empty">Loading…</p>
           </div>
         </header>
-        <section class="card-assistant steward-launch-card" aria-label="Steward for CAP">
-          <h2>Steward for CAP</h2>
-          <p>Chat-style assistant for meetings, readiness, org chart, resource links, and CAP references.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
-            <button type="button" class="btn-gold" onclick="openSteward()">Open Steward</button>
-            <a class="btn-secondary" href="documents.html" style="display:inline-flex;align-items:center;text-decoration:none">Files &amp; Resources</a>
-          </div>
-        </section>
+        ${renderQuickActionsSection()}
       </div>`;
     bindDashboardSteward();
     global.SMTN170PortalNav?.bindLogout?.();
@@ -163,53 +165,23 @@
 
     const summaryItems = [
       nextMeeting
-        ? `<li><strong>Next meeting:</strong> ${escapeHtml(nextMeeting.title)} · ${escapeHtml(formatDateFriendly(nextMeeting.date))}</li>`
-        : `<li><strong>Next meeting:</strong> No meetings saved yet.</li>`,
+        ? `<li><strong>Next meeting:</strong> ${escapeHtml(nextMeeting.title)} — ${escapeHtml(formatDateFriendly(nextMeeting.date))}</li>`
+        : `<li><strong>Next meeting:</strong> None scheduled yet.</li>`,
       summary.attention.length
-        ? `<li><strong>Needs attention:</strong> ${summary.attention.length} open task${summary.attention.length === 1 ? "" : "s"}</li>`
-        : `<li><strong>Needs attention:</strong> No tasks saved yet.</li>`,
+        ? `<li><strong>Open tasks:</strong> ${summary.attention.length}</li>`
+        : `<li><strong>Open tasks:</strong> None right now.</li>`,
       fr.total
-        ? `<li><strong>Flight reviews:</strong> ${fr.current} on track · ${fr.dueSoon} due soon${fr.overdue ? ` · ${fr.overdue} overdue` : ""}</li>`
-        : `<li><strong>Flight reviews:</strong> No flight review records saved yet.</li>`,
+        ? `<li><strong>Flight reviews:</strong> ${fr.current} current${fr.dueSoon ? `, ${fr.dueSoon} due soon` : ""}${fr.overdue ? `, ${fr.overdue} overdue` : ""}</li>`
+        : `<li><strong>Flight reviews:</strong> None on file yet.</li>`,
     ].join("");
 
-    const meetingsHtml = summary.meetings.length
-      ? summary.meetings
-          .slice(0, 4)
-          .map(
-            (ev) => `
-          <li>
-            <time>${escapeHtml(formatDateFriendly(ev.date))}</time>
-            <div>
-              <strong>${escapeHtml(ev.title)}</strong>
-              ${ev.tag ? `<span class="tag-bfr">${escapeHtml(ev.tag)}</span>` : ""}
-              <span>${escapeHtml(ev.time)}${ev.loc ? ` · ${escapeHtml(ev.loc)}` : ""}</span>
-            </div>
-          </li>`
-          )
-          .join("")
-      : emptyList("No meetings saved yet.", { href: "schedule.html", label: "Create a meeting schedule" });
-
-    const attentionHtml = summary.attention.length
-      ? `<ul class="dash-due-list">${summary.attention
-          .map(
-            (t) => `
-          <li class="dash-due-item">
-            ${renderChip(t.status)}
-            <span>${escapeHtml(t.label)}</span>
-          </li>`
-          )
-          .join("")}</ul>
-        <a class="card-link card-link--light" href="tasks.html">Review tasks →</a>`
-      : `<p class="dash-caught-up">No tasks saved yet.</p>`;
-
     root.innerHTML = `
-      <div class="dash-workspace">
+      <div class="dash-workspace dash-workspace--simple">
         <header class="dash-hero-band">
           <div class="card-info dash-hero-welcome">
             <p class="dash-hero-eyebrow">TN-170 Oak Ridge Composite Squadron</p>
             <h2 class="dash-hero-title">${escapeHtml(welcomeTitle)}</h2>
-            <p class="dash-hero-lead">Private Senior Member operations workspace for TN-170 — shared with all approved Senior Members.</p>
+            <p class="dash-hero-lead">Your squadron portal for meetings, tasks, and readiness.</p>
             ${accountBlock}
           </div>
           <div class="card-info dash-hero-summary">
@@ -217,53 +189,7 @@
             <ul class="dash-summary-list">${summaryItems}</ul>
           </div>
         </header>
-
-        <section class="card-assistant steward-launch-card" aria-label="Steward for CAP">
-          <h2>Steward for CAP</h2>
-          <p>Chat-style assistant for meetings, readiness, org chart, resource links, and CAP references.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
-            <button type="button" class="btn-gold" onclick="openSteward()">Open Steward</button>
-            <a class="btn-secondary" href="documents.html" style="display:inline-flex;align-items:center;text-decoration:none">Files &amp; Resources</a>
-          </div>
-        </section>
-
-        <div class="dash-columns">
-          <div class="dash-col dash-col--left">
-            <section class="card-info dash-block" aria-labelledby="dashMeetings">
-              <h3 id="dashMeetings" class="card-info-title">Upcoming Meetings</h3>
-              ${summary.meetings.length ? `<ul class="dash-meeting-compact">${meetingsHtml}</ul>` : meetingsHtml}
-              <a class="card-link" href="calendar.html">Open calendar →</a>
-            </section>
-
-            <section class="card-info dash-block" aria-labelledby="dashOps">
-              <h3 id="dashOps" class="card-info-title">Squadron operations</h3>
-              <ul class="dash-bullet-list">
-                <li>Private Senior Member operations workspace — approved Senior Members only.</li>
-                <li>Use <a href="schedule.html">Meeting planning</a>, <a href="documents.html">Files &amp; Resources</a>, and <a href="orgchart.html">Organization chart</a> for day-to-day work.</li>
-                <li>Ask <strong>Steward for CAP</strong> for meetings, flight reviews, inspection prep, and CAP references.</li>
-              </ul>
-            </section>
-          </div>
-
-          <div class="dash-col dash-col--right">
-            <section class="card-warning dash-block" aria-labelledby="dashDue">
-              <h3 id="dashDue" class="card-warning-title">Due Soon</h3>
-              ${attentionHtml}
-            </section>
-
-            <section class="card-action dash-block" aria-labelledby="dashActions">
-              <h3 id="dashActions" class="card-action-title">Quick Actions</h3>
-              <div class="dash-action-grid">
-                <a class="dash-action-tile" href="calendar.html"><span class="dash-action-icon" aria-hidden="true">📅</span><span>Open Calendar</span></a>
-                <a class="dash-action-tile" href="documents.html"><span class="dash-action-icon" aria-hidden="true">📁</span><span>Files &amp; Resources</span></a>
-                <a class="dash-action-tile" href="flight-review.html"><span class="dash-action-icon" aria-hidden="true">✈</span><span>Flight Reviews</span></a>
-                <a class="dash-action-tile" href="sui-readiness.html"><span class="dash-action-icon" aria-hidden="true">✓</span><span>Inspection Prep</span></a>
-                <a class="dash-action-tile" href="schedule.html"><span class="dash-action-icon" aria-hidden="true">📋</span><span>View Meetings</span></a>
-              </div>
-            </section>
-
-          </div>
-        </div>
+        ${renderQuickActionsSection()}
       </div>`;
 
     bindDashboardSteward();

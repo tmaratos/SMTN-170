@@ -8,46 +8,46 @@
     return d.innerHTML;
   }
 
+  /** Always-visible sidebar destinations only. */
   const NAV_SECTIONS = [
     {
       id: "main",
-      label: "Main",
+      label: "Menu",
       items: [
         { key: "home", href: "dashboard.html", label: "Home" },
         { key: "calendar", href: "calendar.html", label: "Calendar" },
-        { key: "schedule", href: "schedule.html", label: "Meetings" },
-        { key: "files", href: "documents.html", label: "Files & Resources" },
-        { key: "orgchart", href: "orgchart.html", label: "Organization Chart" },
-      ],
-    },
-    {
-      id: "readiness",
-      label: "Readiness",
-      items: [
-        { key: "bfr", href: "flight-review.html", label: "Flight Reviews" },
-        { key: "sui", href: "sui-readiness.html", label: "Inspection Prep" },
-        { key: "tasks", href: "tasks.html", label: "Tasks" },
-      ],
-    },
-    {
-      id: "operations",
-      label: "Operations",
-      items: [
-        { key: "senior", href: "senior-member.html", label: "Senior Member Workspace" },
-        { key: "resources", href: "resources.html", label: "CAP References" },
       ],
     },
     {
       id: "account",
-      label: "Account",
-      items: [
-        { key: "profile", href: "profile.html", label: "My Profile" },
-        { key: "admin", href: "admin.html", label: "Admin", requireAdmin: true },
-      ],
+      label: "Staff",
+      items: [{ key: "admin", href: "admin.html", label: "Admin", requireAdmin: true }],
     },
   ];
 
+  /** Full-width dashboard quick actions (moved out of sidebar). */
+  const QUICK_ACTIONS = [
+    { key: "calendar", href: "calendar.html", label: "Calendar", icon: "📅" },
+    { key: "schedule", href: "schedule.html", label: "Meetings", icon: "📋" },
+    { key: "files", href: "documents.html", label: "Files & Resources", icon: "📁" },
+    { key: "orgchart", href: "orgchart.html", label: "Org Chart", icon: "👥" },
+    { key: "bfr", href: "flight-review.html", label: "Flight Reviews", icon: "✈" },
+    { key: "sui", href: "sui-readiness.html", label: "Inspection Prep", icon: "✓" },
+    { key: "tasks", href: "tasks.html", label: "Tasks", icon: "☑" },
+    { key: "resources", href: "resources.html", label: "CAP References", icon: "📚" },
+    { key: "senior", href: "senior-member.html", label: "Senior Member Workspace", icon: "⭐" },
+  ];
+
   const NAV_HIDDEN = [
+    { key: "profile", href: "profile.html" },
+    { key: "schedule", href: "schedule.html" },
+    { key: "files", href: "documents.html" },
+    { key: "orgchart", href: "orgchart.html" },
+    { key: "bfr", href: "flight-review.html" },
+    { key: "sui", href: "sui-readiness.html" },
+    { key: "tasks", href: "tasks.html" },
+    { key: "senior", href: "senior-member.html" },
+    { key: "resources", href: "resources.html" },
     { key: "readiness", href: "readiness.html" },
     { key: "exports", href: "exports.html" },
     { key: "operations", href: "operations.html" },
@@ -120,9 +120,20 @@
     sui: { action: "navigate", label: "Inspection Prep", target: "sui-readiness.html", help: "Work through inspection checklist items" },
     tasks: { action: "navigate", label: "Tasks", target: "tasks.html", help: "View squadron tasks and follow-ups" },
     senior: { action: "navigate", label: "Senior Member Workspace", target: "senior-member.html", help: "Open the senior member operations hub" },
+    resources: { action: "navigate", label: "CAP References", target: "resources.html", help: "Open CAP reference materials and links" },
     profile: { action: "navigate", label: "My Profile", target: "profile.html", help: "View and edit your portal profile" },
     admin: { action: "navigate", label: "Admin", target: "admin.html", help: "Approve users and manage roles (command staff only)" },
   };
+
+  function renderQuickActionTiles() {
+    return QUICK_ACTIONS.map((item) => {
+      const attrs = stewardAttrs(item.key);
+      const icon = item.icon
+        ? `<span class="dash-action-icon" aria-hidden="true">${item.icon}</span>`
+        : "";
+      return `<a class="dash-action-tile dash-quick-action-tile" href="${item.href}"${attrs}>${icon}<span>${escapeHtml(item.label)}</span></a>`;
+    }).join("");
+  }
 
   function stewardAttrs(key) {
     const s = NAV_STEWARD[key];
@@ -239,10 +250,12 @@
 
   global.SMTN170PortalNav = {
     NAV_SECTIONS,
+    QUICK_ACTIONS,
     NAV_HIDDEN,
     allNavItems,
     currentKey,
     renderAccountBlock,
+    renderQuickActionTiles,
     bindLogout,
     init,
   };

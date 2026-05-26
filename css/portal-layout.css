@@ -143,8 +143,39 @@ body.menu-open {
 }
 
 .dash-hero-band,
+.dash-quick-actions,
 .steward-launch-card {
   grid-column: 1 / -1;
+}
+
+.dash-workspace--simple {
+  display: flex;
+  flex-direction: column;
+  gap: var(--portal-gap);
+}
+
+.dash-quick-actions {
+  width: 100%;
+}
+
+.dash-quick-actions-lead {
+  margin: -6px 0 18px;
+  font-size: 1.05rem;
+  color: var(--tn-muted, #aab8cf);
+  line-height: 1.5;
+}
+
+.dash-quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.dash-quick-action-tile {
+  min-height: 88px;
+  padding: 18px 16px;
+  font-size: 1.05rem;
 }
 
 .dash-hero-band {

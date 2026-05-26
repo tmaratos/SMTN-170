@@ -83,8 +83,19 @@ textarea {
 
 .card-grid-2,
 .card-grid-3,
-.dash-action-grid {
+.dash-action-grid,
+.dash-quick-actions-grid {
   gap: 16px;
+}
+
+.page-home .dash-quick-action-tile {
+  min-height: 96px;
+  font-size: 1.08rem;
+  padding: 20px 18px;
+}
+
+.page-home .dash-action-icon {
+  font-size: 1.5rem;
 }
 
 .portal-menu-toggle {
