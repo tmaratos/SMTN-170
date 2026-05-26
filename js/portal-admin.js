@@ -13,7 +13,7 @@
   }
 
   async function fetchPending() {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) return { rows: [], configured: false };
     const { data, error } = await sb
       .from("profiles")
@@ -25,7 +25,7 @@
   }
 
   async function setAccountStatus(userId, status) {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) throw new Error("Firebase is not configured.");
     const { error } = await sb
       .from("profiles")

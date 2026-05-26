@@ -3,14 +3,13 @@
  * These are safe for the browser (not service account keys).
  */
 window.TN170_FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID",
-  /** Cloud Functions region for httpsCallable */
+  apiKey: "AIzaSyDZaerVKws3XFCRwBmvxEuwQdZfpbL1Gk0",
+  authDomain: "tn-170-portal.firebaseapp.com",
+  projectId: "tn-170-portal",
+  storageBucket: "tn-170-portal.firebasestorage.app",
+  messagingSenderId: "645835448409",
+  appId: "1:645835448409:web:e850d728cc857972df1148",
+  measurementId: "G-50V6RHQ6NF",
   functionsRegion: "us-central1",
 };
 

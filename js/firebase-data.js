@@ -18,6 +18,7 @@
     steward_chat_messages: "stewardMessages",
     audit_log: "auditLog",
     resource_links: "resourceLinks",
+    schedules: "schedules",
   };
 
   const FIELD_MAP = {

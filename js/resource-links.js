@@ -25,7 +25,7 @@
   }
 
   function getClient() {
-    return global.TN170FirebaseClient || global.SMTN170Supabase?.getClient?.();
+    return global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
   }
 
   function formatDate(iso) {
@@ -285,7 +285,7 @@
     global.SMTN170Pages?.injectStewardContexts?.();
     global.SMTN170Pages?.bindStewardContextActions?.();
     global.SMTN170Steward?.rebind?.();
-    global.SMTN170Supabase?.subscribeTable?.("resource_links", null, () => {
+    global.SMTN170Firebase?.subscribeTable?.("resource_links", null, () => {
       loadAndRender().catch((e) => console.warn("[resource-links]", e));
     });
   }

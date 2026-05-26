@@ -1,5 +1,5 @@
 /**
- * Biannual Flight Review Readiness — Supabase flight_reviews table.
+ * Biannual Flight Review Readiness — Firestore flight_reviews collection.
  */
 (function initFlightReviewModule(global) {
   const STORAGE_KEY = "smtn170_flight_review";
@@ -231,8 +231,8 @@
 
   let reviewCache = { departments: [], updatedAt: new Date().toISOString() };
 
-  async function loadFromSupabase() {
-    const sb = global.SMTN170Supabase?.getClient?.();
+  async function loadFromFirestore() {
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) return { departments: [], updatedAt: new Date().toISOString() };
     const { data, error } = await sb.from("flight_reviews").select("*").order("department");
     if (error || !data?.length) return { departments: [], updatedAt: new Date().toISOString() };
@@ -959,7 +959,7 @@
     } catch {
       /* ignore legacy cached demo rows */
     }
-    reviewCache = refreshStatuses(await loadFromSupabase());
+    reviewCache = refreshStatuses(await loadFromFirestore());
     syncCalendarFromReviews(reviewCache);
 
     renderDashboardCard(document.getElementById("frDashboardCard"));

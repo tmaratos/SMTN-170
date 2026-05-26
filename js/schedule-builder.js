@@ -70,14 +70,14 @@
   }
 
   async function loadSchedule(monthKey) {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) return null;
     const { data } = await sb.from("schedules").select("*").eq("month_key", monthKey).maybeSingle();
     return data;
   }
 
   async function saveSchedule() {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     const uid = global.SMTN170Auth?.actorId?.();
     const now = new Date().toISOString();
     const payload = {
@@ -272,7 +272,7 @@
       state.scheduleId = saved.id;
     }
     render();
-    global.SMTN170Supabase?.subscribeTable?.("schedules", null, async () => {
+    global.SMTN170Firebase?.subscribeTable?.("schedules", null, async () => {
       const s = await loadSchedule(state.monthKey);
       if (s?.payload) {
         state.weeks = s.payload.weeks || state.weeks;

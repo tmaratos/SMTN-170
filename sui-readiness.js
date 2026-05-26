@@ -25,10 +25,10 @@
   }
 
   function getClient() {
-    return global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+    return global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
   }
 
-  function formatSupabaseError(error) {
+  function formatFirebaseError(error) {
     if (!error) return "Unknown error";
     const parts = [error.message || String(error)];
     if (error.code) parts.push(`Code: ${error.code}`);
@@ -38,14 +38,14 @@
   }
 
   async function ensureClient() {
-    if (global.TN170AuthGuard?.waitForSupabaseSdk) {
-      await global.TN170AuthGuard.waitForSupabaseSdk();
+    if (global.TN170AuthGuard?.waitForFirebase) {
+      await global.TN170AuthGuard.waitForFirebase();
     }
     await global.SMTN170Auth?.init?.();
     const sb = getClient();
     if (!sb) return null;
     const { data, error } = await sb.auth.getSession();
-    if (error) console.error("[inspection] session", formatSupabaseError(error));
+    if (error) console.error("[inspection] session", formatFirebaseError(error));
     if (!data?.session) return null;
     return sb;
   }
@@ -58,7 +58,7 @@
       .select("id, title, work_unit, status, due_date, notes, created_at, updated_at")
       .order("due_date", { ascending: true, nullsFirst: false });
     if (error) {
-      const msg = formatSupabaseError(error);
+      const msg = formatFirebaseError(error);
       console.error("[inspection] inspection_items", msg, error);
       return { rows: [], error: msg };
     }

@@ -132,12 +132,12 @@
     return global.SMTN170Auth?.actorId?.() || null;
   }
 
-  function getSupabase() {
-    return global.SMTN170Supabase?.getClient?.() || null;
+  function getClient() {
+    return global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.() || null;
   }
 
   function isOnline() {
-    return !!getSupabase() && !!getUserId() && global.SMTN170Supabase?.isConfigured?.();
+    return !!getClient() && !!getUserId() && global.SMTN170Firebase?.isConfigured?.();
   }
 
   function saveLocalFallback() {
@@ -170,7 +170,7 @@
   }
 
   async function listConversations() {
-    const sb = getSupabase();
+    const sb = getClient();
     const uid = getUserId();
     if (!sb || !uid) return [];
     const { data, error } = await sb
@@ -188,7 +188,7 @@
   }
 
   async function createConversation(title) {
-    const sb = getSupabase();
+    const sb = getClient();
     const uid = getUserId();
     if (!sb || !uid) {
       const id = "local-" + Date.now();
@@ -213,7 +213,7 @@
   }
 
   async function updateConversation(patch) {
-    const sb = getSupabase();
+    const sb = getClient();
     const uid = getUserId();
     if (!sb || !uid || !state.conversationId || String(state.conversationId).startsWith("local-")) {
       if (patch.title) state.conversationTitle = patch.title;
@@ -228,7 +228,7 @@
   }
 
   async function loadMessagesForConversation(conversationId) {
-    const sb = getSupabase();
+    const sb = getClient();
     const uid = getUserId();
     if (!sb || !uid || String(conversationId).startsWith("local-")) {
       return state.messages;
@@ -305,7 +305,7 @@
       at: new Date().toISOString(),
     };
 
-    const sb = getSupabase();
+    const sb = getClient();
     const uid = getUserId();
     if (!sb || !uid || !state.conversationId || String(state.conversationId).startsWith("local-")) {
       msg.id = role + "-" + Date.now();
@@ -576,7 +576,7 @@
   }
 
   async function loadWorkspaceContext() {
-    const sb = getSupabase();
+    const sb = getClient();
     const empty = { operations: [], schedules: [], resources: [], tasks: [], expirations: [] };
     if (!sb) {
       state.workspaceContext = empty;
@@ -675,7 +675,7 @@
       /resource link|files & resources|squadron files|find.*link|where.*schedule|where.*form/i.test(lower);
     if (!wantsLinks) return "";
 
-    const sb = getSupabase();
+    const sb = getClient();
     if (!sb) return "";
 
     try {
@@ -797,7 +797,7 @@
       return;
     }
 
-    const sb = getSupabase();
+    const sb = getClient();
     const uid = getUserId();
     if (sb && uid && state.conversationId && !String(state.conversationId).startsWith("local-")) {
       await sb

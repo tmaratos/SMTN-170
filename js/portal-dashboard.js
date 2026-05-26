@@ -26,7 +26,7 @@
   }
 
   async function fetchSummary() {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) {
       return {
         configured: false,

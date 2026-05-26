@@ -61,7 +61,7 @@
   }
 
   async function fetchProfile(userId) {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb || !userId) return null;
     const { data, error } = await sb.from("profiles").select("*").eq("id", userId).maybeSingle();
     if (error) {
@@ -112,7 +112,7 @@
   }
 
   async function updateOwnProfile(formData) {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     const uid = session?.userId;
     if (!sb || !uid) throw new Error("You must be signed in to update your profile.");
 
@@ -174,10 +174,10 @@
   }
 
   async function signIn(email, password) {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) {
       throw new Error(
-        global.TN170SupabaseConfig?.adminMessage?.() ||
+        global.FIREBASE_CONFIG?.adminMessage?.() ||
           "Firebase is not configured. Please contact the portal administrator."
       );
     }
@@ -188,10 +188,10 @@
   }
 
   async function signUp(email, password) {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) {
       throw new Error(
-        global.TN170SupabaseConfig?.adminMessage?.() ||
+        global.FIREBASE_CONFIG?.adminMessage?.() ||
           "Firebase is not configured. Please contact the portal administrator."
       );
     }
@@ -208,7 +208,7 @@
   }
 
   async function logout() {
-    const sb = global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (sb) await sb.auth.signOut();
     session = null;
     profile = null;

@@ -39,6 +39,28 @@
     return null;
   }
 
+  async function waitForAuthState(maxMs) {
+    await waitForFirebase(maxMs);
+    const fb = global.SMTN170Firebase;
+    if (!fb) return null;
+    return new Promise((resolve) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          resolve(null);
+        }
+      }, maxMs || 10000);
+      const { data } = fb.onAuthStateChange((_event, session) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        data?.subscription?.unsubscribe?.();
+        resolve(session);
+      });
+    });
+  }
+
   async function ensureProtectedSession() {
     if (authChecked && global.TN170_AUTH_SESSION_OK) return true;
     if (!authChecked) showLoading("Loading workspace…");
@@ -50,10 +72,9 @@
       global.location.href = LOGIN;
       return false;
     }
-    const { data, error } = await client.auth.getSession();
-    if (error) console.log("PROFILE_LOAD_ERROR", error.message);
+    const session = await waitForAuthState();
     authChecked = true;
-    if (!data?.session) {
+    if (!session) {
       console.log("SESSION_MISSING_REDIRECT");
       console.log("REDIRECT REASON: no Firebase session on protected page");
       global.location.href = LOGIN;
@@ -73,9 +94,8 @@
       authChecked = true;
       return;
     }
-    const { data, error } = await client.auth.getSession();
-    if (error) console.log("PROFILE_LOAD_ERROR", error.message);
-    const hasSession = !!data?.session;
+    const session = await waitForAuthState();
+    const hasSession = !!session;
     console.log("LOGIN PAGE SESSION:", hasSession ? "yes" : "no");
     authChecked = true;
     if (hasSession) {
@@ -119,6 +139,7 @@
 
   global.TN170AuthGuard = {
     waitForFirebase,
+    waitForAuthState,
     ensureProtectedSession,
     runLoginPage,
     runDashboardPage,
@@ -128,8 +149,5 @@
     hideLoading,
     isAuthChecked: () => authChecked,
     getFirebaseClient,
-    /** @deprecated use getFirebaseClient */
-    getSupabase: getFirebaseClient,
-    waitForSupabaseSdk: waitForFirebase,
   };
 })(window);

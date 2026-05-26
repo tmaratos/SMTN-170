@@ -31,13 +31,13 @@
     "IT",
   ];
 
-  const SUPABASE = {
+  const FIRESTORE = {
     table: "org_positions",
     connected() {
-      return !!global.SMTN170Supabase?.isConfigured?.();
+      return !!global.SMTN170Firebase?.isConfigured?.();
     },
     async fetchPositions() {
-      const sb = global.SMTN170Supabase?.getClient?.();
+      const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
       if (!sb) return null;
       const { data, error } = await sb.from("org_positions").select("*").order("sort_order");
       if (error) {
@@ -47,7 +47,7 @@
       return (data || []).map(fromDbRow);
     },
     async upsertPosition(row) {
-      const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+      const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
       if (!sb) return { ok: false, reason: "not_connected" };
       const payload = toDbRow(row);
       const uid = global.SMTN170Auth?.actorId?.();
@@ -56,7 +56,7 @@
       return error ? { ok: false, reason: error.message } : { ok: true, data };
     },
     async deletePosition(id) {
-      const sb = global.SMTN170Supabase?.getClient?.();
+      const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
       if (!sb) return { ok: false, reason: "not_connected" };
       const { error } = await sb.from("org_positions").delete().eq("id", id);
       return error ? { ok: false, reason: error.message } : { ok: true };
@@ -340,8 +340,8 @@
   }
 
   async function loadAsync() {
-    const fromDb = await SUPABASE.fetchPositions();
-    return { positions: fromDb || [], source: fromDb?.length ? "supabase" : "empty" };
+    const fromDb = await FIRESTORE.fetchPositions();
+    return { positions: fromDb || [], source: fromDb?.length ? "firestore" : "empty" };
   }
 
   function load() {
@@ -360,7 +360,7 @@
   function save(data) {
     data.updatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    // Future: debounced SUPABASE.upsertPosition per row
+    // Future: debounced FIRESTORE.upsertPosition per row
   }
 
   function formatWhen(iso) {
@@ -602,7 +602,7 @@
     w.document.close();
     w.focus();
     setTimeout(() => w.print(), 400);
-    // Future: SUPABASE.saveSnapshot('print-' + Date.now())
+    // Future: FIRESTORE.saveSnapshot('print-' + Date.now())
   }
 
   function openEditor(id) {
@@ -662,8 +662,8 @@
       data.positions.push(row);
     }
 
-    if (SUPABASE.connected()) {
-      const result = await SUPABASE.upsertPosition(row);
+    if (FIRESTORE.connected()) {
+      const result = await FIRESTORE.upsertPosition(row);
       if (!result.ok) {
         alert("Could not save position: " + result.reason);
         return;
@@ -680,8 +680,8 @@
   async function deletePosition(id) {
     if (!confirm("Remove this position from the squadron org chart?")) return;
     const data = getChartData();
-    if (SUPABASE.connected()) {
-      const result = await SUPABASE.deletePosition(id);
+    if (FIRESTORE.connected()) {
+      const result = await FIRESTORE.deletePosition(id);
       if (!result.ok) {
         alert("Could not delete position: " + result.reason);
         return;
@@ -850,7 +850,7 @@
   }
 
   async function fetchImportedOrgCharts() {
-    const sb = global.TN170SupabaseClient || global.SMTN170Supabase?.getClient?.();
+    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) return [];
     const { data, error } = await sb
       .from("uploaded_files")
@@ -924,7 +924,7 @@
     await global.SMTN170FileIngestion.saveDraftOrgPositions([one]);
     pendingIngest.drafts.splice(idx, 1);
     if (!pendingIngest.drafts.length) pendingIngest = null;
-    await hydrateFromSupabase();
+    await hydrateFromFirestore();
     importNotice = "Position saved to organization chart.";
     render();
   }
@@ -936,18 +936,18 @@
     render();
   }
 
-  async function hydrateFromSupabase() {
-    const fromDb = await SUPABASE.fetchPositions();
+  async function hydrateFromFirestore() {
+    const fromDb = await FIRESTORE.fetchPositions();
     chartData = { positions: fromDb || [], source: fromDb?.length ? "firestore" : "empty" };
     if (chartData.positions.length) save(chartData);
   }
 
   async function init() {
     await global.SMTN170Auth?.init?.();
-    await hydrateFromSupabase();
+    await hydrateFromFirestore();
     render();
-    global.SMTN170Supabase?.subscribeTable?.("org_positions", null, async () => {
-      await hydrateFromSupabase();
+    global.SMTN170Firebase?.subscribeTable?.("org_positions", null, async () => {
+      await hydrateFromFirestore();
       render();
     });
   }
@@ -956,14 +956,14 @@
     STORAGE_KEY,
     STATUS,
     DEPARTMENTS,
-    SUPABASE,
+    FIRESTORE,
     load,
     save,
     render,
     init,
     openEditor,
     exportChartPrint,
-    hydrateFromSupabase,
+    hydrateFromFirestore,
     parseOrgChartUpload,
     draftOrgPositionsFromUpload,
     importOrgChartFile,
