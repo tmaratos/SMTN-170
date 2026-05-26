@@ -217,6 +217,38 @@
     return state.schedule;
   }
 
+  async function deleteSavedSchedule(id) {
+    const ms = global.SMTN170FirebaseData?.monthlySchedules?.();
+    if (!ms) {
+      alert("Firestore is not available — cannot delete this schedule.");
+      return;
+    }
+    const doc = state.savedList.find((d) => d.id === id);
+    const label =
+      doc?.title ||
+      (doc?.month && doc?.year
+        ? `${R().MONTH_NAMES[(doc.month - 1) % 12]} ${doc.year}`
+        : "this monthly schedule");
+    if (!confirm(`Delete schedule "${label}"? This cannot be undone.`)) return;
+    const { error } = await ms.remove(id);
+    if (error) {
+      console.warn("[schedule-builder] delete failed", error);
+      alert("Could not delete: " + (error.message || error));
+      return;
+    }
+    state.notice = "Schedule deleted.";
+    if (state.schedule?.id === id) {
+      state.schedule = R().defaultMonthlySchedule();
+      state.saveStatus = "idle";
+    }
+    await loadSavedList();
+    render();
+  }
+
+  function isAdminUser() {
+    return !!global.SMTN170Auth?.isAdmin?.();
+  }
+
   /**
    * Normalize anything coming from Firestore / localStorage / the legacy
    * builder into the canonical shape used by the renderer and the editor.
@@ -882,6 +914,7 @@
     if (!state.savedList.length) {
       return `<p class="page-intro">No saved monthly schedules yet. Build one in <strong>Grid Builder</strong> and click <strong>Save Schedule</strong>.</p>`;
     }
+    const canDelete = isAdminUser();
     const rows = state.savedList
       .map(
         (doc) => `
@@ -905,6 +938,13 @@
             <button type="button" class="btn-outline" data-sb-saved="print" data-sb-id="${escapeAttr(
               doc.id
             )}">Print</button>
+            ${
+              canDelete
+                ? `<button type="button" class="sb-delete-btn" data-sb-saved="delete" data-sb-id="${escapeAttr(
+                    doc.id
+                  )}" title="Delete this schedule (admin only)">Delete</button>`
+                : ""
+            }
           </td>
         </tr>`
       )
@@ -1042,6 +1082,8 @@
           });
         } else if (action === "print") {
           loadSavedSchedule(id).then(() => openPrintWindow());
+        } else if (action === "delete") {
+          deleteSavedSchedule(id);
         }
       }
     });
@@ -1244,6 +1286,15 @@
       .sb-saved-table { width:100%; }
       .sb-saved-table th, .sb-saved-table td { padding: 10px 12px; vertical-align: middle; }
       .sb-saved-table .btn-outline { margin-right: 6px; margin-bottom: 4px; }
+      .sb-delete-btn {
+        background: transparent; border: 1px solid #fecaca;
+        color: #b91c1c; border-radius: 8px; padding: 8px 12px;
+        font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        margin-right: 6px; margin-bottom: 4px;
+      }
+      .sb-delete-btn:hover {
+        background: #fef2f2; border-color: #fca5a5;
+      }
       .sb-notice { margin: 12px 0; }
 
       .sb-grid-mobile { display: none; }
@@ -1315,6 +1366,7 @@
     clonePreviousMonth,
     loadSavedList,
     loadSavedSchedule,
+    deleteSavedSchedule,
     loadTN170JuneExample,
   };
 

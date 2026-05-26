@@ -8,6 +8,22 @@
     return d.innerHTML;
   }
 
+  function injectStyles() {
+    if (document.getElementById("tasksPageStyleTag")) return;
+    const style = document.createElement("style");
+    style.id = "tasksPageStyleTag";
+    style.textContent = `
+      .task-delete-btn {
+        background: transparent; border: 1px solid #fecaca;
+        color: #b91c1c; border-radius: 8px; padding: 4px 10px;
+        font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        margin-left: 6px;
+      }
+      .task-delete-btn:hover { background: #fef2f2; border-color: #fca5a5; }
+    `;
+    document.head.appendChild(style);
+  }
+
   function formatDate(d) {
     if (!d) return "—";
     try {
@@ -53,7 +69,7 @@
     if (!sb) return { waiting: true, rows: [] };
     const { data, error } = await sb
       .from("portal_tasks")
-      .select("id, title, description, status, due_date, priority, category, created_at, updated_at")
+      .select("id, title, description, status, due_date, priority, category, created_at, updated_at, created_by")
       .order("due_date", { ascending: true, nullsFirst: false })
       .limit(50);
     if (error) {
@@ -62,6 +78,19 @@
       return { error: msg, rows: [] };
     }
     return { rows: data || [] };
+  }
+
+  async function deleteTask(id) {
+    const sb = getClient();
+    if (!sb) throw new Error("Sign in to delete tasks.");
+    const { error } = await sb.from("portal_tasks").delete().eq("id", id);
+    if (error) throw new Error(error.message || String(error));
+  }
+
+  function canDeleteTask(task) {
+    if (global.SMTN170Auth?.isAdmin?.()) return true;
+    const myId = global.SMTN170Auth?.actorId?.();
+    return !!(myId && task?.created_by && task.created_by === myId);
   }
 
   async function addTask(title, dueDate) {
@@ -128,7 +157,8 @@
         ? `<ul class="dash-due-list">${rows
             .map(
               (t) => `<li class="dash-due-item">${statusChip(t.status)}<span><strong>${escapeHtml(t.title)}</strong>${t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}</span>
-              ${t.status !== "completed" ? `<button type="button" class="ghost-btn btn-sm" data-task-complete="${escapeHtml(t.id)}">Mark complete</button>` : ""}</li>`
+              ${t.status !== "completed" ? `<button type="button" class="ghost-btn btn-sm" data-task-complete="${escapeHtml(t.id)}">Mark complete</button>` : ""}
+              ${canDeleteTask(t) ? `<button type="button" class="task-delete-btn btn-sm" data-task-delete="${escapeHtml(t.id)}" title="Delete this task">Delete</button>` : ""}</li>`
             )
             .join("")}</ul>`
         : `<p class="dash-empty">${escapeHtml(emptyMsg)}</p>`;
@@ -194,9 +224,23 @@
         }
       });
     });
+    root.querySelectorAll("[data-task-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.taskDelete;
+        const title = btn.closest(".dash-due-item")?.querySelector("strong")?.textContent || "this task";
+        if (!confirm(`Delete task "${title}"? This cannot be undone.`)) return;
+        try {
+          await deleteTask(id);
+          await render();
+        } catch (err) {
+          alert("Could not delete: " + (err.message || String(err)));
+        }
+      });
+    });
   }
 
   async function init() {
+    injectStyles();
     await global.SMTN170Auth?.init?.();
     await render();
   }

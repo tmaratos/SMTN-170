@@ -488,9 +488,14 @@
     const loc = ev.location ? " · " + escapeHtml(ev.location) : "";
     const frClass = ev.category === "flight-review" ? " event-item--flight-review" : "";
     const badge = ev.category === "flight-review" ? '<span class="fr-event-badge">BFR</span>' : "";
+    const canDelete = ev.category === "custom";
+    const deleteBtn = canDelete
+      ? `<button type="button" class="cal-delete-btn" data-cal-delete="${escapeHtml(ev.id)}" data-cal-title="${escapeHtml(ev.title)}" data-cal-date="${escapeHtml(ev.date)}" title="Delete this event">Delete</button>`
+      : "";
     return `<div class="event-item${frClass}" data-event-id="${escapeHtml(ev.id)}">
       <b>${escapeHtml(label)}</b>
       <span>${badge}${escapeHtml(ev.title)}<br><small>${escapeHtml(time)}${loc}</small></span>
+      ${deleteBtn}
     </div>`;
   }
 
@@ -910,13 +915,61 @@
     });
   }
 
+  function deleteCustomCalendarEvent(id) {
+    let custom = [];
+    try {
+      custom = JSON.parse(localStorage.getItem(CALENDAR_KEY) || "[]");
+      if (!Array.isArray(custom)) custom = [];
+    } catch {
+      custom = [];
+    }
+    const next = custom.filter((ev) => ev.id !== id);
+    localStorage.setItem(CALENDAR_KEY, JSON.stringify(next));
+  }
+
+  function injectCalendarDeleteStyles() {
+    if (document.getElementById("calDeleteStyleTag")) return;
+    const style = document.createElement("style");
+    style.id = "calDeleteStyleTag";
+    style.textContent = `
+      .cal-delete-btn {
+        background: transparent; border: 1px solid #fecaca;
+        color: #b91c1c; border-radius: 8px; padding: 4px 10px;
+        font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        margin-left: 8px; align-self: center;
+      }
+      .cal-delete-btn:hover { background: #fef2f2; border-color: #fca5a5; }
+      .event-item { display:flex; align-items:center; gap:10px; }
+    `;
+    document.head.appendChild(style);
+  }
+
   function initCalendarPage() {
+    injectCalendarDeleteStyles();
     const list = document.getElementById("calendarEventList");
     const dashList = document.getElementById("dashboardEventList");
     const events = loadAllCalendarEvents();
 
     if (list) {
       list.innerHTML = events.map(renderCalendarEventItem).join("");
+      if (!list.dataset.calDeleteBound) {
+        list.dataset.calDeleteBound = "1";
+        list.addEventListener("click", function (e) {
+          const btn = e.target.closest("[data-cal-delete]");
+          if (!btn) return;
+          const id = btn.dataset.calDelete;
+          const title = btn.dataset.calTitle || "this event";
+          const date = btn.dataset.calDate || "";
+          const dateLabel = date ? ` on ${formatEventDate(date).label}` : "";
+          if (!confirm(`Delete event "${title}"${dateLabel}? This cannot be undone.`)) return;
+          try {
+            deleteCustomCalendarEvent(id);
+            initCalendarPage();
+          } catch (err) {
+            alert("Could not delete: " + (err.message || String(err)));
+          }
+        });
+      }
     }
     if (dashList) {
       dashList.innerHTML = events.slice(0, 8).map(renderDashboardEvent).join("");

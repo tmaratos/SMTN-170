@@ -209,6 +209,34 @@
     return merged;
   }
 
+  async function deleteSavedChart(id) {
+    const orgCharts = global.SMTN170FirebaseData?.orgCharts?.();
+    if (!orgCharts) {
+      alert("Firestore is not available — cannot delete this org chart.");
+      return;
+    }
+    const doc = state.savedList.find((d) => d.id === id);
+    const label = doc?.title || "this org chart";
+    if (!confirm(`Delete org chart "${label}"? This cannot be undone.`)) return;
+    const { error } = await orgCharts.remove(id);
+    if (error) {
+      console.warn("[orgchart-builder] delete failed", error);
+      alert("Could not delete: " + (error.message || error));
+      return;
+    }
+    state.notice = "Org chart deleted.";
+    if (state.chart?.id === id) {
+      state.chart = R().defaultOrgChart();
+      state.saveStatus = "idle";
+    }
+    await loadSavedList();
+    render();
+  }
+
+  function isAdminUser() {
+    return !!global.SMTN170Auth?.isAdmin?.();
+  }
+
   async function cloneSaved(id) {
     const orgCharts = global.SMTN170FirebaseData?.orgCharts?.();
     if (!orgCharts) return;
@@ -513,6 +541,7 @@
     if (!state.savedList.length) {
       return `<p class="page-intro">No saved org charts yet. Build one in the <strong>Builder</strong> tab and click <strong>Save</strong>.</p>`;
     }
+    const canDelete = isAdminUser();
     const rows = state.savedList
       .map(
         (doc) => `
@@ -534,6 +563,13 @@
             <button type="button" class="btn-outline" data-ocb-saved="print" data-ocb-id="${escapeAttr(
               doc.id
             )}">Print</button>
+            ${
+              canDelete
+                ? `<button type="button" class="ocb-delete-btn" data-ocb-saved="delete" data-ocb-id="${escapeAttr(
+                    doc.id
+                  )}" title="Delete this org chart (admin only)">Delete</button>`
+                : ""
+            }
           </td>
         </tr>`
       )
@@ -655,6 +691,8 @@
           cloneSaved(id);
         } else if (action === "print") {
           loadSavedChart(id).then(() => openPrintWindow());
+        } else if (action === "delete") {
+          deleteSavedChart(id);
         }
       }
     });
@@ -771,6 +809,15 @@
       .ocb-saved-table { width:100%; }
       .ocb-saved-table th, .ocb-saved-table td { padding: 10px 12px; vertical-align: middle; }
       .ocb-saved-table .btn-outline { margin-right: 6px; margin-bottom: 4px; }
+      .ocb-delete-btn {
+        background: transparent; border: 1px solid #fecaca;
+        color: #b91c1c; border-radius: 8px; padding: 8px 12px;
+        font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        margin-right: 6px; margin-bottom: 4px;
+      }
+      .ocb-delete-btn:hover {
+        background: #fef2f2; border-color: #fca5a5;
+      }
       .ocb-notice { margin: 12px 0; }
       @media (max-width: 720px) {
         .ocb-row-head { flex-direction: column; align-items: stretch; }
@@ -817,6 +864,7 @@
     loadSavedList,
     loadSavedChart,
     cloneSaved,
+    deleteSavedChart,
   };
 
   if (document.getElementById("orgChartApp")) {

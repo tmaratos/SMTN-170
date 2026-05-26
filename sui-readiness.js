@@ -98,6 +98,20 @@
     if (error) throw new Error(error.message);
   }
 
+  async function deleteItem(id) {
+    const sb = getClient();
+    if (!sb) throw new Error("Sign in to delete inspection items.");
+    if (!global.SMTN170Auth?.isAdmin?.()) {
+      throw new Error("Only admins can delete inspection items.");
+    }
+    const { error } = await sb.from("inspection_items").delete().eq("id", id);
+    if (error) throw new Error(error.message || String(error));
+  }
+
+  function isAdminUser() {
+    return !!global.SMTN170Auth?.isAdmin?.();
+  }
+
   function groupByWorkUnit(rows) {
     const map = new Map();
     rows.forEach((r) => {
@@ -141,6 +155,19 @@
           await render();
         } catch (err) {
           alert(err.message);
+        }
+      });
+    });
+    root.querySelectorAll("[data-insp-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.inspDelete;
+        const title = btn.dataset.inspTitle || "this inspection item";
+        if (!confirm(`Delete inspection item "${title}"? This cannot be undone.`)) return;
+        try {
+          await deleteItem(id);
+          await render();
+        } catch (err) {
+          alert("Could not delete: " + (err.message || String(err)));
         }
       });
     });
@@ -219,11 +246,13 @@
       })
       .join("");
 
+    const canDelete = isAdminUser();
     const checklist = res.rows
       .map(
         (c) =>
           `<li class="${c.status === "completed" ? "sui-check--done" : ""}">${c.status === "completed" ? "☑" : "☐"} ${escapeHtml(c.title)}${c.due_date ? ` <small>· due ${escapeHtml(c.due_date)}</small>` : ""}
-          ${c.status !== "completed" ? `<button type="button" class="ghost-btn btn-sm" data-insp-complete="${escapeHtml(c.id)}">Mark complete</button>` : ""}</li>`
+          ${c.status !== "completed" ? `<button type="button" class="ghost-btn btn-sm" data-insp-complete="${escapeHtml(c.id)}">Mark complete</button>` : ""}
+          ${canDelete ? `<button type="button" class="insp-delete-btn btn-sm" data-insp-delete="${escapeHtml(c.id)}" data-insp-title="${escapeHtml(c.title)}" title="Delete this inspection item (admin only)">Delete</button>` : ""}</li>`
       )
       .join("");
 
@@ -247,7 +276,24 @@
     global.SMTN170StewardLauncher?.rebind?.();
   }
 
+  function injectStyles() {
+    if (document.getElementById("suiReadinessStyleTag")) return;
+    const style = document.createElement("style");
+    style.id = "suiReadinessStyleTag";
+    style.textContent = `
+      .insp-delete-btn {
+        background: transparent; border: 1px solid #fecaca;
+        color: #b91c1c; border-radius: 8px; padding: 4px 10px;
+        font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        margin-left: 6px;
+      }
+      .insp-delete-btn:hover { background: #fef2f2; border-color: #fca5a5; }
+    `;
+    document.head.appendChild(style);
+  }
+
   async function init() {
+    injectStyles();
     await global.SMTN170Auth?.init?.();
     await render();
   }
