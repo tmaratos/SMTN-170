@@ -3,7 +3,13 @@
  */
 (function initPortalBootstrap(global) {
   async function bootstrap() {
-    if (global.TN170_PAGE_AUTH_HANDLED || (await global.TN170AuthGuard?.ensureProtectedSession?.())) {
+    const page = document.body?.dataset?.portalPage || "";
+    const authOk =
+      page === "admin"
+        ? await global.TN170AuthGuard?.runAdminPage?.()
+        : global.TN170_PAGE_AUTH_HANDLED || (await global.TN170AuthGuard?.ensureProtectedSession?.());
+
+    if (authOk) {
       try {
         await global.SMTN170Auth?.init?.();
         console.log("PROFILE_LOAD_OK");
@@ -18,6 +24,9 @@
       global.SMTN170PortalNav?.init?.();
       global.SMTN170Steward?.rebind?.();
       global.SMTN170Pages?.bindStewardContextActions?.();
+      if (page === "admin") {
+        global.SMTN170PortalAdmin?.render?.();
+      }
     }
   }
 

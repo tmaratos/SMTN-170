@@ -138,8 +138,16 @@
     return `<a href="${n.href}" class="portal-nav-link${featured} ${active === n.key ? "active" : ""}"${n.requireAdmin ? ' data-require-admin="true"' : ""}${stewardAttrs(n.key)}>${escapeHtml(n.label)}</a>`;
   }
 
+  function canShowAdminNav() {
+    const profile = global.TN170_CURRENT_PROFILE || global.SMTN170Auth?.getProfile?.();
+    if (global.SMTN170Auth?.computeAllowAdmin) {
+      return global.SMTN170Auth.computeAllowAdmin(profile);
+    }
+    return global.SMTN170Auth?.isAdmin?.() ?? false;
+  }
+
   function renderNav(active) {
-    const isAdmin = global.SMTN170Auth?.isAdmin?.() ?? false;
+    const isAdmin = canShowAdminNav();
 
     return NAV_SECTIONS.map((section) => {
       const links = section.items
@@ -246,4 +254,5 @@
   }
 
   global.addEventListener("smtn170:auth-changed", init);
+  global.addEventListener("smtn170:auth-ready", init);
 })(window);

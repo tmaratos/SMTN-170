@@ -64,6 +64,66 @@
     return profile;
   }
 
+  function clearStaleProfileCache() {
+    try {
+      const localKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        const lower = key.toLowerCase();
+        if (
+          lower.includes("supabase") ||
+          lower.includes("account_status") ||
+          lower.includes("accountstatus") ||
+          lower.includes("awaiting_verification") ||
+          lower.includes("awaitingapproval") ||
+          lower.includes("isadmin") ||
+          key === "capId" ||
+          key === "profile.id" ||
+          key === "smtn170_logged_in" ||
+          key.startsWith("smtn170_profile_cache")
+        ) {
+          localKeys.push(key);
+        }
+      }
+      localKeys.forEach((k) => localStorage.removeItem(k));
+
+      const sessionKeys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (!key) continue;
+        const lower = key.toLowerCase();
+        if (
+          lower.includes("supabase") ||
+          lower.includes("account_status") ||
+          lower.includes("accountstatus") ||
+          lower.includes("awaiting_verification") ||
+          lower.includes("awaitingapproval") ||
+          lower.includes("isadmin") ||
+          key === "capId" ||
+          key === "profile.id"
+        ) {
+          sessionKeys.push(key);
+        }
+      }
+      sessionKeys.forEach((k) => sessionStorage.removeItem(k));
+      sessionStorage.removeItem("smtn170_profile_banner_dismissed");
+    } catch {
+      /* ignore */
+    }
+    global.TN170_CURRENT_USER = null;
+    global.TN170_CURRENT_PROFILE = null;
+  }
+
+  function computeAllowAdmin(p) {
+    if (!p) return false;
+    const status = Profile()?.getProfileStatus?.(p) || String(p.status || p.account_status || "").toLowerCase().trim();
+    const approved = status === "active" || status === "approved";
+    const role = String(p.role || "").toLowerCase().trim();
+    const admin = role === "admin" || role === "commander";
+    return approved && admin;
+  }
+
   async function fetchProfile(userId) {
     const fb = global.SMTN170Firebase;
     if (!fb || !userId) return null;
@@ -91,50 +151,95 @@
     return data;
   }
 
-  async function syncSessionFromFirebase() {
-    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
-    if (!sb) {
+  async function getCurrentUserProfile() {
+    const fb = global.SMTN170Firebase;
+    if (!fb) {
+      global.TN170_CURRENT_USER = null;
+      global.TN170_CURRENT_PROFILE = null;
+      return null;
+    }
+
+    await fb.whenReady?.({ authOnly: false });
+    await fb.ensureFullClient?.();
+    const authInstance = fb.getAuth?.();
+    const user = authInstance?.currentUser;
+    if (!user?.uid) {
+      global.TN170_CURRENT_USER = null;
+      global.TN170_CURRENT_PROFILE = null;
       session = null;
       profile = null;
       return null;
     }
-    const { data: authData, error } = await sb.auth.getSession();
-    if (error) {
-      console.error("Session check error:", error);
+
+    const currentUser = { uid: user.uid, email: user.email || "" };
+    global.TN170_CURRENT_USER = currentUser;
+
+    const row = await fetchProfile(user.uid);
+    if (!row) {
+      global.TN170_CURRENT_PROFILE = null;
+      profile = null;
+      session = {
+        userId: user.uid,
+        email: user.email || "",
+        displayName: user.email?.split("@")[0] || "",
+        firstName: "",
+        lastName: "",
+        preferredName: "",
+        rank: "",
+        role: ROLES.SENIOR_MEMBER.id,
+        roleLabel: getRoleLabel(ROLES.SENIOR_MEMBER.id),
+        status: ACCOUNT_STATUS.AWAITING,
+        accountStatus: ACCOUNT_STATUS.AWAITING,
+        unit: "TN-170 Oak Ridge Composite Squadron",
+      };
+      return null;
     }
-    const user = authData?.session?.user;
-    if (!user) {
+
+    profile = row;
+    session = mapProfile(row) || session;
+    const profileOut = {
+      uid: user.uid,
+      email: user.email || row.email || "",
+      ...row,
+      id: user.uid,
+    };
+    global.TN170_CURRENT_PROFILE = profileOut;
+    return profileOut;
+  }
+
+  async function syncSessionFromFirebase() {
+    const fb = global.SMTN170Firebase;
+    if (!fb) {
+      session = null;
+      profile = null;
+      global.TN170_CURRENT_USER = null;
+      global.TN170_CURRENT_PROFILE = null;
+      return null;
+    }
+
+    await fb.whenReady?.({ authOnly: false });
+    const authInstance = fb.getAuth?.();
+    const user = authInstance?.currentUser;
+    if (!user?.uid) {
       console.log("No session found");
       session = null;
       profile = null;
+      global.TN170_CURRENT_USER = null;
+      global.TN170_CURRENT_PROFILE = null;
       return null;
     }
+
     console.log("SESSION_FOUND");
-    console.log("AUTH_UID", user.id);
+    console.log("AUTH_UID", user.uid);
     console.log("AUTH_EMAIL", user.email || "");
-    const row = await fetchProfile(user.id);
-    if (row) {
+    const profileOut = await getCurrentUserProfile();
+    if (profileOut) {
       console.log("PROFILE_LOAD_OK");
-      console.log("PROFILE_STATUS", Profile()?.getProfileStatus?.(row) || "(none)");
-      console.log("PROFILE_ROLE", String(row.role || "").toLowerCase().trim() || "(none)");
+      console.log("PROFILE_STATUS", Profile()?.getProfileStatus?.(profile) || "(none)");
+      console.log("PROFILE_ROLE", String(profile?.role || "").toLowerCase().trim() || "(none)");
     } else {
       console.log("PROFILE_LOAD_ERROR", "no profiles row for uid");
     }
-    profile = row;
-    session = mapProfile(row) || {
-      userId: user.id,
-      email: user.email || "",
-      displayName: user.email?.split("@")[0] || "",
-      firstName: "",
-      lastName: "",
-      preferredName: "",
-      rank: "",
-      role: ROLES.SENIOR_MEMBER.id,
-      roleLabel: getRoleLabel(ROLES.SENIOR_MEMBER.id),
-      status: ACCOUNT_STATUS.AWAITING,
-      accountStatus: ACCOUNT_STATUS.AWAITING,
-      unit: "TN-170 Oak Ridge Composite Squadron",
-    };
     return session;
   }
 
@@ -205,8 +310,8 @@
   }
 
   function isAdmin(s) {
-    const x = s || profile || session;
-    return x && isApproved(x) && isAdminRole(x.role);
+    const x = s || profile || session || global.TN170_CURRENT_PROFILE;
+    return computeAllowAdmin(x);
   }
 
   function can(action, s) {
@@ -227,6 +332,7 @@
           "Firebase is not configured. Please contact the portal administrator."
       );
     }
+    clearStaleProfileCache();
     const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
     if (error) {
       const formatted = global.SMTN170FirebaseAuth?.formatAuthError?.(error);
@@ -249,6 +355,7 @@
           "Firebase is not configured. Please contact the portal administrator."
       );
     }
+    clearStaleProfileCache();
     const { error } = await sb.auth.signUp({
       email: email.trim(),
       password,
@@ -263,15 +370,11 @@
 
   async function logout() {
     global.StewardSiteIndex?.clearCache?.();
+    clearStaleProfileCache();
     const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (sb) await sb.auth.signOut();
     session = null;
     profile = null;
-    try {
-      sessionStorage.removeItem("smtn170_profile_banner_dismissed");
-    } catch {
-      /* ignore */
-    }
   }
 
   function formatAuditLine(meta) {
@@ -382,6 +485,9 @@
     init,
     loadSession,
     getProfile,
+    getCurrentUserProfile,
+    computeAllowAdmin,
+    clearStaleProfileCache,
     syncSessionFromFirebase,
     syncSessionFromSupabase: syncSessionFromFirebase,
     updateOwnProfile,

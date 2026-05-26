@@ -272,7 +272,11 @@
   }
 
   function canAccessAdmin() {
-    return !!(global.SMTN170Auth?.isAdmin?.() || global.TN170AuthGuard?.canAccessAdmin?.(global.SMTN170Auth?.getProfile?.()));
+    const profile = global.TN170_CURRENT_PROFILE || global.SMTN170Auth?.getProfile?.();
+    if (global.SMTN170Auth?.computeAllowAdmin) {
+      return global.SMTN170Auth.computeAllowAdmin(profile);
+    }
+    return !!(global.SMTN170Auth?.isAdmin?.() || global.TN170AuthGuard?.canAccessAdmin?.(profile));
   }
 
   function readJsonScript(id) {

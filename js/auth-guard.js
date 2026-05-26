@@ -103,6 +103,70 @@
     });
   }
 
+  function clearStaleProfileCache() {
+    global.SMTN170Auth?.clearStaleProfileCache?.();
+    try {
+      const localKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        const lower = key.toLowerCase();
+        if (
+          lower.includes("supabase") ||
+          lower.includes("account_status") ||
+          lower.includes("accountstatus") ||
+          lower.includes("awaiting_verification") ||
+          lower.includes("awaitingapproval") ||
+          lower.includes("isadmin") ||
+          key === "capId" ||
+          key === "profile.id" ||
+          key === "smtn170_logged_in" ||
+          key.startsWith("smtn170_profile_cache")
+        ) {
+          localKeys.push(key);
+        }
+      }
+      localKeys.forEach((k) => localStorage.removeItem(k));
+
+      const sessionKeys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (!key) continue;
+        const lower = key.toLowerCase();
+        if (
+          lower.includes("supabase") ||
+          lower.includes("account_status") ||
+          lower.includes("accountstatus") ||
+          lower.includes("awaiting_verification") ||
+          lower.includes("awaitingapproval") ||
+          lower.includes("isadmin") ||
+          key === "capId" ||
+          key === "profile.id"
+        ) {
+          sessionKeys.push(key);
+        }
+      }
+      sessionKeys.forEach((k) => sessionStorage.removeItem(k));
+      sessionStorage.removeItem("smtn170_profile_banner_dismissed");
+    } catch {
+      /* ignore */
+    }
+    global.TN170_CURRENT_USER = null;
+    global.TN170_CURRENT_PROFILE = null;
+  }
+
+  function normalizeProfileDoc(raw, userId) {
+    if (!raw) return null;
+    const dataLayer = global.SMTN170FirebaseData;
+    const row = dataLayer?.fromFirestore?.(raw, userId) || { id: userId, ...raw };
+    return {
+      uid: userId,
+      email: row.email || "",
+      ...row,
+      id: userId,
+    };
+  }
+
   async function fetchProfileDoc(userId) {
     const fb = global.SMTN170Firebase;
     await fb?.ensureFullClient?.();
@@ -115,11 +179,11 @@
     const snap = await getDoc(doc(db, "profiles", userId));
     console.log("PROFILE_EXISTS", snap.exists());
     if (!snap.exists()) return null;
-    return snap.data();
+    return normalizeProfileDoc(snap.data(), userId);
   }
 
   function normalizeStatus(profile) {
-    const raw = profile?.status ?? profile?.accountStatus ?? "";
+    const raw = profile?.status ?? profile?.account_status ?? profile?.accountStatus ?? "";
     return String(raw).toLowerCase().trim();
   }
 
@@ -170,20 +234,54 @@
   function canAccessAdmin(profile) {
     if (!profile) return false;
     const status = normalizeStatus(profile);
-    if (!isActiveStatus(status)) return false;
+    const approved = status === "active" || status === "approved";
     const role = profileRole(profile);
-    return role === "admin" || role === "commander";
+    const admin = role === "admin" || role === "commander";
+    return approved && admin;
+  }
+
+  function logAdminGuard(user, profile, allowAdmin) {
+    console.log("[admin guard] auth uid", user?.uid || user?.id || "(none)");
+    console.log("[admin guard] email", user?.email || "(none)");
+    console.log("[admin guard] profile path", user?.uid || user?.id ? `profiles/${user.uid || user.id}` : "(none)");
+    console.log("[admin guard] role", profile?.role ?? "(none)");
+    console.log("[admin guard] status", normalizeStatus(profile) || "(none)");
+    console.log("[admin guard] allowAdmin", allowAdmin);
+  }
+
+  async function syncCurrentProfile(userId, email) {
+    if (global.SMTN170Auth?.getCurrentUserProfile) {
+      return global.SMTN170Auth.getCurrentUserProfile();
+    }
+    const profile = await fetchProfileDoc(userId);
+    if (profile) {
+      global.TN170_CURRENT_USER = { uid: userId, email: email || profile.email || "" };
+      global.TN170_CURRENT_PROFILE = profile;
+    }
+    return profile;
   }
 
   async function enforceProfileAccess(userId, email) {
     const page = currentPage();
-    const profile = await fetchProfileDoc(userId);
+    const profile = await syncCurrentProfile(userId, email);
     const dest = destinationForProfile(profile);
     logRouteDecision(userId, email, profile, dest);
 
-    if (isAdminPage(page) && !canAccessAdmin(profile)) {
-      global.location.href = DASHBOARD;
-      return false;
+    if (isAdminPage(page)) {
+      if (!profile) {
+        global.location.href = `${PENDING}?reason=no-profile`;
+        return false;
+      }
+      const status = normalizeStatus(profile);
+      if (isDeniedStatus(status)) {
+        global.location.href = DENIED;
+        return false;
+      }
+      if (!isActiveStatus(status)) {
+        global.location.href = PENDING;
+        return false;
+      }
+      return true;
     }
 
     if (dest === DASHBOARD) {
@@ -204,7 +302,9 @@
     }
 
     if (authChecked && global.TN170_AUTH_SESSION_OK) return true;
-    if (!authChecked) showLoading("Loading workspace…");
+    if (!authChecked) {
+      showLoading(isAdminPage(page) ? "Checking admin access…" : "Loading workspace…");
+    }
 
     const client = await waitForFirebase(undefined, { authOnly: false });
     if (!client) {
@@ -253,6 +353,47 @@
     }
   }
 
+  async function runAdminPage() {
+    if (authChecked && global.TN170_PAGE_AUTH_HANDLED) return global.TN170_AUTH_SESSION_OK !== false;
+    showLoading("Checking admin access…");
+
+    const client = await waitForFirebase(undefined, { authOnly: false });
+    if (!client) {
+      console.log("ROUTE_DECISION", LOGIN);
+      authChecked = true;
+      global.location.href = LOGIN;
+      return false;
+    }
+
+    const session = await waitForAuthState();
+    authChecked = true;
+
+    if (!session?.user?.id) {
+      console.log("[admin guard] auth uid", "(none)");
+      console.log("ROUTE_DECISION", LOGIN);
+      global.location.href = LOGIN;
+      return false;
+    }
+
+    const user = { uid: session.user.id, email: session.user.email || "" };
+    global.TN170_CURRENT_USER = user;
+
+    const profile = await syncCurrentProfile(user.uid, user.email);
+    const allowAdmin = canAccessAdmin(profile);
+    logAdminGuard(user, profile, allowAdmin);
+    global.TN170_ADMIN_ALLOW = allowAdmin;
+
+    const allowed = await enforceProfileAccess(user.uid, user.email);
+    if (!allowed) return false;
+
+    console.log("SESSION_FOUND");
+    console.log("AUTH_INIT_OK");
+    global.TN170_AUTH_SESSION_OK = true;
+    global.TN170_PAGE_AUTH_HANDLED = true;
+    hideLoading();
+    return true;
+  }
+
   async function runDashboardPage() {
     if (authChecked && global.TN170_PAGE_AUTH_HANDLED) return global.TN170_AUTH_SESSION_OK !== false;
     showLoading("Loading workspace…");
@@ -269,10 +410,12 @@
   async function logout() {
     console.log("LOGOUT_CLICKED");
     global.StewardSiteIndex?.clearCache?.();
+    clearStaleProfileCache();
     const client = global.SMTN170Firebase?.getClient?.();
     if (client?.auth) await client.auth.signOut();
     console.log("SIGNOUT_COMPLETE");
     global.TN170_AUTH_SESSION_OK = false;
+    global.TN170_ADMIN_ALLOW = false;
     global.location.href = LOGIN;
   }
 
@@ -293,6 +436,7 @@
     ensureProtectedSession,
     runLoginPage,
     runDashboardPage,
+    runAdminPage,
     logout,
     loadPortalScripts,
     showLoading,
@@ -303,6 +447,7 @@
     fetchProfileDoc,
     destinationForProfile,
     canAccessAdmin,
+    clearStaleProfileCache,
     isPublicPage,
     isProtectedPage,
   };

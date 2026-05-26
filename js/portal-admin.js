@@ -246,9 +246,34 @@
     const root = document.getElementById("adminPage");
     const auth = global.SMTN170Auth;
     const data = global.SMTN170_DATA;
-    if (!root || !auth || !data) return;
+    if (!root || !data) return;
 
-    if (!auth.isAdmin?.()) {
+    root.innerHTML = `<section class="panel"><p class="page-intro">Checking admin access…</p></section>`;
+
+    await auth?.init?.();
+    const profile =
+      (await auth?.getCurrentUserProfile?.()) ||
+      global.TN170_CURRENT_PROFILE ||
+      auth?.getProfile?.() ||
+      null;
+    const user = global.TN170_CURRENT_USER || {
+      uid: auth?.actorId?.() || profile?.uid || profile?.id || null,
+      email: auth?.loadSession?.()?.email || profile?.email || "",
+    };
+    const allowAdmin =
+      global.TN170_ADMIN_ALLOW ??
+      auth?.computeAllowAdmin?.(profile) ??
+      global.TN170AuthGuard?.canAccessAdmin?.(profile) ??
+      false;
+
+    console.log("[admin guard] auth uid", user?.uid || "(none)");
+    console.log("[admin guard] email", user?.email || "(none)");
+    console.log("[admin guard] profile path", user?.uid ? `profiles/${user.uid}` : "(none)");
+    console.log("[admin guard] role", profile?.role ?? "(none)");
+    console.log("[admin guard] status", global.SMTN170Profile?.getProfileStatus?.(profile) || profile?.status || "(none)");
+    console.log("[admin guard] allowAdmin", allowAdmin);
+
+    if (!auth || !allowAdmin) {
       root.innerHTML = `<section class="panel"><h2>Access denied</h2><p>You do not have permission to access this page.</p><a class="btn-gold" href="dashboard.html">Return to Home</a></section>`;
       return;
     }
@@ -434,8 +459,12 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", render);
-  } else {
+    document.addEventListener("DOMContentLoaded", () => {
+      if (document.body?.dataset?.portalPage !== "admin") render();
+    });
+  } else if (document.body?.dataset?.portalPage !== "admin") {
     render();
   }
+
+  global.SMTN170PortalAdmin = { render };
 })(window);

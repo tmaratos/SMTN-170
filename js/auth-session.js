@@ -46,6 +46,8 @@
 
   async function signOut() {
     global.StewardSiteIndex?.clearCache?.();
+    global.SMTN170Auth?.clearStaleProfileCache?.();
+    global.TN170AuthGuard?.clearStaleProfileCache?.();
     if (global.TN170AuthGuard?.logout) {
       await global.TN170AuthGuard.logout();
       return;
