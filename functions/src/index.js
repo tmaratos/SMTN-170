@@ -139,16 +139,28 @@ exports.stewardCore = onCall({ region: "us-central1" }, async (request) => {
   const supabase = createDbAdapter(db);
   const body = request.data || {};
 
-  const activeMode = body.active_mode || body.activeMode || "chat";
-  const confirmPending = !!(body.confirm_pending || body.confirmPending);
-  const cancelPending = !!(body.cancel_pending || body.cancelPending);
+  const activeMode = body.activeMode || body.active_mode || "chat";
+  const pagePath = String(body.pagePath || body.page_path || "").trim();
+  const pageTitle = String(body.pageTitle || body.page_title || "").trim();
+  const pendingActionId = body.pendingActionId || body.pending_action_id || null;
+
+  let confirmPending = !!(body.confirm_pending || body.confirmPending);
+  let cancelPending = !!(body.cancel_pending || body.cancelPending);
+  if (body.confirmation === true) {
+    confirmPending = true;
+    cancelPending = false;
+  } else if (body.confirmation === false) {
+    cancelPending = true;
+    confirmPending = false;
+  }
+
   const message = String(body.message || "").trim();
 
   if (!message && !confirmPending && !cancelPending) {
     throw new HttpsError("invalid-argument", "Message or action required.");
   }
 
-  let conversationId = body.conversation_id || body.conversationId;
+  let conversationId = body.conversationId || body.conversation_id;
   let pending = null;
 
   if (conversationId) {
@@ -158,6 +170,10 @@ exports.stewardCore = onCall({ region: "us-central1" }, async (request) => {
     } else {
       conversationId = undefined;
     }
+  }
+
+  if (pendingActionId && pending && pending.action_id !== pendingActionId) {
+    pending = null;
   }
 
   if (!conversationId) {
@@ -170,7 +186,7 @@ exports.stewardCore = onCall({ region: "us-central1" }, async (request) => {
     conversationId = created.id;
   }
 
-  const ctx = { supabase, userId, profile };
+  const ctx = { supabase, userId, profile, pagePath, pageTitle };
 
   let userMessageId = null;
   if (message && !confirmPending && !cancelPending) {
@@ -179,6 +195,8 @@ exports.stewardCore = onCall({ region: "us-central1" }, async (request) => {
       profileId: userId,
       role: "user",
       message,
+      pagePath: pagePath || null,
+      pageTitle: pageTitle || null,
       createdAt: new Date().toISOString(),
     });
     userMessageId = userMsg.id;
@@ -224,18 +242,30 @@ exports.stewardCore = onCall({ region: "us-central1" }, async (request) => {
     { merge: true }
   );
 
+  const openUrl = brain.openUrl || brain.open_url || brain.cap_search?.searchUrl || null;
+
   return {
     ok: true,
     reply: brain.reply,
+    intent: brain.intent ?? null,
+    suggestions: brain.suggestions ?? [],
+    actions: brain.actions ?? [],
+    openUrl,
     data_connected: brain.data_connected,
+    dataConnected: brain.data_connected,
     source: brain.source ?? null,
     cap_search: brain.cap_search ?? null,
     needs_confirmation: brain.needs_confirmation,
     pending_confirmation: brain.pending_confirmation,
+    pendingConfirmation: brain.pending_confirmation,
     conversation_id: conversationId,
+    conversationId,
     user_message_id: userMessageId,
+    userMessageId,
     steward_message_id: stewardMsg.id,
+    stewardMessageId: stewardMsg.id,
     steward_message_at: new Date().toISOString(),
+    stewardMessageAt: new Date().toISOString(),
   };
 });
 

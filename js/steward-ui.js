@@ -1,6 +1,6 @@
 /**
- * Steward for CAP — Phase 3 UI shell (GitHub Pages).
- * Brain runs in Firebase Cloud Function stewardCore via steward-client.js.
+ * Steward for CAP — UI only (GitHub Pages public repo).
+ * All brain logic runs in Firebase Cloud Function stewardCore via js/steward-client.js.
  */
 (function initSteward(global) {
   const DISCLAIMER =
@@ -105,11 +105,11 @@
   }
 
   function canUseStewardCore() {
-    return !!(
-      global.SMTN170StewardApi?.isConfigured?.() &&
-      getUserId() &&
-      global.SMTN170StewardApi?.functionsUrl?.()
-    );
+    return !!(global.SMTN170StewardClient?.isConfigured?.() && getUserId());
+  }
+
+  function getClientApi() {
+    return global.SMTN170StewardClient || global.SMTN170StewardApi;
   }
 
   function escapeHtml(t) {
@@ -132,12 +132,8 @@
     return global.SMTN170Auth?.actorId?.() || null;
   }
 
-  function getClient() {
-    return global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.() || null;
-  }
-
   function isOnline() {
-    return !!getClient() && !!getUserId() && global.SMTN170Firebase?.isConfigured?.();
+    return canUseStewardCore();
   }
 
   function saveLocalFallback() {
@@ -170,81 +166,33 @@
   }
 
   async function listConversations() {
-    const sb = getClient();
-    const uid = getUserId();
-    if (!sb || !uid) return [];
-    const { data, error } = await sb
-      .from("steward_conversations")
-      .select("id, title, archived_at, updated_at, created_at")
-      .eq("profile_id", uid)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(30);
-    if (error) {
-      console.warn("[Steward] list conversations", error.message);
-      return [];
-    }
-    return data || [];
+    return state.conversations || [];
   }
 
   async function createConversation(title) {
-    const sb = getClient();
-    const uid = getUserId();
-    if (!sb || !uid) {
-      const id = "local-" + Date.now();
-      state.conversationId = id;
-      state.conversationTitle = title || "New conversation";
-      state.messages = [];
-      saveLocalFallback();
-      return { id, title: state.conversationTitle };
-    }
-    const now = new Date().toISOString();
-    const { data, error } = await sb
-      .from("steward_conversations")
-      .insert({
-        profile_id: uid,
-        title: title || "New conversation",
-        updated_at: now,
-      })
-      .select("id, title")
-      .single();
-    if (error) throw error;
-    return data;
+    const id = "local-" + Date.now();
+    state.conversationId = id;
+    state.conversationTitle = title || "New conversation";
+    state.messages = [];
+    saveLocalFallback();
+    return { id, title: state.conversationTitle };
   }
 
   async function updateConversation(patch) {
-    const sb = getClient();
-    const uid = getUserId();
-    if (!sb || !uid || !state.conversationId || String(state.conversationId).startsWith("local-")) {
-      if (patch.title) state.conversationTitle = patch.title;
-      saveLocalFallback();
-      return;
-    }
-    await sb
-      .from("steward_conversations")
-      .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq("id", state.conversationId)
-      .eq("profile_id", uid);
+    if (patch.title) state.conversationTitle = patch.title;
+    saveLocalFallback();
   }
 
   async function loadMessagesForConversation(conversationId) {
-    const sb = getClient();
-    const uid = getUserId();
-    if (!sb || !uid || String(conversationId).startsWith("local-")) {
-      return state.messages;
-    }
-    const { data, error } = await sb
-      .from("steward_chat_messages")
-      .select("id, role, message, created_at")
-      .eq("conversation_id", conversationId)
-      .eq("profile_id", uid)
-      .order("created_at", { ascending: true })
-      .limit(300);
-    if (error) {
-      console.warn("[Steward] load messages", error.message);
+    if (String(conversationId).startsWith("local-")) return state.messages;
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY + ":" + conversationId);
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      return Array.isArray(data.messages) ? data.messages : [];
+    } catch {
       return [];
     }
-    return (data || []).map((r) => parseStoredMessage(r));
   }
 
   function parseStoredMessage(row) {
@@ -276,58 +224,14 @@
   }
 
   async function ensureActiveConversation() {
-    if (!isOnline()) {
+    if (!state.conversationId) {
       if (!loadLocalFallback()) {
-        state.conversationId = "local-" + Date.now();
-        state.conversationTitle = "New conversation";
+        state.conversationId = null;
+        state.conversationTitle = "New operation";
         state.messages = [];
-        saveLocalFallback();
       }
-      return;
     }
-
     state.conversations = await listConversations();
-    let active = state.conversations[0];
-    if (!active) {
-      active = await createConversation("New conversation");
-      state.conversations = await listConversations();
-    }
-    state.conversationId = active.id;
-    state.conversationTitle = active.title || "New conversation";
-    state.messages = await loadMessagesForConversation(active.id);
-  }
-
-  async function insertMessage(role, text) {
-    const msg = {
-      id: "tmp-" + Date.now(),
-      role: role === "user" ? "user" : "steward",
-      text,
-      at: new Date().toISOString(),
-    };
-
-    const sb = getClient();
-    const uid = getUserId();
-    if (!sb || !uid || !state.conversationId || String(state.conversationId).startsWith("local-")) {
-      msg.id = role + "-" + Date.now();
-      return msg;
-    }
-
-    const { data, error } = await sb
-      .from("steward_chat_messages")
-      .insert({
-        conversation_id: state.conversationId,
-        profile_id: uid,
-        role: role === "user" ? "user" : "steward",
-        message: text,
-      })
-      .select("id, created_at")
-      .single();
-
-    if (error) throw error;
-    msg.id = data.id;
-    msg.at = data.created_at;
-    await updateConversation({ updated_at: msg.at });
-    return msg;
   }
 
   function formatTime(iso) {
@@ -440,13 +344,14 @@
           const time = m.at ? `<time class="steward-msg-time">${escapeHtml(formatTime(m.at))}</time>` : "";
           const body = formatMessageHtml(m.text);
           const capActions = m.role === "steward" ? renderCapActions(m.capSearchUrl) : "";
+          const suggestionActions = m.role === "steward" ? renderMessageActions(m) : "";
           return `<div class="steward-msg steward-msg--${m.role}" data-msg-id="${escapeHtml(m.id || "")}">
           <div class="steward-msg-meta">
             <span class="steward-msg-avatar" aria-hidden="true">${escapeHtml(avatar)}</span>
             <span class="steward-msg-label">${escapeHtml(label)}</span>
             ${time}
           </div>
-          <div class="steward-msg-bubble">${body}${capActions}</div>
+          <div class="steward-msg-bubble">${body}${capActions}${suggestionActions}</div>
         </div>`;
         })
         .join("") + renderConfirmBar();
@@ -463,6 +368,30 @@
       html = html.replace(escapeHtml(DISCLAIMER), `<span class="steward-msg-disclaimer-inline">${escapeHtml(DISCLAIMER)}</span>`);
     }
     return html;
+  }
+
+  function renderMessageActions(msg) {
+    const chips = [];
+    (msg.suggestions || []).forEach((s, i) => {
+      const label = typeof s === "string" ? s : s.label || s.text || "Suggestion";
+      const prompt = typeof s === "string" ? s : s.prompt || s.message || label;
+      chips.push(
+        `<button type="button" class="steward-chip steward-chip--inline" data-prompt="${escapeHtml(prompt)}">${escapeHtml(label)}</button>`
+      );
+    });
+    (msg.actions || []).forEach((a) => {
+      if (a.href || a.url) {
+        chips.push(
+          `<a href="${escapeHtml(a.href || a.url)}" class="steward-chip steward-chip--link">${escapeHtml(a.label || a.title || "Open")}</a>`
+        );
+      } else if (a.prompt || a.message) {
+        chips.push(
+          `<button type="button" class="steward-chip steward-chip--inline" data-prompt="${escapeHtml(a.prompt || a.message)}">${escapeHtml(a.label || a.title || "Run")}</button>`
+        );
+      }
+    });
+    if (!chips.length) return "";
+    return `<div class="steward-msg-actions">${chips.join("")}</div>`;
   }
 
   function renderConfirmBar() {
@@ -576,122 +505,49 @@
   }
 
   async function loadWorkspaceContext() {
-    const sb = getClient();
     const empty = { operations: [], schedules: [], resources: [], tasks: [], expirations: [] };
-    if (!sb) {
-      state.workspaceContext = empty;
-      return empty;
-    }
-
-    const today = new Date().toISOString().slice(0, 10);
-    const convos = await listConversations();
-
-    let meetings = [];
-    let tasks = [];
-    let fr = [];
-    let resourceLinks = [];
-
-    try {
-      const [mRes, tRes, fRes, rRes] = await Promise.all([
-        sb
-          .from("meetings")
-          .select("title, meeting_date")
-          .gte("meeting_date", today)
-          .order("meeting_date", { ascending: true })
-          .limit(5),
-        sb
-          .from("portal_tasks")
-          .select("title, due_date, status")
-          .neq("status", "completed")
-          .order("due_date", { ascending: true, nullsFirst: false })
-          .limit(5),
-        sb.from("flight_reviews").select("department, status").in("status", ["due_soon", "overdue", "needs_review"]).limit(6),
-        sb
-          .from("resource_links")
-          .select("title, category, updated_at")
-          .order("updated_at", { ascending: false })
-          .limit(5),
-      ]);
-      if (!mRes.error) meetings = mRes.data || [];
-      if (!tRes.error) tasks = tRes.data || [];
-      if (!fRes.error) fr = fRes.data || [];
-      if (!rRes.error) resourceLinks = rRes.data || [];
-    } catch (err) {
-      console.warn("[Steward] workspace context", err);
-    }
-
-    const fmtDate = (d) => {
-      if (!d) return "";
-      try {
-        return new Date(d + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      } catch {
-        return d;
-      }
-    };
-
     state.workspaceContext = {
-      operations: convos.slice(0, 6).map((c) => ({
+      ...empty,
+      operations: (state.conversations || []).slice(0, 6).map((c) => ({
         id: c.id,
-        label: (c.title || "Operation").slice(0, 42),
-      })),
-      schedules: meetings.map((m) => ({
-        label: `${fmtDate(m.meeting_date)} · ${m.title || "Meeting"}`,
-      })),
-      resources: resourceLinks.map((r) => ({
-        label: `${(r.category || "Resource").slice(0, 20)} · ${(r.title || "Link").slice(0, 32)}`,
-      })),
-      tasks: tasks.map((t) => ({
-        label: `${t.title || "Task"}${t.due_date ? ` · due ${fmtDate(t.due_date)}` : ""}`,
-      })),
-      expirations: fr.map((r) => ({
-        label: `${r.department || "Review"} · ${(r.status || "needs review").replace(/_/g, " ")}`,
+        label: (c.title || c.label || "Operation").slice(0, 42),
       })),
     };
-
     return state.workspaceContext;
   }
 
   function pushStewardReplyFromApi(result) {
-    const api = global.SMTN170StewardApi;
+    const api = getClientApi();
     const capUrl =
-      result.cap_search?.searchUrl || api?.parseCapUrlFromText?.(result.reply) || null;
+      result.openUrl ||
+      result.open_url ||
+      result.cap_search?.searchUrl ||
+      api?.parseCapUrlFromText?.(result.reply) ||
+      null;
     if (result.cap_search?.openInNewTab && capUrl) {
+      api?.openCapUrl?.(capUrl);
+    } else if ((result.openUrl || result.open_url) && !result.pending_confirmation && !result.pendingConfirmation) {
       api?.openCapUrl?.(capUrl);
     }
     state.messages.push({
-      id: result.steward_message_id || "steward-" + Date.now(),
+      id: result.steward_message_id || result.stewardMessageId || "steward-" + Date.now(),
       role: "steward",
       text: api?.stripCapMarker?.(result.reply) || result.reply || "",
-      at: result.steward_message_at || new Date().toISOString(),
+      at: result.steward_message_at || result.stewardMessageAt || new Date().toISOString(),
       capSearchUrl: capUrl,
+      intent: result.intent || null,
+      suggestions: result.suggestions || [],
+      actions: result.actions || [],
     });
-    state.pendingConfirmation = result.pending_confirmation || null;
-    renderDataStatus(!!result.data_connected);
+    state.pendingConfirmation = result.pending_confirmation || result.pendingConfirmation || null;
+    renderDataStatus(!!result.data_connected || !!result.dataConnected);
   }
 
-  async function buildFileContextForMessage(trimmed) {
-    const lower = trimmed.toLowerCase();
-    const wantsLinks =
-      /resource link|files & resources|squadron files|find.*link|where.*schedule|where.*form/i.test(lower);
-    if (!wantsLinks) return "";
-
-    const sb = getClient();
-    if (!sb) return "";
-
-    try {
-      const { data, error } = await sb
-        .from("resource_links")
-        .select("title, category, url")
-        .order("category", { ascending: true })
-        .limit(25);
-      if (error || !data?.length) {
-        return "\n\n[Portal resource links: none saved yet — add links on Files & Resources.]";
-      }
-      const lines = data.map((r) => `- ${r.title} (${r.category}): ${r.url}`);
-      return `\n\n[Portal resourceLinks — ${data.length} link(s):\n${lines.join("\n")}]`;
-    } catch {
-      return "";
-    }
+  function pageContext() {
+    return {
+      pagePath: global.location?.pathname || "",
+      pageTitle: document.title || "",
+    };
   }
 
   async function sendMessage(text) {
@@ -704,7 +560,7 @@
       state.messages.push({
         id: "err-" + Date.now(),
         role: "steward",
-        text: "Sign in with Firebase configured to use Steward. Deploy the stewardCore Cloud Function if you have not already.",
+        text: "Steward is unavailable right now. Please try again later.",
         at: new Date().toISOString(),
       });
       renderMessages();
@@ -717,9 +573,6 @@
     const optimisticId = "tmp-u-" + Date.now();
 
     try {
-      const fileContext = await buildFileContextForMessage(trimmed);
-      const outbound = trimmed + fileContext;
-
       state.messages.push({
         id: optimisticId,
         role: "user",
@@ -734,14 +587,16 @@
           ? state.conversationId
           : undefined;
 
-      const result = await global.SMTN170StewardApi.invoke({
-        message: outbound,
-        conversation_id: convId,
-        active_mode: activeMode,
-        context_area: activeMode,
+      const result = await getClientApi().invoke({
+        message: trimmed,
+        ...pageContext(),
+        conversationId: convId,
+        activeMode,
       });
 
-      if (result.conversation_id) state.conversationId = result.conversation_id;
+      if (result.conversation_id || result.conversationId) {
+        state.conversationId = result.conversation_id || result.conversationId;
+      }
 
       const userIdx = state.messages.findIndex((m) => m.id === optimisticId);
       if (userIdx >= 0) {
@@ -767,7 +622,7 @@
       state.messages.push({
         id: "err-" + Date.now(),
         role: "steward",
-        text: err.message || "Steward could not respond. Check your connection and Cloud Function deployment.",
+        text: "Steward is unavailable right now. Please try again later.",
         at: new Date().toISOString(),
       });
       renderMessages();
@@ -796,17 +651,6 @@
     ) {
       return;
     }
-
-    const sb = getClient();
-    const uid = getUserId();
-    if (sb && uid && state.conversationId && !String(state.conversationId).startsWith("local-")) {
-      await sb
-        .from("steward_conversations")
-        .update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq("id", state.conversationId)
-        .eq("profile_id", uid);
-    }
-
     await startNewChat();
   }
 
@@ -929,6 +773,12 @@
     });
 
     document.getElementById("stewardMessages")?.addEventListener("click", (e) => {
+      const chip = e.target.closest(".steward-chip[data-prompt]");
+      if (chip?.dataset.prompt) {
+        e.preventDefault();
+        sendMessage(chip.dataset.prompt);
+        return;
+      }
       const capBtn = e.target.closest("[data-cap-open-tab]");
       if (capBtn) {
         e.preventDefault();
@@ -961,17 +811,19 @@
     if (!state.pendingConfirmation || !canUseStewardCore()) return;
     setThinking(true);
     try {
-      const result = await global.SMTN170StewardApi.invoke({
-        conversation_id: state.conversationId,
-        active_mode: activeMode,
-        confirm_pending: true,
+      const result = await getClientApi().invoke({
+        ...pageContext(),
+        conversationId: state.conversationId,
+        pendingActionId: state.pendingConfirmation.action_id || state.pendingConfirmation.id,
+        confirmation: true,
+        activeMode,
       });
       pushStewardReplyFromApi(result);
       saveLocalFallback();
       renderMessages();
     } catch (err) {
       console.error("[Steward] confirm", err);
-      alert(err.message || "Could not complete that action.");
+      alert("Steward is unavailable right now. Please try again later.");
     } finally {
       setThinking(false);
     }
@@ -981,17 +833,19 @@
     if (!canUseStewardCore()) return;
     setThinking(true);
     try {
-      const result = await global.SMTN170StewardApi.invoke({
-        conversation_id: state.conversationId,
-        active_mode: activeMode,
-        cancel_pending: true,
+      const result = await getClientApi().invoke({
+        ...pageContext(),
+        conversationId: state.conversationId,
+        pendingActionId: state.pendingConfirmation?.action_id || state.pendingConfirmation?.id,
+        confirmation: false,
+        activeMode,
       });
       pushStewardReplyFromApi(result);
       saveLocalFallback();
       renderMessages();
     } catch (err) {
       console.error("[Steward] cancel", err);
-      alert(err.message || "Could not cancel.");
+      alert("Steward is unavailable right now. Please try again later.");
     } finally {
       setThinking(false);
     }

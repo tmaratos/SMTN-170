@@ -1,5 +1,5 @@
 /**
- * Global Steward launcher — available before steward.js finishes loading.
+ * Global Steward launcher — available before steward-ui.js finishes loading.
  */
 (function initStewardLauncher(global) {
   function waitForSteward(maxMs) {
@@ -11,7 +11,7 @@
           return;
         }
         if (Date.now() - start > (maxMs || 10000)) {
-          reject(new Error("Steward is still loading. Refresh the page and try again."));
+          reject(new Error("Steward is unavailable right now. Please try again later."));
           return;
         }
         setTimeout(tick, 40);
@@ -26,7 +26,7 @@
       return steward.openSteward(promptText);
     } catch (err) {
       console.error("[openSteward]", err);
-      alert(err.message || "Could not open Steward.");
+      alert(err.message || "Steward is unavailable right now. Please try again later.");
     }
   };
 })(window);

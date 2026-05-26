@@ -5,5 +5,5 @@
  * 3. portal-nav.js
  * 4. portal-shell.js
  * 5. Module scripts (flight-review, document-intake, sui-readiness, etc.)
- * 6. steward.js
+ * 6. steward-ui.js + steward-client.js
  */

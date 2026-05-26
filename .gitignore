@@ -1,6 +1,9 @@
 # Supabase CLI local link state
 supabase/.temp/
 
+# Steward brain — private deploy only (Option B)
+functions/src/steward/
+
 # OS / editor
 .DS_Store
 Thumbs.db

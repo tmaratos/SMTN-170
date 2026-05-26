@@ -240,7 +240,7 @@
       callback?.();
       return;
     }
-    if (document.querySelector('script[src*="steward.js"]')) {
+    if (document.querySelector('script[src*="steward-ui.js"]')) {
       const wait = setInterval(() => {
         if (global.SMTN170Steward) {
           clearInterval(wait);
@@ -251,7 +251,7 @@
       return;
     }
     const script = document.createElement("script");
-    script.src = "./js/steward.js?v=3";
+    script.src = "./js/steward-ui.js?v=1";
     script.onload = () => {
       global.SMTN170Steward?.rebind?.();
       callback?.();
