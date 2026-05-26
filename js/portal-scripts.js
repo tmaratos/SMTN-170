@@ -5,9 +5,16 @@
  */
 (function loadPortalScripts(global) {
   const PAGE_SCRIPTS = {
-    schedule: ["./js/portal-data.js", "./js/schedule-builder.js"],
+    schedule: [
+      "./js/portal-data.js",
+      "./js/report-renderers.js?v=1",
+      "./js/schedule-builder.js?v=2",
+    ],
     documents: ["./js/resource-links.js?v=1"],
-    orgchart: ["./js/org-chart.js?v=9"],
+    orgchart: [
+      "./js/report-renderers.js?v=1",
+      "./js/orgchart-builder.js?v=1",
+    ],
     "flight-review": ["./flight-review.js"],
     "sui-readiness": ["./sui-readiness.js?v=9"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js?v=2"],
@@ -63,6 +70,7 @@
     if (i >= urls.length) {
       global.SMTN170ScheduleBuilder?.init?.();
       global.SMTN170ResourceLinks?.init?.();
+      global.SMTN170OrgChartBuilder?.init?.();
       global.SMTN170OrgChart?.init?.();
       global.SMTN170TasksPage?.init?.();
       global.SMTN170SuiReadiness?.init?.();

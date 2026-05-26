@@ -22,6 +22,16 @@
     schedules: "schedules",
   };
 
+  /**
+   * Builder report collections (camelCase end-to-end, no snake/camel translation).
+   * These store full report documents authored in `js/orgchart-builder.js` and
+   * `js/schedule-builder.js` separate from the live `orgPositions` directory.
+   */
+  const REPORT_COLLECTIONS = {
+    orgCharts: "orgCharts",
+    monthlySchedules: "monthlySchedules",
+  };
+
   const FIELD_MAP = {
     owner_id: "ownerId",
     file_name: "fileName",
@@ -409,11 +419,101 @@
     return onSnapshot(q, () => cb?.({ eventType: "UPDATE" }));
   }
 
+  /**
+   * Direct (no key translation) CRUD helpers for builder report collections.
+   * Used by Org Chart and Monthly Schedule builders for full versioned reports.
+   */
+  function reports(collectionName) {
+    const real = REPORT_COLLECTIONS[collectionName] || collectionName;
+    return {
+      async list({ limit: lim, order } = {}) {
+        const mod = getMod();
+        const db = getDb();
+        if (!mod || !db) return { data: null, error: new Error("Firestore not ready") };
+        const { collection, query, orderBy, limit, getDocs } = mod;
+        const colRef = collection(db, real);
+        const cons = [];
+        if (order?.field) cons.push(orderBy(order.field, order.asc ? "asc" : "desc"));
+        if (lim) cons.push(limit(lim));
+        try {
+          const q = cons.length ? query(colRef, ...cons) : colRef;
+          const snap = await getDocs(q);
+          return {
+            data: snap.docs.map((d) => ({ id: d.id, ...d.data() })),
+            error: null,
+          };
+        } catch (error) {
+          return { data: null, error };
+        }
+      },
+      async get(id) {
+        const mod = getMod();
+        const db = getDb();
+        if (!mod || !db) return { data: null, error: new Error("Firestore not ready") };
+        const { doc, getDoc } = mod;
+        try {
+          const snap = await getDoc(doc(db, real, id));
+          if (!snap.exists()) return { data: null, error: null };
+          return { data: { id: snap.id, ...snap.data() }, error: null };
+        } catch (error) {
+          return { data: null, error };
+        }
+      },
+      async save(payload) {
+        const mod = getMod();
+        const db = getDb();
+        if (!mod || !db) return { data: null, error: new Error("Firestore not ready") };
+        const { collection, doc, setDoc, addDoc, getDoc } = mod;
+        try {
+          const id = payload?.id;
+          const body = { ...payload };
+          delete body.id;
+          body.updatedAt = new Date().toISOString();
+          if (!body.createdAt) body.createdAt = body.updatedAt;
+          let ref;
+          if (id) {
+            ref = doc(db, real, id);
+            await setDoc(ref, body, { merge: true });
+          } else {
+            ref = await addDoc(collection(db, real), body);
+          }
+          const snap = await getDoc(ref);
+          return { data: { id: snap.id, ...snap.data() }, error: null };
+        } catch (error) {
+          return { data: null, error };
+        }
+      },
+      async remove(id) {
+        const mod = getMod();
+        const db = getDb();
+        if (!mod || !db) return { data: null, error: new Error("Firestore not ready") };
+        const { doc, deleteDoc } = mod;
+        try {
+          await deleteDoc(doc(db, real, id));
+          return { data: { id }, error: null };
+        } catch (error) {
+          return { data: null, error };
+        }
+      },
+      subscribe(cb) {
+        const mod = getMod();
+        const db = getDb();
+        if (!mod || !db) return null;
+        const { collection, onSnapshot } = mod;
+        return onSnapshot(collection(db, real), () => cb?.());
+      },
+    };
+  }
+
   global.SMTN170FirebaseData = {
     TABLE_MAP,
+    REPORT_COLLECTIONS,
     toFirestore,
     fromFirestore,
     from,
+    reports,
+    orgCharts: () => reports("orgCharts"),
+    monthlySchedules: () => reports("monthlySchedules"),
     subscribeCollection,
   };
 })(window);

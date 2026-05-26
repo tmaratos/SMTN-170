@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#030914" />
   <title>Organization Chart | TN-170</title>
   <script type="application/json" id="steward-page-meta">
-  {"pageId":"orgchart","title":"Organization Chart","path":"orgchart.html","section":"Main","summary":"Squadron leadership structure, staff assignments, and vacant positions.","primaryActions":["Add position","View vacancies","Ask Steward"],"forms":["orgPositionForm"],"buttons":["Add","Vacancies","Steward"],"relatedPages":["admin.html","senior-member.html"],"keywords":["org chart","organization","staff","vacancies","billets"]}
+  {"pageId":"orgchart","title":"Organization Chart","path":"orgchart.html","section":"Main","summary":"Build and update the squadron Table of Organization report — commander, staff row, cadet branch, custom positions.","primaryActions":["Edit org chart","Reset to TN-170 default","Save org chart","Print org chart","Open saved reports"],"forms":["orgChartBuilderForm"],"buttons":["Save Org Chart","Reset to TN-170 Default Structure","Preview Print Layout","Print / Save as PDF","Clone Existing Chart"],"relatedPages":["admin.html","senior-member.html","orgchart-print.html"],"keywords":["org chart","organization","staff","vacancies","billets","edit org chart","build org chart","print org chart","table of organization","clone chart"]}
   </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
@@ -47,20 +47,25 @@
     </div>
   </div>
   <div class="org-mobile-actions" id="orgMobileActions" role="toolbar" aria-label="Quick org chart actions">
-    <button type="button" class="btn-gold" data-action="add-position" data-steward-action="create" data-steward-label="Add position" data-steward-help="Add a new billet to the org chart">Add</button>
-    <button type="button" class="btn-outline" data-action="view-vacancies" data-steward-action="filter" data-steward-label="View vacancies" data-steward-help="Show vacant squadron positions">Vacancies</button>
-    <button type="button" class="btn-outline" data-steward-ask="Help build the squadron org chart." data-steward-action="ask" data-steward-label="Steward" data-steward-help="Ask Steward about org chart structure">Steward</button>
+    <button type="button" class="btn-gold" data-ocb-cmd="save" data-steward-action="save" data-steward-label="Save Org Chart" data-steward-help="Save this org chart to the squadron workspace">Save</button>
+    <button type="button" class="btn-outline" data-ocb-cmd="reset" data-steward-action="reset" data-steward-label="Reset to TN-170 default" data-steward-help="Pre-populate the standard TN-170 layout">Reset</button>
+    <button type="button" class="btn-outline" data-ocb-cmd="preview" data-steward-action="preview" data-steward-label="Preview Print Layout" data-steward-help="Open the print preview">Preview</button>
+    <button type="button" class="btn-outline" data-ocb-cmd="print" data-steward-action="print" data-steward-label="Print / Save as PDF" data-steward-help="Print or save as PDF">Print</button>
+    <button type="button" class="btn-outline" data-steward-ask="Help me build the squadron Table of Organization." data-steward-action="ask" data-steward-label="Steward" data-steward-help="Ask Steward about org chart structure">Steward</button>
   </div>
   <script src="./js/portal-scripts.js?v=13" data-page="orgchart"></script>
   <script>
     document.getElementById("orgMobileActions")?.addEventListener("click", function (e) {
-      var btn = e.target.closest("[data-action],[data-steward-ask]");
+      var btn = e.target.closest("[data-ocb-cmd],[data-steward-ask]");
       if (!btn) return;
       if (btn.dataset.stewardAsk) {
         (window.openSteward || window.SMTN170Steward?.openSteward)?.(btn.dataset.stewardAsk);
         return;
       }
-      document.getElementById("orgChartApp")?.querySelector('[data-action="' + btn.dataset.action + '"]')?.click();
+      var cmd = btn.dataset.ocbCmd;
+      if (!cmd) return;
+      var target = document.getElementById("orgChartApp")?.querySelector('[data-ocb-cmd="' + cmd + '"]');
+      if (target) target.click();
     });
   </script>
 </body>
