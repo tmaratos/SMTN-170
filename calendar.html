@@ -11,13 +11,13 @@
   <meta name="theme-color" content="#030914" />
   <title>Calendar | TN-170</title>
   <script type="application/json" id="steward-page-meta">
-  {"pageId":"calendar","title":"Calendar","path":"calendar.html","section":"Main","summary":"Post squadron events and review upcoming meeting nights and activities.","primaryActions":["Add event","Open meeting planner"],"forms":["calendarAddForm"],"buttons":["Add to calendar","Meeting planner"],"relatedPages":["schedule.html","flight-review.html"],"keywords":["calendar","events","meetings","schedule"]}
+  {"pageId":"calendar","title":"Calendar","path":"calendar.html","section":"Main","summary":"Read-only month view of every approved squadron event. Edit events in Tasks or the Monthly Meeting Schedule Builder.","primaryActions":["View this month","Jump to today","Filter event categories"],"forms":[],"buttons":["Previous month","Next month","Today","Meeting planner"],"relatedPages":["schedule.html","tasks.html","flight-review.html"],"keywords":["calendar","events","meetings","schedule","month","grid"]}
   </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=6" />
   <link rel="stylesheet" href="./css/portal-layout.css?v=2" />
-  <link rel="stylesheet" href="./flight-review.css?v=1" />
+  <link rel="stylesheet" href="./css/portal-calendar.css?v=1" />
 </head>
 <body data-portal-page="calendar">
   <div class="portal-app">
@@ -42,35 +42,58 @@
       </header>
       <div class="portal-content portal-content--wide">
         <div class="page-frame">
-          <p class="page-intro">Post squadron events and see what is coming up. Flight review nights show a BFR badge.</p>
           <div data-steward-context="calendar"></div>
-          <section class="calendar-grid workspace-split">
-            <article class="workspace-panel card-info">
-              <h2 style="margin:0 0 16px;font-size:1.15rem">Add an event</h2>
-              <form class="form-panel" id="calendarAddForm">
-                <label>Event title</label>
-                <input name="title" placeholder="Weekly squadron meeting" required />
-                <label>Date</label>
-                <input type="date" name="date" required />
-                <label>Start time</label>
-                <input type="time" name="startTime" />
-                <label>End time</label>
-                <input type="time" name="endTime" />
-                <label>Location</label>
-                <input name="location" placeholder="Squadron classroom" />
-                <button type="submit" class="btn-gold" data-steward-action="submit" data-steward-label="Add to calendar" data-steward-help="Post a new event on the squadron calendar">Add to calendar</button>
-              </form>
-            </article>
-            <article class="workspace-panel card-action">
-              <h2 style="margin:0 0 16px;font-size:1.15rem">Upcoming events</h2>
-              <div class="event-list large" id="calendarEventList" aria-live="polite"></div>
-            </article>
+
+          <aside class="cal-banner" role="note">
+            <span class="cal-banner-icon" aria-hidden="true">📅</span>
+            <div>
+              <strong>Squadron calendar — read only.</strong>
+              <span>Add or edit individual events in <a href="tasks.html">Tasks</a> or the <a href="schedule.html">Monthly Meeting Schedule Builder</a>.</span>
+            </div>
+          </aside>
+
+          <section class="cal-shell" aria-label="Month calendar">
+            <header class="cal-toolbar">
+              <div class="cal-toolbar-title">
+                <h2 id="calMonthTitle" aria-live="polite">Loading…</h2>
+              </div>
+              <div class="cal-toolbar-controls">
+                <button type="button" class="cal-btn cal-btn--today" id="calTodayBtn" aria-label="Jump to today">Today</button>
+                <div class="cal-nav-group" role="group" aria-label="Month navigation">
+                  <button type="button" class="cal-btn cal-btn--nav" id="calPrevBtn" aria-label="Previous month">◀</button>
+                  <button type="button" class="cal-btn cal-btn--nav" id="calNextBtn" aria-label="Next month">▶</button>
+                </div>
+              </div>
+            </header>
+
+            <div class="cal-filters" id="calFilters" role="group" aria-label="Filter by event category"></div>
+
+            <div class="cal-grid-wrap">
+              <div class="cal-weekhead" aria-hidden="true">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+              </div>
+              <div class="cal-grid" id="calGrid" role="grid" aria-labelledby="calMonthTitle">
+                <p class="cal-empty">Loading squadron calendar…</p>
+              </div>
+            </div>
           </section>
         </div>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
-  <script src="./js/portal-scripts.js?v=13" data-page="calendar"></script>
+
+  <div class="cal-modal" id="calEventModal" role="dialog" aria-modal="true" aria-labelledby="calModalTitle" hidden>
+    <div class="cal-modal-backdrop" data-close-modal></div>
+    <div class="cal-modal-panel" role="document">
+      <button type="button" class="cal-modal-close" data-close-modal aria-label="Close">✕</button>
+      <p class="cal-modal-kicker" id="calModalKicker"></p>
+      <h3 class="cal-modal-title" id="calModalTitle"></h3>
+      <dl class="cal-modal-meta" id="calModalMeta"></dl>
+      <p class="cal-modal-notes" id="calModalNotes"></p>
+    </div>
+  </div>
+
+  <script src="./js/portal-scripts.js?v=14" data-page="calendar"></script>
 </body>
 </html>

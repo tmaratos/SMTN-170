@@ -21,7 +21,7 @@
     profile: ["./js/profile-page.js?v=13"],
     tasks: ["./js/tasks-page.js?v=9"],
     dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js?v=8"],
-    calendar: ["./flight-review.js"],
+    calendar: ["./flight-review.js", "./js/portal-calendar.js?v=1"],
     resources: [],
     exports: ["./flight-review.js"],
   };
@@ -75,6 +75,7 @@
       global.SMTN170TasksPage?.init?.();
       global.SMTN170SuiReadiness?.init?.();
       global.SMTN170ProfilePage?.init?.();
+      global.SMTN170PortalCalendar?.init?.();
       return;
     }
     const s = document.createElement("script");
