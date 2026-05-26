@@ -1192,7 +1192,7 @@ a.hub-card:hover {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
-  z-index: 550;
+  z-index: 500;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -1210,7 +1210,7 @@ body.steward-open .steward-backdrop {
   width: min(440px, 100vw);
   height: 100vh;
   height: 100dvh;
-  z-index: 600;
+  z-index: 501;
   background: linear-gradient(180deg, #0c1830 0%, #030914 100%);
   border-left: 1px solid rgba(88, 101, 242, 0.45);
   display: flex;

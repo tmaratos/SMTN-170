@@ -2,7 +2,7 @@
  * TN-170 Smart Import — upload, classify, extract, preview, confirm, save.
  */
 (function initFileIngestion(global) {
-  const PARSER_VERSION = "1.2";
+  const PARSER_VERSION = "2.0";
 
   const IMPORT_TYPES = {
     meeting_schedule: {
@@ -115,8 +115,93 @@
   const BINARY_EXT = ["pdf", "docx", "doc", "png", "jpg", "jpeg", "gif", "webp"];
 
   let lastResult = null;
-  let xlsxLoading = null;
-  let mammothLoading = null;
+
+  function importProcessorUrl() {
+    const base = (global.SUPABASE_CONFIG?.url || "").replace(/\/$/, "");
+    if (!base) return null;
+    return `${base}/functions/v1/import-processor`;
+  }
+
+  async function getAccessToken() {
+    const sb = getClient();
+    if (!sb) return null;
+    const { data } = await sb.auth.getSession();
+    return data?.session?.access_token || null;
+  }
+
+  /** Call import-processor Edge Function (server-side extraction + parsing). */
+  async function invokeImportProcessor(payload) {
+    const url = importProcessorUrl();
+    const token = await getAccessToken();
+    const anon = global.SUPABASE_CONFIG?.anonKey;
+    if (!url || !token || !anon) {
+      throw new Error("Sign in with Supabase configured to use Smart Import.");
+    }
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: anon,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload || {}),
+    });
+
+    const text = await res.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { error: text || `Import processor unavailable (${res.status})` };
+    }
+    if (!res.ok || data.ok === false) {
+      const msg =
+        data.error ||
+        data.message ||
+        `Import processor failed (${res.status})`;
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  function mapProcessorResponse(processorData, fileRecord) {
+    const rec = normalizeFileRecord(fileRecord);
+    const detectedType = processorData.detected_type || "needs_review";
+    const importMeta =
+      processorData.import_meta ||
+      IMPORT_TYPES[detectedType] ||
+      IMPORT_TYPES.needs_review;
+    const extractedText =
+      processorData.extracted_text_preview ||
+      processorData.extracted_text ||
+      null;
+
+    return {
+      ok: true,
+      detectedType,
+      confidence: processorData.confidence ?? 0,
+      category: TYPE_TO_CATEGORY[detectedType] || detectedType,
+      message: processorData.message || "",
+      drafts: processorData.drafts || [],
+      parsed: !!processorData.parsed,
+      parseable: !!processorData.parseable,
+      needsOcr: !!processorData.needs_ocr,
+      fileRecord: rec,
+      extractedText,
+      type: processorData.type || typeToTable(detectedType),
+      needsReview: true,
+      lowConfidence: !!processorData.low_confidence,
+      importMeta: {
+        label: importMeta.label,
+        target: importMeta.target || processorData.target,
+        table: importMeta.table,
+        href: importMeta.href,
+      },
+      warnings: [],
+      parserVersion: processorData.parser_version || PARSER_VERSION,
+    };
+  }
 
   const MONTH_NAMES = {
     january: 1,
@@ -1034,60 +1119,32 @@
     return { parsed, job, warnings };
   }
 
-  async function updatePortalFromFile(fileRecord, extractedText, categoryOrType) {
-    const result = await buildImportResult(fileRecord, extractedText, {
+  async function updatePortalFromFile(fileRecord, _extractedText, categoryOrType) {
+    return ingestUploadedFile(fileRecord, {
       detectedType: categoryOrType,
-      category: categoryOrType,
+      requested_target: categoryOrType,
     });
-    await persistImportAudit(fileRecord, result);
-    return result;
   }
 
   async function ingestUploadedFile(fileRecord, options) {
     const rec = normalizeFileRecord(fileRecord);
-    let text = options?.extractedText != null ? options.extractedText : null;
-    let extractionError = null;
-
-    if (text == null) {
-      try {
-        text = await downloadFileText(rec);
-      } catch (err) {
-        extractionError = err.message;
-      }
+    if (!rec?.id || !rec?.file_path) {
+      throw new Error("File index failed: missing uploaded file record.");
     }
 
-    const e = ext(rec?.file_name || rec?.name);
-    if ((e === "docx" || e === "doc") && text == null && !extractionError) {
-      extractionError = "DOCX extraction failed.";
-    }
-
-    const folder = rec.file_category || rec.folder || rec.upload_area;
-    const detected =
-      options?.detectedType ||
-      detectFileCategory(rec?.file_name, rec?.mime_type, folder);
-
-    let result;
+    let processorData;
     try {
-      result = await buildImportResult(rec, text, { detectedType: detected });
+      processorData = await invokeImportProcessor({
+        uploaded_file_id: rec.id,
+        file_path: rec.file_path,
+        file_name: rec.file_name || rec.name,
+        requested_target: options?.detectedType || options?.requested_target || undefined,
+      });
     } catch (err) {
-      throw new Error(`Draft meeting creation failed: ${err.message}`);
+      throw new Error(`Import processor failed: ${err.message}`);
     }
 
-    if (extractionError && (e === "docx" || e === "doc")) {
-      result.message = "File uploaded and indexed. DOCX reading is not enabled yet.";
-      if (extractionError !== "DOCX extraction failed.") {
-        result.warnings = [...(result.warnings || []), extractionError];
-      }
-    }
-
-    const audit = await persistImportAudit(rec, result);
-    result.importJob = audit.job;
-    result.parsedDocument = audit.parsed;
-    if (audit.warnings?.length) {
-      result.warnings = [...(result.warnings || []), ...audit.warnings];
-      result.message = `${result.message} ${audit.warnings[0]}`;
-    }
-
+    const result = mapProcessorResponse(processorData, rec);
     lastResult = result;
     global.dispatchEvent(new CustomEvent("smtn170:file-ingested", { detail: result }));
     return result;
@@ -1102,17 +1159,7 @@
     const uid = userData?.user?.id;
     if (userErr || !uid) throw new Error("Sign in to upload files.");
 
-    let extractedText = null;
-    try {
-      extractedText = await extractTextFromFile(file);
-    } catch (err) {
-      const e = ext(file.name);
-      if (e === "docx" || e === "doc") {
-        throw new Error(`DOCX extraction failed: ${err.message}`);
-      }
-    }
-
-    const classification = scoreClassification(extractedText, file.name);
+    const classification = scoreClassification("", file.name);
     const detectedType =
       options?.detectedType || options?.category || classification.detectedType;
     const fileCategory =
@@ -1129,7 +1176,7 @@
       cacheControl: "3600",
       upsert: false,
     });
-    if (upErr) throw new Error(`Storage upload failed: ${upErr.message}`);
+    if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
 
     const insertPayload = {
       owner_id: uid,
@@ -1142,34 +1189,23 @@
     const { data: row, error: dbErr } = await sb.from("uploaded_files").insert(insertPayload).select().single();
     if (dbErr) {
       await sb.storage.from(bucket).remove([storagePath]).catch(() => {});
-      throw new Error(`File index save failed: ${dbErr.message}`);
+      throw new Error(`File index failed: ${dbErr.message}`);
     }
 
     const fileRecord = normalizeFileRecord(row);
-    let result;
+    let processorData;
     try {
-      result = await buildImportResult(fileRecord, extractedText, { detectedType });
+      processorData = await invokeImportProcessor({
+        uploaded_file_id: fileRecord.id,
+        file_path: fileRecord.file_path,
+        file_name: fileRecord.file_name,
+        requested_target: options?.detectedType || options?.category || undefined,
+      });
     } catch (err) {
-      throw new Error(`Draft meeting creation failed: ${err.message}`);
+      throw new Error(`Extraction failed: ${err.message}`);
     }
 
-    const e = ext(file.name);
-    if ((e === "docx" || e === "doc") && !extractedText) {
-      result.message = "File uploaded and indexed. DOCX reading is not enabled yet.";
-    }
-
-    const audit = await persistImportAudit(fileRecord, result);
-    if (!audit.job) {
-      result.warnings = [...(result.warnings || []), "Import job save failed: import_jobs table not available."];
-    }
-    if (audit.warnings?.length) {
-      result.warnings = [...(result.warnings || []), ...audit.warnings.filter((w) => !w.includes("import_jobs"))];
-      if (audit.warnings.some((w) => w.includes("not installed"))) {
-        result.message = `${result.message} Import history tables are not installed yet.`;
-      }
-    }
-    result.importJob = audit.job;
-    result.parsedDocument = audit.parsed;
+    const result = mapProcessorResponse(processorData, fileRecord);
     lastResult = result;
     global.dispatchEvent(new CustomEvent("smtn170:file-ingested", { detail: result }));
     return result;
@@ -1177,7 +1213,13 @@
 
   async function commitDrafts(result, overrideType) {
     const drafts = result?.drafts || [];
-    if (!drafts.length) return { saved: [], message: "No records to import." };
+    if (!drafts.length) {
+      return {
+        saved: [],
+        message:
+          "No structured records were extracted. The file was uploaded and indexed, but nothing is ready to import.",
+      };
+    }
 
     const type = overrideType || result.type;
     let saved = [];
@@ -1211,15 +1253,18 @@
   async function confirmImport(result, overrideDetectedType) {
     if (!result) throw new Error("Nothing to import.");
     let type = result.type;
-    if (overrideDetectedType) {
-      const remapped = await createRecordsFromExtractedText(
-        result.fileRecord,
-        result.extractedText || (await downloadFileText(result.fileRecord)),
-        overrideDetectedType
-      );
-      result.detectedType = overrideDetectedType;
+    if (overrideDetectedType && result.fileRecord) {
+      const processorData = await invokeImportProcessor({
+        uploaded_file_id: result.fileRecord.id,
+        file_path: result.fileRecord.file_path,
+        file_name: result.fileRecord.file_name || result.fileRecord.name,
+        requested_target: overrideDetectedType,
+      });
+      const remapped = mapProcessorResponse(processorData, result.fileRecord);
+      result.detectedType = remapped.detectedType;
       result.drafts = remapped.drafts;
       result.type = remapped.type;
+      result.importMeta = remapped.importMeta;
       type = remapped.type;
     }
     return commitDrafts({ ...result, type }, type);
@@ -1285,12 +1330,12 @@
     normalizeFileRecord,
     parseBctMeetingScheduleText,
     isBctScheduleContent,
-    extractTextFromFile,
+    invokeImportProcessor,
+    mapProcessorResponse,
     ingestUploadedFile,
     uploadAndIngest,
     updatePortalFromFile,
     createRecordsFromExtractedText,
-    downloadFileText,
     listUploadedFiles,
     listImportJobs,
     commitDrafts,

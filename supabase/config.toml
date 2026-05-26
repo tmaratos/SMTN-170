@@ -2,3 +2,9 @@
 
 [functions.steward-core]
 verify_jwt = true
+
+[functions.import-processor]
+verify_jwt = true
+
+[functions.ocr-processor]
+verify_jwt = true

@@ -2,7 +2,7 @@
  * TN-170 Import Center — smart import preview and confirm.
  */
 (function initImportCenter(global) {
-  let state = { jobs: [], pending: null, busy: false };
+  let state = { jobs: [], pending: null, busy: false, flashMessage: null };
 
   function escapeHtml(t) {
     const d = document.createElement("div");
@@ -89,7 +89,9 @@
 
     const extractSnippet = r.extractedText
       ? `<details class="import-extract-details"><summary>Extracted text (preview)</summary><pre class="import-extract-preview">${escapeHtml(r.extractedText.slice(0, 4000))}${r.extractedText.length > 4000 ? "\n…" : ""}</pre></details>`
-      : "";
+      : r.needsOcr
+        ? `<p class="page-intro import-ocr-notice">This file was uploaded and indexed. OCR is required before it can be read automatically.</p>`
+        : "";
 
     const title = isMeetingSchedule ? "Review imported meeting schedule" : "Smart import preview";
     const actions = isMeetingSchedule
@@ -178,7 +180,10 @@
           <input type="file" id="icFileInput" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp" />
         </div>
       </div>
-      <div id="importPreviewHost">${renderPreview()}</div>
+      <div id="importPreviewHost">
+        ${state.flashMessage ? `<p class="import-success" role="status">${escapeHtml(state.flashMessage)}</p>` : ""}
+        ${renderPreview()}
+      </div>
       <section class="card-info">
         <h3 class="card-info-title">Recent import jobs</h3>
         ${renderJobs()}
@@ -240,16 +245,31 @@
 
   async function handleTypeChange(e) {
     const r = state.pending;
-    if (!r) return;
+    if (!r?.fileRecord) return;
     const newType = e.target.value;
-    const text = r.extractedText || (await global.SMTN170FileIngestion.downloadFileText(r.fileRecord));
-    const remapped = await global.SMTN170FileIngestion.createRecordsFromExtractedText(r.fileRecord, text, newType);
-    r.detectedType = newType;
-    r.drafts = remapped.drafts;
-    r.type = remapped.type;
-    r.importMeta = global.SMTN170FileIngestion.IMPORT_TYPES[newType];
-    r.message = `Destination changed to ${r.importMeta?.label || newType}. ${r.drafts.length} record(s) shown — review before confirming.`;
+    const errEl = document.getElementById("importPreviewError");
+    if (errEl) errEl.hidden = true;
+    state.busy = true;
     render();
+    try {
+      const processorData = await global.SMTN170FileIngestion.invokeImportProcessor({
+        uploaded_file_id: r.fileRecord.id,
+        file_path: r.fileRecord.file_path,
+        file_name: r.fileRecord.file_name || r.fileRecord.name,
+        requested_target: newType,
+      });
+      const remapped = global.SMTN170FileIngestion.mapProcessorResponse(processorData, r.fileRecord);
+      state.pending = remapped;
+      state.pending.message = `Destination changed to ${remapped.importMeta?.label || newType}. ${remapped.drafts.length} record(s) shown — review before confirming.`;
+    } catch (err) {
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = err.message || "Import processor failed";
+      }
+    } finally {
+      state.busy = false;
+      render();
+    }
   }
 
   async function handleUpload(file) {
@@ -270,6 +290,11 @@
         detectedType: "needs_review",
         confidence: 0,
       };
+      const errEl = document.getElementById("importPreviewError");
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = err.message || "Upload failed";
+      }
     } finally {
       state.busy = false;
       render();
@@ -282,20 +307,27 @@
     const errEl = document.getElementById("importPreviewError");
     const override = document.getElementById("importTypeOverride")?.value;
     state.busy = true;
+    state.flashMessage = null;
     if (errEl) errEl.hidden = true;
     try {
+      if (!r.drafts?.length) {
+        if (errEl) {
+          errEl.hidden = false;
+          errEl.textContent =
+            "No structured records were extracted. The file was uploaded and indexed, but nothing is ready to import.";
+        }
+        return;
+      }
       const out = await global.SMTN170FileIngestion.confirmImport(r, override);
       state.pending = null;
+      state.flashMessage = out.message || "Import complete.";
       await refreshJobs();
       global.SMTN170Shell?.renderDashboardV2?.();
       global.dispatchEvent(new CustomEvent("smtn170:import-complete", { detail: out }));
-      alert(out.message || "Import complete.");
     } catch (err) {
       if (errEl) {
         errEl.hidden = false;
-        errEl.textContent = err.message || "Import failed";
-      } else {
-        alert(err.message);
+        errEl.textContent = err.message || "Confirm import failed";
       }
     } finally {
       state.busy = false;

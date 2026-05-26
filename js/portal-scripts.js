@@ -5,8 +5,8 @@
 (function loadPortalScripts() {
   const PAGE_SCRIPTS = {
     schedule: ["./js/portal-data.js", "./js/schedule-builder.js"],
-    documents: ["./js/import-center.js?v=2", "./js/file-library.js?v=7"],
-    orgchart: ["./js/file-ingestion.js?v=3", "./js/org-chart.js?v=8"],
+    documents: ["./js/import-center.js?v=3", "./js/file-library.js?v=8"],
+    orgchart: ["./js/file-ingestion.js?v=6", "./js/org-chart.js?v=8"],
     "flight-review": ["./flight-review.js"],
     "sui-readiness": ["./sui-readiness.js?v=8"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js"],
@@ -32,9 +32,9 @@
     "./js/portal-pages.js?v=3",
     "./js/steward-api.js?v=2",
     "./js/steward-launcher.js?v=1",
-    "./js/steward.js?v=14",
+    "./js/steward.js?v=15",
     "./js/doc-viewer.js?v=2",
-    "./js/file-ingestion.js?v=5",
+    "./js/file-ingestion.js?v=6",
     "./app.js?v=7",
     "./js/profile-banner.js?v=1",
     "./js/portal-bootstrap.js?v=7",

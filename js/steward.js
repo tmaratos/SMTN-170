@@ -409,7 +409,7 @@
     if (document.querySelector('link[href*="steward-workspace.css"]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "./css/steward-workspace.css?v=3";
+    link.href = "./css/steward-workspace.css?v=4";
     document.head.appendChild(link);
   }
 
@@ -835,10 +835,20 @@
     renderWorkspaceContext();
   }
 
+  function closePortalMenuBackdrop() {
+    document.getElementById("portalSidebar")?.classList.remove("open");
+    document.getElementById("portalBackdrop")?.classList.remove("open");
+    document.body.classList.remove("menu-open");
+    document.getElementById("portalMenuToggle")?.setAttribute("aria-expanded", "false");
+  }
+
   function openPanel() {
+    closePortalMenuBackdrop();
     const panel = document.getElementById("stewardPanel");
+    const backdrop = document.getElementById("stewardBackdrop");
     panel?.classList.add("open");
     panel?.setAttribute("aria-hidden", "false");
+    backdrop?.setAttribute("aria-hidden", "false");
     document.body.classList.add("steward-open");
     document.getElementById("stewardFab")?.setAttribute("aria-expanded", "true");
     renderModeTabs();
@@ -851,10 +861,13 @@
 
   function closePanel() {
     const panel = document.getElementById("stewardPanel");
+    const backdrop = document.getElementById("stewardBackdrop");
     panel?.classList.remove("open");
     panel?.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("steward-open");
+    backdrop?.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("steward-open", "steward-ctx-open");
     document.getElementById("stewardFab")?.setAttribute("aria-expanded", "false");
+    document.getElementById("stewardCtxToggle")?.setAttribute("aria-expanded", "false");
   }
 
   function togglePanel() {

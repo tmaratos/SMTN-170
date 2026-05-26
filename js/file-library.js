@@ -153,7 +153,7 @@
         upsert: false,
       });
       if (upErr) {
-        showUploadError(`Storage upload failed: ${upErr.message}`);
+        showUploadError(`Upload failed: ${upErr.message}`);
         return;
       }
       storageOk = true;
@@ -177,7 +177,7 @@
 
       if (dbErr) {
         await sb.storage.from(bucket).remove([path]).catch(() => {});
-        showUploadError(`File index save failed: ${dbErr.message}`);
+        showUploadError(`File index failed: ${dbErr.message}`);
         return;
       }
 
@@ -195,7 +195,12 @@
           showIngestNotice(ingestResult);
           global.SMTN170ImportCenter?.setPending?.(ingestResult);
         } catch (err) {
-          showIngestNotice({ message: err.message, ok: false });
+          showIngestNotice({
+            ok: false,
+            message: err.message?.includes("Import processor")
+              ? err.message
+              : `Extraction failed: ${err.message}`,
+          });
         }
       }
     } finally {
@@ -234,7 +239,11 @@
       result?.warnings?.length && !result.message?.includes("not installed")
         ? `<p class="page-intro" style="margin-top:8px">${escapeHtml(result.warnings.join(" "))}</p>`
         : "";
-    el.innerHTML = `<p><strong>Smart import:</strong> ${escapeHtml(result?.message || "Upload complete.")}${detected ? ` <em>(${escapeHtml(detected)}${conf})</em>` : ""}</p>${warn}`;
+    const ocr =
+      result?.needsOcr
+        ? `<p class="page-intro import-ocr-notice" style="margin-top:8px">This file was uploaded and indexed. OCR is required before it can be read automatically.</p>`
+        : "";
+    el.innerHTML = `<p><strong>Smart import:</strong> ${escapeHtml(result?.message || "Upload complete.")}${detected ? ` <em>(${escapeHtml(detected)}${conf})</em>` : ""}</p>${ocr}${warn}`;
     if (result?.needsReview) {
       el.innerHTML += `<p class="page-intro" style="margin-top:8px">Review extracted records in the <strong>Import Center</strong> section above before confirming.</p>`;
     }
