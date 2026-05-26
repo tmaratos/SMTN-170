@@ -159,14 +159,73 @@
         </div>
       </form>
 
+      <section class="profile-security card-info" aria-labelledby="securityTitle">
+        <h2 id="securityTitle" class="card-info-title">Security</h2>
+        <p class="page-intro">Need to change your password? Click below and we will email you a secure link. Open the link on any device to choose a new password.</p>
+        <p id="securityNotice" class="reset-notice" hidden role="status"></p>
+        <p id="securityError" class="reset-error" hidden role="alert"></p>
+        <div class="profile-actions">
+          <button type="button" class="btn-gold btn-lg" id="securityResetBtn">Send password reset email</button>
+        </div>
+      </section>
+
       <button type="button" class="steward-launch-strip" data-steward-open style="margin-top:20px">
         <span class="steward-launch-icon" aria-hidden="true">💬</span>
         <span><strong>Open Steward</strong> Questions about the portal or your squadron duties.</span>
       </button>`;
 
     document.getElementById("profileForm")?.addEventListener("submit", (e) => onSubmit(e, user));
+    document.getElementById("securityResetBtn")?.addEventListener("click", () => onSendResetEmail(user));
     global.SMTN170StewardLauncher?.rebind?.();
     global.SMTN170ProfileBanner?.refresh?.();
+  }
+
+  async function onSendResetEmail(user) {
+    const btn = document.getElementById("securityResetBtn");
+    const notice = document.getElementById("securityNotice");
+    const errEl = document.getElementById("securityError");
+    if (!notice || !errEl) return;
+
+    const email = (user?.email || "").trim();
+    notice.hidden = true;
+    notice.textContent = "";
+    notice.classList.remove("reset-notice--success");
+    errEl.hidden = true;
+    errEl.textContent = "";
+
+    if (!email) {
+      errEl.textContent = "We could not find an email on your account. Please sign out and sign back in.";
+      errEl.hidden = false;
+      return;
+    }
+
+    const helper = global.SMTN170PasswordReset;
+    if (!helper?.requestPasswordReset) {
+      errEl.textContent = "Password reset is not available right now. Please refresh the page and try again.";
+      errEl.hidden = false;
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+    }
+
+    try {
+      await helper.requestPasswordReset(email);
+      notice.textContent = helper.buildProfileSuccessMessage(email);
+      notice.classList.add("reset-notice--success");
+      notice.hidden = false;
+    } catch (err) {
+      console.log("PROFILE_PASSWORD_RESET_ERROR", err?.code || "", err?.message || err);
+      errEl.textContent = err?.message || "Could not send the reset email. Please try again.";
+      errEl.hidden = false;
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Send password reset email";
+      }
+    }
   }
 
   async function onSubmit(e, user) {

@@ -10,7 +10,7 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Sign in | TN-170</title>
-  <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
+  <link rel="stylesheet" href="./css/portal-v2.css?v=8" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=6" />
 </head>
@@ -35,6 +35,27 @@
       <button type="submit" class="btn-gold btn-lg" id="loginSubmit">Sign in</button>
     </form>
 
+    <div class="login-forgot">
+      <button type="button" class="forgot-link" id="forgotPasswordLink" aria-expanded="false" aria-controls="resetPanel">
+        Forgot password?
+      </button>
+    </div>
+
+    <section class="reset-panel" id="resetPanel" hidden aria-labelledby="resetPanelTitle">
+      <h2 id="resetPanelTitle" class="reset-panel-title">Reset your password</h2>
+      <p class="reset-panel-lead">Enter the email you use for the portal. We will send you a secure link to choose a new password.</p>
+      <form class="reset-form" id="resetForm" novalidate>
+        <label for="resetEmail">Email</label>
+        <input id="resetEmail" name="email" type="email" placeholder="your.email@example.com" autocomplete="email" required />
+        <p id="resetNotice" class="reset-notice" hidden role="status"></p>
+        <p id="resetError" class="reset-error" hidden role="alert"></p>
+        <div class="reset-actions">
+          <button type="submit" class="btn-gold btn-lg" id="resetSubmit">Send reset link</button>
+          <button type="button" class="ghost-btn btn-lg" id="resetCancel">Cancel</button>
+        </div>
+      </form>
+    </section>
+
     <div class="login-signup" style="margin-top:18px;text-align:center">
       <a href="create-profile.html" class="ghost-btn btn-lg" style="display:inline-block;width:100%;text-decoration:none">Create Account</a>
       <p class="login-hint" style="margin-top:12px">New users may request portal access. Accounts must be approved by squadron leadership before portal access is enabled.</p>
@@ -52,9 +73,10 @@
   </script>
   <script src="./js/firebase-config.js?v=3"></script>
   <script>console.log("LIVE FIREBASE API KEY:", window.TN170_FIREBASE_CONFIG?.apiKey);</script>
-  <script src="./js/firebase-client.js?v=2"></script>
+  <script src="./js/firebase-client.js?v=3"></script>
   <script src="./js/firebase-auth.js?v=2"></script>
   <script src="./js/auth-guard.js?v=15"></script>
+  <script src="./js/password-reset.js?v=1"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async function () {
       const form = document.getElementById("loginForm");
@@ -116,6 +138,94 @@
         } finally {
           btn.disabled = false;
           btn.textContent = "Sign in";
+        }
+      });
+
+      const forgotLink = document.getElementById("forgotPasswordLink");
+      const resetPanel = document.getElementById("resetPanel");
+      const resetForm = document.getElementById("resetForm");
+      const resetEmail = document.getElementById("resetEmail");
+      const resetNotice = document.getElementById("resetNotice");
+      const resetError = document.getElementById("resetError");
+      const resetSubmit = document.getElementById("resetSubmit");
+      const resetCancel = document.getElementById("resetCancel");
+
+      function clearResetMessages() {
+        resetNotice.hidden = true;
+        resetNotice.textContent = "";
+        resetNotice.classList.remove("reset-notice--success");
+        resetError.hidden = true;
+        resetError.textContent = "";
+      }
+
+      function showResetSuccess(message) {
+        resetError.hidden = true;
+        resetNotice.textContent = message;
+        resetNotice.classList.add("reset-notice--success");
+        resetNotice.hidden = false;
+      }
+
+      function showResetError(message) {
+        resetNotice.hidden = true;
+        resetNotice.classList.remove("reset-notice--success");
+        resetError.textContent = message;
+        resetError.hidden = false;
+      }
+
+      function openResetPanel() {
+        const seedEmail = document.getElementById("loginEmail").value.trim();
+        if (seedEmail && !resetEmail.value) resetEmail.value = seedEmail;
+        clearResetMessages();
+        resetPanel.hidden = false;
+        forgotLink.setAttribute("aria-expanded", "true");
+        setTimeout(function () {
+          try {
+            resetEmail.focus();
+            resetPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+          } catch (_err) { /* ignore */ }
+        }, 0);
+      }
+
+      function closeResetPanel() {
+        resetPanel.hidden = true;
+        forgotLink.setAttribute("aria-expanded", "false");
+        clearResetMessages();
+      }
+
+      forgotLink?.addEventListener("click", function () {
+        if (resetPanel.hidden) openResetPanel();
+        else closeResetPanel();
+      });
+
+      resetCancel?.addEventListener("click", closeResetPanel);
+
+      resetForm?.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        clearResetMessages();
+        const email = resetEmail.value.trim();
+        if (!email) {
+          showResetError("Enter the email you use for the portal.");
+          return;
+        }
+        resetSubmit.disabled = true;
+        resetSubmit.textContent = "Sending…";
+        try {
+          const helper = window.SMTN170PasswordReset;
+          if (!helper?.requestPasswordReset) {
+            throw new Error("Password reset is not available right now. Please try again in a moment.");
+          }
+          const result = await helper.requestPasswordReset(email);
+          showResetSuccess(
+            result.masked
+              ? helper.buildGenericSuccessMessage(email)
+              : "We sent a password reset link to " + email + ". Check your inbox (and spam folder)."
+          );
+        } catch (err) {
+          console.log("PASSWORD_RESET_ERROR", err?.code || "", err?.message || err);
+          showResetError(err?.message || "Could not send the reset email. Please try again.");
+        } finally {
+          resetSubmit.disabled = false;
+          resetSubmit.textContent = "Send reset link";
         }
       });
     });

@@ -2807,3 +2807,144 @@ body.steward-open {
     padding-bottom: 72px;
   }
 }
+
+/* —— Password reset (login.html "Forgot password?" + profile.html Security) —— */
+.login-forgot {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.forgot-link {
+  display: inline-block;
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--tn-gold);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.forgot-link:hover,
+.forgot-link:focus-visible {
+  color: #ffe983;
+  outline: none;
+}
+
+.reset-panel {
+  margin-top: 18px;
+  padding: 22px 22px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 210, 31, 0.35);
+  background: linear-gradient(180deg, rgba(13, 31, 53, 0.96), rgba(5, 15, 29, 0.98));
+  text-align: left;
+}
+
+.reset-panel-title {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--tn-gold);
+}
+
+.reset-panel-lead {
+  margin: 0 0 14px;
+  color: var(--tn-muted);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.reset-form {
+  display: grid;
+  gap: 12px;
+}
+
+.reset-form label {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.reset-form input[type="email"] {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.85);
+  color: var(--tn-white);
+  font-size: 1rem;
+}
+
+.reset-form input[type="email"]:focus {
+  outline: 2px solid rgba(255, 210, 31, 0.45);
+  outline-offset: 1px;
+}
+
+.reset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.reset-actions .btn-gold,
+.reset-actions .ghost-btn {
+  flex: 1 1 180px;
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+.reset-notice,
+.reset-error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.reset-notice {
+  background: rgba(18, 63, 145, 0.25);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  color: var(--tn-white);
+}
+
+.reset-notice--success {
+  background: rgba(57, 255, 101, 0.12);
+  border-color: rgba(57, 255, 101, 0.4);
+  color: #c8ffd6;
+}
+
+.reset-error {
+  background: rgba(196, 30, 58, 0.16);
+  border: 1px solid rgba(196, 30, 58, 0.45);
+  color: #ffb4be;
+  font-weight: 700;
+}
+
+/* Profile Security section */
+.profile-security {
+  margin-top: 22px;
+}
+
+.profile-security .page-intro {
+  margin: 0 0 14px;
+}
+
+.profile-security .reset-notice,
+.profile-security .reset-error {
+  margin-bottom: 14px;
+}
+
+.profile-security .profile-actions {
+  margin-top: 6px;
+}
+
+.profile-security .btn-gold {
+  min-width: 240px;
+  min-height: 52px;
+}
+

@@ -18,7 +18,7 @@
     "flight-review": ["./flight-review.js"],
     "sui-readiness": ["./sui-readiness.js?v=9"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js?v=3"],
-    profile: ["./js/profile-page.js?v=13"],
+    profile: ["./js/password-reset.js?v=1", "./js/profile-page.js?v=14"],
     tasks: ["./js/tasks-page.js?v=9"],
     dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js?v=8"],
     calendar: ["./flight-review.js", "./js/portal-calendar.js?v=1"],
@@ -29,7 +29,7 @@
   const CORE_CHAIN = [
     "./portal-config.js?v=3",
     "./js/firebase-config.js?v=3",
-    "./js/firebase-client.js?v=2",
+    "./js/firebase-client.js?v=3",
     "./js/firebase-data.js?v=2",
     "./js/auth-guard.js?v=15",
     "./js/profile-service.js?v=3",

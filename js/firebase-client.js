@@ -275,6 +275,10 @@
     return modules.firestoreMod;
   }
 
+  function getAuthModule() {
+    return modules.authMod;
+  }
+
   function getFunctionsInstance() {
     return functions;
   }
@@ -314,6 +318,7 @@
     ensureFullClient,
     getClient,
     getAuth: getAuthInstance,
+    getAuthModule,
     getFirestore,
     getFirestoreModule,
     getFunctions: getFunctionsInstance,
