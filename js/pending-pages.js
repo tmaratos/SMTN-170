@@ -7,6 +7,7 @@
   const DASHBOARD = "dashboard.html";
   const PENDING = "pending-approval.html";
   const DENIED = "access-denied.html";
+  const CREATE_PROFILE = "create-profile.html";
 
   function currentPage() {
     return (global.location.pathname || "").split("/").pop() || "";
@@ -105,6 +106,14 @@
 
         console.log("PROFILE_STATUS", status || "(none)");
         console.log("PROFILE_ROLE", role || "(none)");
+
+        if (!profile) {
+          console.log("ROUTE_DECISION", CREATE_PROFILE);
+          finish(() => {
+            global.location.href = CREATE_PROFILE;
+          });
+          return;
+        }
 
         if (status === "active" || status === "approved") {
           console.log("ROUTE_DECISION", DASHBOARD);

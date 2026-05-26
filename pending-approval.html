@@ -16,7 +16,8 @@
     <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" class="login-patch" style="margin-bottom:16px" />
     <p class="login-motto">Not Without Effort.</p>
     <h1 style="text-align:left">Awaiting approval</h1>
-    <p class="login-unit" style="text-align:left">Your account is awaiting approval by squadron leadership.</p>
+    <p class="login-unit login-lead" style="text-align:left">Awaiting approval by squadron leadership.</p>
+    <p class="login-unit" style="text-align:left">Your account request has been submitted. A squadron administrator must approve your account before you can access the portal.</p>
     <p id="pendingIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
     <p id="pendingEmail" class="login-unit"></p>
     <p class="login-unit"><strong>Status:</strong> Pending approval</p>
@@ -27,7 +28,7 @@
   <script src="./js/firebase-client.js?v=3"></script>
   <script src="./js/firebase-data.js?v=2"></script>
   <script src="./js/profile-service.js?v=2"></script>
-  <script src="./js/pending-pages.js?v=1"></script>
+  <script src="./js/pending-pages.js?v=2"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       window.TN170PendingPages?.init?.();

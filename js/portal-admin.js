@@ -4,10 +4,12 @@
 (function initPortalAdmin(global) {
   const APPROVAL_ROLES = [
     { id: "senior_member", label: "Senior Member" },
-    { id: "senior_member_limited", label: "Senior Member Limited" },
-    { id: "commander", label: "Commander" },
+    { id: "staff", label: "Staff" },
     { id: "admin", label: "Admin" },
+    { id: "commander", label: "Commander" },
   ];
+
+  const PENDING_STATUSES = ["awaiting_approval", "pending"];
 
   function escapeHtml(t) {
     const d = document.createElement("div");
@@ -37,31 +39,71 @@
     return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
   }
 
+  function tsToDate(value) {
+    if (!value) return null;
+    if (typeof value?.toDate === "function") return value.toDate();
+    if (typeof value?.toMillis === "function") return new Date(value.toMillis());
+    const d = new Date(value);
+    return Number.isFinite(d.getTime()) ? d : null;
+  }
+
+  function readField(row, ...keys) {
+    if (!row) return "";
+    for (const k of keys) {
+      const v = row[k];
+      if (v != null && String(v).trim() !== "") return String(v);
+    }
+    return "";
+  }
+
   async function fetchPending() {
-    const sb = client();
-    if (!sb) return { rows: [], configured: false };
-    const { data, error } = await sb
-      .from("profiles")
-      .select(
-        "id, email, first_name, last_name, preferred_name, rank, cap_id, phone, duty_position, role, status, created_at, updated_at, created_from_invite_id, profile_photo_url"
-      )
-      .eq("status", "pending")
-      .order("created_at", { ascending: true });
-    if (error) return { rows: [], configured: true, error: error.message };
-    return { rows: data || [], configured: true };
+    const { mod, db } = firestore();
+    if (!mod || !db) return { rows: [], configured: false };
+    try {
+      const { collection, query, where, orderBy, getDocs } = mod;
+      const profilesRef = collection(db, "profiles");
+      let snap;
+      try {
+        snap = await getDocs(
+          query(profilesRef, where("status", "in", PENDING_STATUSES), orderBy("createdAt", "asc"))
+        );
+      } catch (orderErr) {
+        console.warn(
+          "[admin] order by createdAt failed, falling back to client sort",
+          orderErr?.message || orderErr
+        );
+        snap = await getDocs(query(profilesRef, where("status", "in", PENDING_STATUSES)));
+      }
+      const rows = [];
+      snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+      rows.sort((a, b) => {
+        const ad = tsToDate(a.createdAt)?.getTime() || 0;
+        const bd = tsToDate(b.createdAt)?.getTime() || 0;
+        return ad - bd;
+      });
+      return { rows, configured: true };
+    } catch (err) {
+      return { rows: [], configured: true, error: err?.message || String(err) };
+    }
   }
 
   async function writeAudit(action, targetId, details) {
-    const sb = client();
+    const { mod, db } = firestore();
     const actorId = global.SMTN170Auth?.actorId?.();
-    if (!sb || !actorId) return;
-    await sb.from("audit_log").insert({
-      actor_id: actorId,
-      action,
-      target_table: "profiles",
-      target_id: targetId,
-      details: details || {},
-    });
+    if (!mod || !db || !actorId) return;
+    try {
+      const { collection, addDoc, serverTimestamp } = mod;
+      await addDoc(collection(db, "auditLog"), {
+        actorId,
+        action,
+        targetTable: "profiles",
+        targetId,
+        details: details || {},
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn("[admin] audit log write failed", err?.message || err);
+    }
   }
 
   async function approveProfile(userId, role, displayLabel) {
@@ -145,8 +187,10 @@
 
   function formatDate(value) {
     if (!value) return "—";
+    const d = tsToDate(value);
+    if (!d) return String(value);
     try {
-      return new Date(value).toLocaleString(undefined, {
+      return d.toLocaleString(undefined, {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -154,7 +198,7 @@
         minute: "2-digit",
       });
     } catch {
-      return String(value);
+      return d.toISOString();
     }
   }
 
@@ -173,20 +217,29 @@
   function renderPendingCard(m) {
     const name = displayName(m);
     const defaultRole = m.role || "senior_member";
+    const firstName = readField(m, "firstName", "first_name");
+    const lastName = readField(m, "lastName", "last_name");
+    const preferredName = readField(m, "preferredName", "preferred_name");
+    const capId = readField(m, "capId", "cap_id");
+    const dutyPosition = readField(m, "dutyPosition", "duty_position");
+    const accessNote = readField(m, "accessNote", "access_note");
+    const createdAt = m.createdAt || m.created_at || m.updatedAt || m.updated_at;
+    const fromInvite = readField(m, "createdFromInviteId", "created_from_invite_id");
     return `
       <article class="panel admin-pending-card" data-pending-id="${escapeHtml(m.id)}">
         <div class="admin-pending-grid">
           ${fieldRow("Rank", m.rank)}
-          ${fieldRow("First name", m.first_name)}
-          ${fieldRow("Last name", m.last_name)}
-          ${fieldRow("Preferred name", m.preferred_name)}
+          ${fieldRow("First name", firstName)}
+          ${fieldRow("Last name", lastName)}
+          ${fieldRow("Preferred name", preferredName)}
           ${fieldRow("Email", m.email)}
-          ${fieldRow("CAPID", m.cap_id)}
+          ${fieldRow("CAP ID", capId)}
           ${fieldRow("Phone", m.phone)}
-          ${fieldRow("Duty position", m.duty_position)}
-          ${fieldRow("Created at", formatDate(m.created_at || m.updated_at))}
-          ${fieldRow("Created from invite", m.created_from_invite_id)}
+          ${fieldRow("Duty position", dutyPosition)}
+          ${fieldRow("Submitted", formatDate(createdAt))}
+          ${fromInvite ? fieldRow("From invite", fromInvite) : ""}
         </div>
+        ${accessNote ? `<div class="admin-pending-note" style="margin-top:12px;padding:10px;background:rgba(1,8,20,.5);border-left:3px solid var(--tn-gold);border-radius:6px"><strong style="display:block;margin-bottom:4px">Access note</strong><span>${escapeHtml(accessNote)}</span></div>` : ""}
         <div class="admin-pending-actions">
           <label for="approveRole-${escapeHtml(m.id)}">Role on approval</label>
           <select id="approveRole-${escapeHtml(m.id)}" data-approve-role="${escapeHtml(m.id)}">${roleOptions(defaultRole)}</select>
@@ -203,19 +256,20 @@
     const rows = [
       ["Profile ID", m.id],
       ["Email", m.email],
-      ["First name", m.first_name],
-      ["Last name", m.last_name],
-      ["Preferred name", m.preferred_name],
+      ["First name", readField(m, "firstName", "first_name")],
+      ["Last name", readField(m, "lastName", "last_name")],
+      ["Preferred name", readField(m, "preferredName", "preferred_name")],
       ["Rank", m.rank],
-      ["CAPID", m.cap_id],
+      ["CAP ID", readField(m, "capId", "cap_id")],
       ["Phone", m.phone],
-      ["Duty position", m.duty_position],
+      ["Duty position", readField(m, "dutyPosition", "duty_position")],
+      ["Access note", readField(m, "accessNote", "access_note")],
       ["Role", m.role],
       ["Status", m.status],
-      ["Created at", formatDate(m.created_at)],
-      ["Updated at", formatDate(m.updated_at)],
-      ["Created from invite", m.created_from_invite_id],
-      ["Profile photo URL", m.profile_photo_url],
+      ["Created at", formatDate(m.createdAt || m.created_at)],
+      ["Updated at", formatDate(m.updatedAt || m.updated_at)],
+      ["Created from invite", readField(m, "createdFromInviteId", "created_from_invite_id")],
+      ["Profile photo URL", readField(m, "profilePhotoUrl", "profile_photo_url")],
     ];
     return rows
       .map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value || "—")}</td></tr>`)
@@ -283,7 +337,7 @@
 
     const pendingCards = pendingRes.rows.length
       ? pendingRes.rows.map(renderPendingCard).join("")
-      : `<p class="dash-empty">No profiles awaiting approval.</p>`;
+      : `<p class="dash-empty">No account requests awaiting approval.</p>`;
 
     const roleOptionsInvite = roles
       .map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.label)}</option>`)
@@ -293,10 +347,10 @@
       <p class="page-intro">Commander and Admin tools for the private Senior Member operations portal.</p>
       <p class="role-banner">Admin-only: create invite links, approve profiles, change roles, and manage squadron settings.</p>
 
-      <section class="card-warning panel">
-        <h2>Pending Profile Approvals</h2>
-        <p>Review and approve or deny profiles submitted through invite links. All approval happens here — no email or console steps required.</p>
-        ${!pendingRes.configured ? '<p class="dash-empty">Connect Firebase to load pending profiles.</p>' : ""}
+      <section class="card-warning panel" id="pendingAccountRequests">
+        <h2>Pending Account Requests</h2>
+        <p>Review and approve or deny new account requests from senior members. All approval happens here — no email or console steps required.</p>
+        ${!pendingRes.configured ? '<p class="dash-empty">Connect Firebase to load pending account requests.</p>' : ""}
         ${pendingRes.error ? `<p class="dash-empty">${escapeHtml(pendingRes.error)}</p>` : ""}
         <div class="admin-pending-list">${pendingCards}</div>
       </section>

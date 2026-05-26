@@ -9,9 +9,9 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Create profile | TN-170</title>
+  <title>Create Account | TN-170</title>
   <script type="application/json" id="steward-page-meta">
-  {"pageId":"create-profile","title":"Create Profile","path":"create-profile.html","section":"Account","summary":"Set up your TN-170 portal profile using a squadron invite link.","primaryActions":["Submit profile"],"forms":["createProfileForm"],"buttons":["Create profile"],"relatedPages":["pending-approval.html","login.html"],"keywords":["create profile","signup","invite","registration"],"public":true}
+  {"pageId":"create-profile","title":"Create Account","path":"create-profile.html","section":"Account","summary":"Request access to the TN-170 Senior Member Portal.","primaryActions":["Create Account"],"forms":["createProfileForm"],"buttons":["Create Account"],"relatedPages":["pending-approval.html","login.html"],"keywords":["create account","request access","signup","registration"],"public":true}
   </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
@@ -20,15 +20,19 @@
   <main class="login-card-v2" style="max-width:640px;text-align:left">
     <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170 Oak Ridge Composite Squadron" class="login-patch" />
     <p class="login-motto">Not Without Effort.</p>
-    <h1 style="text-align:left">Create profile</h1>
-    <p class="login-unit login-lead" style="text-align:left">Use the invite link provided by squadron leadership to set up your TN-170 portal profile.</p>
+    <h1 style="text-align:left">Create Account</h1>
+    <p class="login-unit login-lead" style="text-align:left">Request access to the TN-170 Senior Member Portal.</p>
+    <p class="login-unit" style="text-align:left;margin-top:-4px">Request portal access.</p>
     <div id="createProfilePage"></div>
+    <p style="margin-top:18px;text-align:center">
+      <a href="login.html" style="color:var(--tn-gold);text-decoration:none">← Back to sign in</a>
+    </p>
     <p class="portal-fbi login-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
   <script src="./js/firebase-config.js?v=3"></script>
   <script src="./js/firebase-client.js?v=2"></script>
   <script src="./js/firebase-data.js?v=2"></script>
   <script src="./js/firebase-auth.js?v=1"></script>
-  <script src="./js/create-profile-page.js?v=1"></script>
+  <script src="./js/create-profile-page.js?v=2"></script>
 </body>
 </html>

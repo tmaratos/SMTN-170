@@ -35,7 +35,10 @@
       <button type="submit" class="btn-gold btn-lg" id="loginSubmit">Sign in</button>
     </form>
 
-    <p class="login-hint">Have an invite link? Use the link provided by squadron leadership.</p>
+    <div class="login-signup" style="margin-top:18px;text-align:center">
+      <a href="create-profile.html" class="ghost-btn btn-lg" style="display:inline-block;width:100%;text-decoration:none">Create Account</a>
+      <p class="login-hint" style="margin-top:12px">New users may request portal access. Accounts must be approved by squadron leadership before portal access is enabled.</p>
+    </div>
     <p class="portal-fbi login-fbi">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
 
@@ -51,7 +54,7 @@
   <script>console.log("LIVE FIREBASE API KEY:", window.TN170_FIREBASE_CONFIG?.apiKey);</script>
   <script src="./js/firebase-client.js?v=2"></script>
   <script src="./js/firebase-auth.js?v=2"></script>
-  <script src="./js/auth-guard.js?v=12"></script>
+  <script src="./js/auth-guard.js?v=15"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async function () {
       const form = document.getElementById("loginForm");

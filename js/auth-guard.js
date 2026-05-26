@@ -6,6 +6,7 @@
   const DASHBOARD = "dashboard.html";
   const PENDING = "pending-approval.html";
   const DENIED = "access-denied.html";
+  const CREATE_PROFILE = "create-profile.html";
   const ADMIN = "admin.html";
 
   const PUBLIC_PAGES = new Set([
@@ -209,7 +210,7 @@
   }
 
   function destinationForProfile(profile) {
-    if (!profile) return `${PENDING}?reason=no-profile`;
+    if (!profile) return CREATE_PROFILE;
     const status = normalizeStatus(profile);
     if (isDeniedStatus(status)) return DENIED;
     if (isActiveStatus(status)) return DASHBOARD;
@@ -274,7 +275,7 @@
 
     if (isAdminPage(page)) {
       if (!profile) {
-        global.location.href = `${PENDING}?reason=no-profile`;
+        global.location.href = CREATE_PROFILE;
         return false;
       }
       const status = normalizeStatus(profile);

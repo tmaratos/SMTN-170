@@ -1,4 +1,19 @@
 rules_version = '2';
+// TN-170 Firestore rules
+//
+// V1 access model — public self-signup + manual squadron-leadership approval:
+//   - Anyone can sign up via Firebase Auth and create their own
+//     profiles/{uid} document with role="senior_member" and
+//     status="awaiting_approval" (no invite required).
+//   - The optional legacy invite-link flow is still supported.
+//   - Approval / role assignment is performed by an admin or commander on
+//     admin.html, which updates status to "active" (or "denied") and writes
+//     to the auditLog collection.
+//   - Approved members (status in ['active','approved']) can read shared
+//     portal data; admins/commanders can read pending profiles.
+//   - Users may only update a whitelisted set of fields on their own profile;
+//     role, status, approved, isAdmin, accountStatus, portalRole, etc. are
+//     server-managed and cannot be self-mutated.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -39,16 +54,25 @@ service cloud.firestore {
       return !('expiresAt' in data) || data.expiresAt == null || data.expiresAt > request.time;
     }
 
-    function validInviteSignup(userId) {
-      let inviteId = request.resource.data.createdFromInviteId;
-      let invite = get(/databases/$(database)/documents/inviteLinks/$(inviteId));
+    // Public self-signup: signed-in user may create their own profile with
+    // hardcoded server-managed defaults. Never accepts role/status overrides
+    // from the client beyond the values listed here. Optional invite token
+    // may be recorded via createdFromInviteId but is not required.
+    function validSelfSignup(userId) {
+      let data = request.resource.data;
+      let baseKeys = [
+        'email','firstName','lastName','preferredName',
+        'capId','rank','phone','dutyPosition','accessNote',
+        'role','status','createdAt','updatedAt'
+      ];
+      let allKeys = baseKeys.concat(['createdFromInviteId']);
       return signedIn()
         && userId == uid()
-        && request.resource.data.status == 'pending'
-        && request.resource.data.createdFromInviteId == inviteId
-        && invite.data.status == 'unused'
-        && invite.data.email == request.auth.token.email
-        && inviteNotExpired(invite.data);
+        && data.role == 'senior_member'
+        && data.status == 'awaiting_approval'
+        && data.email == request.auth.token.email
+        && data.keys().hasOnly(allKeys)
+        && data.keys().hasAll(['email','firstName','lastName','capId','rank','role','status']);
     }
 
     function safeProfilePatch() {
@@ -80,10 +104,21 @@ service cloud.firestore {
     }
 
     match /profiles/{userId} {
+      // Read: own profile OR approval admin (so admins can see pending list).
       allow read: if signedIn() && (userId == uid() || isApprovalAdmin());
-      allow create: if validInviteSignup(userId);
+
+      // Create: signed-in user may create their own profile with role
+      // "senior_member" and status "awaiting_approval" (public signup path).
+      allow create: if validSelfSignup(userId);
+
+      // Update: owner may patch a whitelisted set of editable fields
+      // (NEVER role/status/approved/isAdmin/accountStatus/portalRole).
       allow update: if signedIn() && userId == uid() && safeProfilePatch();
+
+      // Update: approval admins may flip status (with role) on approve, or
+      // set denied state on deny. Any other field change is rejected.
       allow update: if isApprovalAdmin() && adminProfileApprovalUpdate();
+
       allow delete: if isApprovalAdmin();
     }
 
@@ -162,7 +197,10 @@ service cloud.firestore {
 
     match /auditLog/{docId} {
       allow read: if isApprovalAdmin();
-      allow create: if isApproved();
+      // Approval admins always write audit entries (approve / deny).
+      // Approved members may also write audit entries for their own actions.
+      allow create: if isApprovalAdmin()
+        || (isApproved() && request.resource.data.actorId == uid());
     }
 
     match /resourceLinks/{id} {
