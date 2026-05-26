@@ -18,7 +18,6 @@
     steward_chat_messages: "stewardMessages",
     audit_log: "auditLog",
     resource_links: "resourceLinks",
-    invite_links: "inviteLinks",
     schedules: "schedules",
   };
 
@@ -86,14 +85,10 @@
     pending_action: "pendingAction",
     last_reviewed_at: "lastReviewedAt",
     role_default: "roleDefault",
-    created_from_invite_id: "createdFromInviteId",
     approved_at: "approvedAt",
     approved_by: "approvedBy",
     denied_at: "deniedAt",
     denied_by: "deniedBy",
-    used_at: "usedAt",
-    used_by: "usedBy",
-    expires_at: "expiresAt",
   };
 
   const CAMEL_MAP = Object.fromEntries(Object.entries(FIELD_MAP).map(([k, v]) => [v, k]));

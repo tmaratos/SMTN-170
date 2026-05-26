@@ -1,5 +1,10 @@
 /**
- * TN-170 admin — invites, pending profiles, website-based approvals (Firebase).
+ * TN-170 admin — pending account approvals + role management (Firebase).
+ *
+ * Account creation is now a fully public self-signup flow (login.html →
+ * create-profile.html). New accounts land here in "awaiting_approval" status
+ * and an admin/commander approves or denies them from the Pending Account
+ * Requests section below.
  */
 (function initPortalAdmin(global) {
   const APPROVAL_ROLES = [
@@ -21,22 +26,12 @@
     return global.SMTN170Profile?.computeDisplayName?.(row) || row.email || "Member";
   }
 
-  function client() {
-    return global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
-  }
-
   function firestore() {
     const fb = global.SMTN170Firebase;
     return {
       mod: fb?.getFirestoreModule?.(),
       db: fb?.getFirestore?.(),
     };
-  }
-
-  function generateInviteToken() {
-    const arr = new Uint8Array(32);
-    crypto.getRandomValues(arr);
-    return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
   }
 
   function tsToDate(value) {
@@ -150,41 +145,6 @@
     });
   }
 
-  async function createInvite(form) {
-    const sb = client();
-    const auth = global.SMTN170Auth;
-    if (!sb) throw new Error("Firebase is not configured.");
-    if (!auth?.isAdmin?.()) throw new Error("Only Commander or Admin can create invite links.");
-
-    const email = String(form.email || "").trim().toLowerCase();
-    if (!email) throw new Error("Email is required.");
-
-    const token = generateInviteToken();
-    const now = new Date().toISOString();
-    const payload = {
-      id: token,
-      email,
-      cap_id: String(form.capId || "").trim(),
-      first_name: String(form.firstName || "").trim(),
-      last_name: String(form.lastName || "").trim(),
-      rank: String(form.rank || "").trim(),
-      duty_position: String(form.dutyPosition || "").trim(),
-      role_default: form.roleDefault || "senior_member",
-      token,
-      status: "unused",
-      created_at: now,
-      created_by: auth.actorId?.() || null,
-    };
-
-    const { error } = await sb.from("invite_links").insert(payload);
-    if (error) throw error;
-
-    const base = new URL(".", global.location.href);
-    const inviteUrl = new URL("create-profile.html", base);
-    inviteUrl.searchParams.set("invite", token);
-    return { token, url: inviteUrl.pathname + inviteUrl.search };
-  }
-
   function formatDate(value) {
     if (!value) return "—";
     const d = tsToDate(value);
@@ -224,7 +184,6 @@
     const dutyPosition = readField(m, "dutyPosition", "duty_position");
     const accessNote = readField(m, "accessNote", "access_note");
     const createdAt = m.createdAt || m.created_at || m.updatedAt || m.updated_at;
-    const fromInvite = readField(m, "createdFromInviteId", "created_from_invite_id");
     return `
       <article class="panel admin-pending-card" data-pending-id="${escapeHtml(m.id)}">
         <div class="admin-pending-grid">
@@ -237,7 +196,6 @@
           ${fieldRow("Phone", m.phone)}
           ${fieldRow("Duty position", dutyPosition)}
           ${fieldRow("Submitted", formatDate(createdAt))}
-          ${fromInvite ? fieldRow("From invite", fromInvite) : ""}
         </div>
         ${accessNote ? `<div class="admin-pending-note" style="margin-top:12px;padding:10px;background:rgba(1,8,20,.5);border-left:3px solid var(--tn-gold);border-radius:6px"><strong style="display:block;margin-bottom:4px">Access note</strong><span>${escapeHtml(accessNote)}</span></div>` : ""}
         <div class="admin-pending-actions">
@@ -268,7 +226,6 @@
       ["Status", m.status],
       ["Created at", formatDate(m.createdAt || m.created_at)],
       ["Updated at", formatDate(m.updatedAt || m.updated_at)],
-      ["Created from invite", readField(m, "createdFromInviteId", "created_from_invite_id")],
       ["Profile photo URL", readField(m, "profilePhotoUrl", "profile_photo_url")],
     ];
     return rows
@@ -339,66 +296,20 @@
       ? pendingRes.rows.map(renderPendingCard).join("")
       : `<p class="dash-empty">No account requests awaiting approval.</p>`;
 
-    const roleOptionsInvite = roles
+    const roleOptionsAll = roles
       .map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.label)}</option>`)
       .join("");
 
     root.innerHTML = `
       <p class="page-intro">Commander and Admin tools for the private Senior Member operations portal.</p>
-      <p class="role-banner">Admin-only: create invite links, approve profiles, change roles, and manage squadron settings.</p>
+      <p class="role-banner">Admin-only: approve new account requests, change roles, and manage squadron settings.</p>
 
       <section class="card-warning panel" id="pendingAccountRequests">
         <h2>Pending Account Requests</h2>
-        <p>Review and approve or deny new account requests from senior members. All approval happens here — no email or console steps required.</p>
+        <p>Review and approve or deny new account requests submitted from the public Create Account page. All approval happens here — no email or console steps required.</p>
         ${!pendingRes.configured ? '<p class="dash-empty">Connect Firebase to load pending account requests.</p>' : ""}
         ${pendingRes.error ? `<p class="dash-empty">${escapeHtml(pendingRes.error)}</p>` : ""}
         <div class="admin-pending-list">${pendingCards}</div>
-      </section>
-
-      <section class="card-info panel">
-        <h2>Create profile invite</h2>
-        <p>Generate a one-time invite link for a new member. They will create their profile and await your approval before portal access.</p>
-        <form id="adminInviteForm" class="admin-invite-form">
-          <div class="card-grid-2">
-            <div>
-              <label for="inviteEmail">Email</label>
-              <input id="inviteEmail" name="email" type="email" required autocomplete="off" />
-            </div>
-            <div>
-              <label for="inviteCapId">CAPID</label>
-              <input id="inviteCapId" name="capId" type="text" autocomplete="off" />
-            </div>
-            <div>
-              <label for="inviteFirstName">First name</label>
-              <input id="inviteFirstName" name="firstName" type="text" required autocomplete="off" />
-            </div>
-            <div>
-              <label for="inviteLastName">Last name</label>
-              <input id="inviteLastName" name="lastName" type="text" required autocomplete="off" />
-            </div>
-            <div>
-              <label for="inviteRank">Rank</label>
-              <input id="inviteRank" name="rank" type="text" autocomplete="off" />
-            </div>
-            <div>
-              <label for="inviteDuty">Duty position</label>
-              <input id="inviteDuty" name="dutyPosition" type="text" autocomplete="off" />
-            </div>
-            <div>
-              <label for="inviteRole">Default role</label>
-              <select id="inviteRole" name="roleDefault">${roleOptionsInvite}</select>
-            </div>
-          </div>
-          <p id="inviteFormError" class="login-error" hidden role="alert"></p>
-          <button type="submit" class="btn-gold" id="inviteSubmitBtn">Create invite link</button>
-        </form>
-        <div id="inviteResult" hidden style="margin-top:16px">
-          <p><strong>Invite link ready</strong> — copy and send to the member:</p>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
-            <input id="inviteUrlField" type="text" readonly style="flex:1;min-width:220px;padding:10px;border-radius:8px;border:1px solid var(--tn-line);background:rgba(1,8,20,.8);color:#fff" />
-            <button type="button" class="ghost-btn" id="inviteCopyBtn">Copy link</button>
-          </div>
-        </div>
       </section>
 
       <div class="card-grid-2">
@@ -406,7 +317,7 @@
           <h2>Change member role</h2>
           <p>Assign Commander, Admin, Senior Member, or Senior Member Limited. Approved Senior Members only.</p>
           <label for="adminRoleSelect">Role</label>
-          <select id="adminRoleSelect" style="width:100%;margin:8px 0 12px;padding:12px;border-radius:10px;border:1px solid var(--tn-line);background:rgba(1,8,20,.8);color:#fff">${roleOptionsInvite}</select>
+          <select id="adminRoleSelect" style="width:100%;margin:8px 0 12px;padding:12px;border-radius:10px;border:1px solid var(--tn-line);background:rgba(1,8,20,.8);color:#fff">${roleOptionsAll}</select>
           <p class="page-intro" style="margin:0">Role changes are applied in Firestore when member management is enabled for this squadron.</p>
         </article>
         <article class="panel">
@@ -432,8 +343,8 @@
       <article class="card-info panel">
         <h2>Access model</h2>
         <ul class="dash-bullet-list">
-          <li>Invite links control who can create a profile — there is no public signup.</li>
-          <li>Login controls sign-in; approval on this page controls workspace access.</li>
+          <li>Anyone can request portal access via Create Account on the login page — no invite required.</li>
+          <li>New accounts land in "awaiting_approval" status. Approve or deny them above.</li>
           <li>All approved Senior Members share the same operational workspace.</li>
           <li>See <code>firestore.rules</code> for security rules reference.</li>
         </ul>
@@ -471,44 +382,6 @@
           alert(err.message || "Could not update profile.");
         }
       });
-    });
-
-    const inviteForm = document.getElementById("adminInviteForm");
-    const inviteErr = document.getElementById("inviteFormError");
-    const inviteResult = document.getElementById("inviteResult");
-    inviteForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      inviteErr.hidden = true;
-      const btn = document.getElementById("inviteSubmitBtn");
-      btn.disabled = true;
-      btn.textContent = "Creating…";
-      try {
-        const fd = new FormData(inviteForm);
-        const result = await createInvite(Object.fromEntries(fd.entries()));
-        inviteResult.hidden = false;
-        const field = document.getElementById("inviteUrlField");
-        field.value = result.url;
-        document.getElementById("inviteCopyBtn")?.addEventListener(
-          "click",
-          async () => {
-            try {
-              await navigator.clipboard.writeText(result.url);
-              alert("Invite link copied.");
-            } catch {
-              field.select();
-              document.execCommand("copy");
-              alert("Invite link copied.");
-            }
-          },
-          { once: true }
-        );
-      } catch (err) {
-        inviteErr.textContent = err.message || "Could not create invite link.";
-        inviteErr.hidden = false;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Create invite link";
-      }
     });
   }
 

@@ -4,8 +4,7 @@ rules_version = '2';
 // V1 access model — public self-signup + manual squadron-leadership approval:
 //   - Anyone can sign up via Firebase Auth and create their own
 //     profiles/{uid} document with role="senior_member" and
-//     status="awaiting_approval" (no invite required).
-//   - The optional legacy invite-link flow is still supported.
+//     status="awaiting_approval". No invite token required.
 //   - Approval / role assignment is performed by an admin or commander on
 //     admin.html, which updates status to "active" (or "denied") and writes
 //     to the auditLog collection.
@@ -50,28 +49,22 @@ service cloud.firestore {
       return isAdmin();
     }
 
-    function inviteNotExpired(data) {
-      return !('expiresAt' in data) || data.expiresAt == null || data.expiresAt > request.time;
-    }
-
     // Public self-signup: signed-in user may create their own profile with
     // hardcoded server-managed defaults. Never accepts role/status overrides
-    // from the client beyond the values listed here. Optional invite token
-    // may be recorded via createdFromInviteId but is not required.
+    // from the client beyond the values listed here.
     function validSelfSignup(userId) {
       let data = request.resource.data;
-      let baseKeys = [
+      let allowedKeys = [
         'email','firstName','lastName','preferredName',
         'capId','rank','phone','dutyPosition','accessNote',
         'role','status','createdAt','updatedAt'
       ];
-      let allKeys = baseKeys.concat(['createdFromInviteId']);
       return signedIn()
         && userId == uid()
         && data.role == 'senior_member'
         && data.status == 'awaiting_approval'
         && data.email == request.auth.token.email
-        && data.keys().hasOnly(allKeys)
+        && data.keys().hasOnly(allowedKeys)
         && data.keys().hasAll(['email','firstName','lastName','capId','rank','role','status']);
     }
 
@@ -88,14 +81,6 @@ service cloud.firestore {
       let denyOk = request.resource.data.status == 'denied'
         && keys.hasOnly(['status', 'deniedAt', 'deniedBy', 'updatedAt']);
       return statusOk && (approveOk || denyOk);
-    }
-
-    function inviteMarkUsed() {
-      return signedIn()
-        && resource.data.status == 'unused'
-        && request.resource.data.status == 'used'
-        && request.resource.data.usedBy == uid()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedAt', 'usedBy']);
     }
 
     match /users/{userId} {
@@ -119,16 +104,6 @@ service cloud.firestore {
       // set denied state on deny. Any other field change is rejected.
       allow update: if isApprovalAdmin() && adminProfileApprovalUpdate();
 
-      allow delete: if isApprovalAdmin();
-    }
-
-    match /inviteLinks/{inviteId} {
-      allow read: if resource.data.status == 'unused' && inviteNotExpired(resource.data);
-      allow read: if isApprovalAdmin();
-      allow create: if isApprovalAdmin()
-        && request.resource.data.status == 'unused'
-        && request.resource.data.token == inviteId;
-      allow update: if inviteMarkUsed();
       allow delete: if isApprovalAdmin();
     }
 

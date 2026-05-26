@@ -38,7 +38,6 @@
     "deniedAt",
     "deniedBy",
     "createdAt",
-    "createdFromInviteId",
   ];
 
   function trim(v) {

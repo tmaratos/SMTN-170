@@ -1,20 +1,15 @@
 /**
- * TN-170 create-profile page — PUBLIC account request flow.
+ * TN-170 create-profile page — PUBLIC self-signup flow.
  *
- * Anyone can request an account. The submit handler:
+ * Anyone can request a portal account. The submit handler:
  *   1. Validates the form (required fields, email format, password match)
  *   2. Creates the Firebase Auth user via createUserWithEmailAndPassword()
  *   3. Writes profiles/{uid} with status="awaiting_approval", role="senior_member"
  *   4. Redirects to pending-approval.html
  *
- * The page also tolerates an optional ?invite=token query parameter for the
- * legacy invite-link flow: if present and valid, the invite details (email,
- * name, rank, CAPID, duty position) are pre-filled and the createdFromInviteId
- * is recorded on the profile. The page works WITHOUT an invite token as the
- * default public path.
- *
  * NEVER reads role/status/approved/isAdmin from the form — those are server-
- * managed and hardcoded here.
+ * managed and hardcoded here. There is no invite token; every account starts
+ * pending and must be approved by a squadron admin on admin.html.
  */
 (function initCreateProfilePage(global) {
   const SENIOR_RANKS = [
@@ -29,39 +24,8 @@
     return d.innerHTML;
   }
 
-  function getInviteToken() {
-    return new URLSearchParams(global.location.search).get("invite")?.trim() || "";
-  }
-
   function getFirebase() {
     return global.SMTN170Firebase || null;
-  }
-
-  function isExpired(invite) {
-    const exp = invite?.expiresAt || invite?.expires_at;
-    if (!exp) return false;
-    const t = typeof exp?.toMillis === "function" ? exp.toMillis() : new Date(exp).getTime();
-    return Number.isFinite(t) && t < Date.now();
-  }
-
-  async function loadInvite(token) {
-    const fb = getFirebase();
-    if (!fb || !token) return null;
-    try {
-      await fb.ensureFullClient?.();
-      const mod = fb.getFirestoreModule?.();
-      const db = fb.getFirestore?.();
-      if (!mod || !db) return null;
-      const snap = await mod.getDoc(mod.doc(db, "inviteLinks", token));
-      if (!snap.exists()) return null;
-      const data = snap.data() || {};
-      if (data.status !== "unused") return null;
-      if (isExpired(data)) return null;
-      return { id: snap.id, ...data };
-    } catch (err) {
-      console.warn("[create-profile] invite lookup failed", err);
-      return null;
-    }
   }
 
   function rankOptions(selected) {
@@ -71,22 +35,17 @@
     return `<option value="">— Select rank —</option>${opts}`;
   }
 
-  function renderForm(root, invite) {
-    const inviteBanner = invite
-      ? `<p class="login-notice" style="background:rgba(212,162,38,.12);border:1px solid var(--tn-line);padding:10px;border-radius:8px;margin-bottom:12px">Invite recognized — fields below pre-filled from your invite.</p>`
-      : "";
-
+  function renderForm(root) {
     root.innerHTML = `
-      ${inviteBanner}
       <form id="createProfileForm" class="login-form-v2" style="max-width:560px" novalidate>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
             <label for="cpFirstName">First name <span aria-hidden="true" style="color:#f6a4a4">*</span></label>
-            <input id="cpFirstName" name="firstName" type="text" autocomplete="given-name" value="${escapeHtml(invite?.firstName || invite?.first_name || "")}" required />
+            <input id="cpFirstName" name="firstName" type="text" autocomplete="given-name" required />
           </div>
           <div>
             <label for="cpLastName">Last name <span aria-hidden="true" style="color:#f6a4a4">*</span></label>
-            <input id="cpLastName" name="lastName" type="text" autocomplete="family-name" value="${escapeHtml(invite?.lastName || invite?.last_name || "")}" required />
+            <input id="cpLastName" name="lastName" type="text" autocomplete="family-name" required />
           </div>
         </div>
 
@@ -94,7 +53,7 @@
         <input id="cpPreferred" name="preferredName" type="text" autocomplete="nickname" placeholder="How you prefer to be addressed" />
 
         <label for="cpEmail">Email <span aria-hidden="true" style="color:#f6a4a4">*</span></label>
-        <input id="cpEmail" name="email" type="email" autocomplete="email" value="${escapeHtml(invite?.email || "")}" ${invite?.email ? "readonly" : ""} required />
+        <input id="cpEmail" name="email" type="email" autocomplete="email" required />
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
@@ -110,11 +69,11 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
             <label for="cpCapId">CAP ID <span aria-hidden="true" style="color:#f6a4a4">*</span></label>
-            <input id="cpCapId" name="capId" type="text" autocomplete="off" inputmode="numeric" pattern="[0-9]*" value="${escapeHtml(invite?.capId || invite?.cap_id || "")}" required />
+            <input id="cpCapId" name="capId" type="text" autocomplete="off" inputmode="numeric" pattern="[0-9]*" required />
           </div>
           <div>
             <label for="cpRank">Rank <span aria-hidden="true" style="color:#f6a4a4">*</span></label>
-            <select id="cpRank" name="rank" required>${rankOptions(invite?.rank || "")}</select>
+            <select id="cpRank" name="rank" required>${rankOptions("")}</select>
           </div>
         </div>
 
@@ -122,7 +81,7 @@
         <input id="cpPhone" name="phone" type="tel" autocomplete="tel" placeholder="(555) 555-1234" />
 
         <label for="cpDuty">Duty position (optional)</label>
-        <input id="cpDuty" name="dutyPosition" type="text" autocomplete="off" value="${escapeHtml(invite?.dutyPosition || invite?.duty_position || "")}" placeholder="e.g., Personnel Officer" />
+        <input id="cpDuty" name="dutyPosition" type="text" autocomplete="off" placeholder="e.g., Personnel Officer" />
 
         <label for="cpAccessNote">Access note / reason (optional)</label>
         <textarea id="cpAccessNote" name="accessNote" rows="3" placeholder="Anything squadron leadership should know about your request"></textarea>
@@ -139,7 +98,7 @@
       </form>
     `;
 
-    bindSubmit(invite);
+    bindSubmit();
   }
 
   function showError(msg) {
@@ -188,7 +147,7 @@
     return null;
   }
 
-  async function submitSignup(values, invite) {
+  async function submitSignup(values) {
     const fb = getFirebase();
     if (!fb) throw new Error("Firebase is not configured.");
 
@@ -213,7 +172,7 @@
     if (!uid) throw new Error("Account was created but no user id was returned.");
     const canonicalEmail = cred.user.email || values.email;
 
-    const { doc, setDoc, updateDoc, serverTimestamp } = mod;
+    const { doc, setDoc, serverTimestamp } = mod;
 
     const profilePayload = {
       email: canonicalEmail,
@@ -230,28 +189,13 @@
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    if (invite?.id) {
-      profilePayload.createdFromInviteId = invite.id;
-    }
 
     await setDoc(doc(db, "profiles", uid), profilePayload);
-
-    if (invite?.id) {
-      try {
-        await updateDoc(doc(db, "inviteLinks", invite.id), {
-          status: "used",
-          usedAt: serverTimestamp(),
-          usedBy: uid,
-        });
-      } catch (err) {
-        console.warn("[create-profile] invite mark-used failed (non-fatal)", err);
-      }
-    }
 
     return uid;
   }
 
-  function bindSubmit(invite) {
+  function bindSubmit() {
     const form = document.getElementById("createProfileForm");
     const btn = document.getElementById("createProfileSubmit");
     if (!form || !btn) return;
@@ -271,7 +215,7 @@
       btn.textContent = "Creating account…";
 
       try {
-        await submitSignup(values, invite);
+        await submitSignup(values);
         global.location.href = "pending-approval.html";
       } catch (err) {
         const formatted =
@@ -332,9 +276,7 @@
 
     if (global.TN170AuthGuard && (await maybeRedirectSignedIn())) return;
 
-    const token = getInviteToken();
-    const invite = token ? await loadInvite(token) : null;
-    renderForm(root, invite);
+    renderForm(root);
   }
 
   if (document.readyState === "loading") {
