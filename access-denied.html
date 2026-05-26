@@ -16,43 +16,18 @@
     <p class="login-unit" style="text-align:left">Your profile was not approved for the TN-170 Senior Member portal.</p>
     <p class="login-unit login-lead" style="text-align:left">If you believe this is an error, contact squadron leadership.</p>
     <p id="deniedIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
-    <button type="button" class="btn-gold btn-lg" style="width:100%;margin-top:20px" onclick="logout()">Log out</button>
+    <button type="button" id="pendingLogoutBtn" class="btn-gold btn-lg" style="width:100%;margin-top:20px">Log out</button>
     <p class="portal-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
   <script src="./js/firebase-config.js?v=1"></script>
-  <script src="./js/firebase-client.js?v=1"></script>
+  <script src="./js/firebase-client.js?v=3"></script>
   <script src="./js/firebase-data.js?v=2"></script>
-  <script src="./js/profile-service.js?v=1"></script>
-  <script src="./js/auth.js?v=11"></script>
+  <script src="./js/profile-service.js?v=2"></script>
+  <script src="./js/pending-pages.js?v=1"></script>
   <script>
-    async function logout() {
-      const client = window.SMTN170Firebase?.getClient?.();
-      if (client) await client.auth.signOut();
-      location.href = "login.html";
-    }
-
-    (async function () {
-      await window.SMTN170Firebase?.whenReady?.();
-      await window.SMTN170Auth?.init?.();
-      const s = window.SMTN170Auth?.loadSession?.();
-      if (!s) {
-        location.href = "login.html";
-        return;
-      }
-      if (window.SMTN170Auth?.isApproved?.(s)) {
-        location.href = "dashboard.html";
-        return;
-      }
-      if (window.SMTN170Auth?.isPending?.(s)) {
-        location.href = "pending-approval.html";
-        return;
-      }
-      const el = document.getElementById("deniedIdentity");
-      if (el) {
-        const name = window.SMTN170Profile?.computeDisplayName?.(window.SMTN170Auth?.getProfile?.() || s);
-        el.textContent = name ? `${name} · ${s.email}` : s.email;
-      }
-    })();
+    document.addEventListener("DOMContentLoaded", function () {
+      window.TN170PendingPages?.init?.();
+    });
   </script>
 </body>
 </html>

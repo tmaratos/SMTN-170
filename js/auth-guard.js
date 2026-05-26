@@ -8,6 +8,28 @@
   const DENIED = "access-denied.html";
   const ADMIN = "admin.html";
 
+  const PUBLIC_PAGES = new Set([
+    LOGIN,
+    "create-profile.html",
+    PENDING,
+    DENIED,
+  ]);
+
+  const PROTECTED_PAGES = new Set([
+    DASHBOARD,
+    "profile.html",
+    "calendar.html",
+    "schedule.html",
+    "orgchart.html",
+    "tasks.html",
+    "documents.html",
+    "sui-readiness.html",
+    "flight-review.html",
+    ADMIN,
+    "resources.html",
+    "senior-member.html",
+  ]);
+
   let authChecked = false;
 
   function showLoading(msg) {
@@ -39,6 +61,14 @@
     return currentPage() === LOGIN;
   }
 
+  function isPublicPage(page) {
+    return PUBLIC_PAGES.has(page || currentPage());
+  }
+
+  function isProtectedPage(page) {
+    return PROTECTED_PAGES.has(page || currentPage());
+  }
+
   async function waitForFirebase(maxMs, options) {
     const authOnly = options?.authOnly ?? isLoginPage();
     const start = Date.now();
@@ -52,7 +82,7 @@
   }
 
   async function waitForAuthState(maxMs) {
-    await waitForFirebase(maxMs);
+    await waitForFirebase(maxMs, { authOnly: false });
     const fb = global.SMTN170Firebase;
     if (!fb) return null;
     return new Promise((resolve) => {
@@ -80,13 +110,21 @@
     const db = fb?.getFirestore?.();
     if (!mod || !db || !userId) return null;
     const { doc, getDoc } = mod;
+    const path = `profiles/${userId}`;
+    console.log("PROFILE_PATH_CHECKED", path);
     const snap = await getDoc(doc(db, "profiles", userId));
+    console.log("PROFILE_EXISTS", snap.exists());
     if (!snap.exists()) return null;
     return snap.data();
   }
 
   function normalizeStatus(profile) {
-    return String(profile?.status || "").toLowerCase();
+    const raw = profile?.status ?? profile?.accountStatus ?? "";
+    return String(raw).toLowerCase().trim();
+  }
+
+  function profileRole(profile) {
+    return String(profile?.role || "").toLowerCase().trim();
   }
 
   function isActiveStatus(status) {
@@ -102,17 +140,27 @@
   }
 
   function destinationForProfile(profile) {
-    if (!profile) return PENDING;
+    if (!profile) return `${PENDING}?reason=no-profile`;
     const status = normalizeStatus(profile);
     if (isDeniedStatus(status)) return DENIED;
-    if (isPendingStatus(status)) return PENDING;
     if (isActiveStatus(status)) return DASHBOARD;
+    if (isPendingStatus(status)) return PENDING;
     return PENDING;
   }
 
-  async function resolvePostLoginUrl(userId) {
+  function logRouteDecision(userId, email, profile, dest) {
+    console.log("AUTH_UID", userId || "(none)");
+    console.log("AUTH_EMAIL", email || "(none)");
+    console.log("PROFILE_STATUS", profile ? normalizeStatus(profile) : "(none)");
+    console.log("PROFILE_ROLE", profile ? profileRole(profile) : "(none)");
+    console.log("ROUTE_DECISION", dest);
+  }
+
+  async function resolvePostLoginUrl(userId, email) {
     const profile = await fetchProfileDoc(userId);
-    return destinationForProfile(profile);
+    const dest = destinationForProfile(profile);
+    logRouteDecision(userId, email, profile, dest);
+    return dest;
   }
 
   function isAdminPage(page) {
@@ -123,28 +171,26 @@
     if (!profile) return false;
     const status = normalizeStatus(profile);
     if (!isActiveStatus(status)) return false;
-    const role = String(profile.role || "").toLowerCase();
+    const role = profileRole(profile);
     return role === "admin" || role === "commander";
   }
 
-  async function enforceProfileAccess(userId) {
+  async function enforceProfileAccess(userId, email) {
     const page = currentPage();
     const profile = await fetchProfileDoc(userId);
     const dest = destinationForProfile(profile);
+    logRouteDecision(userId, email, profile, dest);
 
     if (isAdminPage(page) && !canAccessAdmin(profile)) {
-      return true;
+      global.location.href = DASHBOARD;
+      return false;
     }
 
     if (dest === DASHBOARD) {
-      if (page === PENDING || page === DENIED || page === LOGIN) {
-        global.location.href = DASHBOARD;
-        return false;
-      }
       return true;
     }
 
-    if (page !== dest) {
+    if (page !== dest.split("?")[0]) {
       global.location.href = dest;
       return false;
     }
@@ -152,26 +198,37 @@
   }
 
   async function ensureProtectedSession() {
+    const page = currentPage();
+    if (isPublicPage(page) || !isProtectedPage(page)) {
+      return true;
+    }
+
     if (authChecked && global.TN170_AUTH_SESSION_OK) return true;
     if (!authChecked) showLoading("Loading workspace…");
-    const client = await waitForFirebase();
+
+    const client = await waitForFirebase(undefined, { authOnly: false });
     if (!client) {
       console.log("SESSION_MISSING_REDIRECT");
-      console.log("REDIRECT REASON: Firebase client not available");
+      console.log("ROUTE_DECISION", LOGIN);
       authChecked = true;
       global.location.href = LOGIN;
       return false;
     }
+
     const session = await waitForAuthState();
     authChecked = true;
+
     if (!session?.user?.id) {
-      console.log("SESSION_MISSING_REDIRECT");
-      console.log("REDIRECT REASON: no Firebase session on protected page");
+      console.log("AUTH_UID", "(none)");
+      console.log("AUTH_EMAIL", "(none)");
+      console.log("ROUTE_DECISION", LOGIN);
       global.location.href = LOGIN;
       return false;
     }
-    const allowed = await enforceProfileAccess(session.user.id);
+
+    const allowed = await enforceProfileAccess(session.user.id, session.user.email);
     if (!allowed) return false;
+
     console.log("SESSION_FOUND");
     console.log("AUTH_INIT_OK");
     global.TN170_AUTH_SESSION_OK = true;
@@ -191,8 +248,7 @@
     console.log("LOGIN PAGE SESSION:", hasSession ? "yes" : "no");
     authChecked = true;
     if (hasSession) {
-      const dest = await resolvePostLoginUrl(session.user.id);
-      console.log("REDIRECT REASON: login page found existing session");
+      const dest = await resolvePostLoginUrl(session.user.id, session.user.email);
       global.location.href = dest;
     }
   }
@@ -213,7 +269,7 @@
   async function logout() {
     console.log("LOGOUT_CLICKED");
     const client = global.SMTN170Firebase?.getClient?.();
-    if (client) await client.auth.signOut();
+    if (client?.auth) await client.auth.signOut();
     console.log("SIGNOUT_COMPLETE");
     global.TN170_AUTH_SESSION_OK = false;
     global.location.href = LOGIN;
@@ -221,7 +277,7 @@
 
   function loadPortalScripts(page) {
     const s = document.createElement("script");
-    s.src = "./js/portal-scripts.js?v=9";
+    s.src = "./js/portal-scripts.js?v=10";
     if (page) s.dataset.page = page;
     document.body.appendChild(s);
   }
@@ -246,5 +302,7 @@
     fetchProfileDoc,
     destinationForProfile,
     canAccessAdmin,
+    isPublicPage,
+    isProtectedPage,
   };
 })(window);

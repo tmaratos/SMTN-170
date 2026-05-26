@@ -99,10 +99,11 @@
     return !trim(row.first_name) || !trim(row.last_name);
   }
 
-  /** Read public.profiles.status (canonical approval field). */
+  /** Read profiles/{uid}.status (canonical approval field). */
   function getProfileStatus(row) {
     if (!row) return "";
-    return trim(row.status).toLowerCase();
+    const raw = row.status ?? row.account_status ?? row.accountStatus ?? "";
+    return trim(raw).toLowerCase();
   }
 
   function isProfileStatusApproved(rowOrStatus) {

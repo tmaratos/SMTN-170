@@ -167,16 +167,54 @@
     return facade;
   }
 
+  async function attachFirestore() {
+    if (db && initMode === "full") return;
+    if (!modules.firestoreMod || !modules.functionsMod) {
+      await loadModules(false);
+    }
+    if (!app || !auth || !modules.firestoreMod || !modules.functionsMod) return;
+
+    const { getFirestore } = modules.firestoreMod;
+    const { getFunctions, connectFunctionsEmulator } = modules.functionsMod;
+    db = getFirestore(app);
+    functions = getFunctions(app, config().functionsRegion || "us-central1");
+    if (global.location?.hostname === "localhost") {
+      try {
+        connectFunctionsEmulator(functions, "localhost", 5001);
+      } catch {
+        /* ignore */
+      }
+    }
+    initMode = "full";
+    global.TN170FirebaseClient = buildClientFacade("full");
+    console.log("FIREBASE_FIRESTORE_READY");
+  }
+
+  async function upgradeToFullClient() {
+    if (initMode === "full" && db) return getClient();
+    if (!app || !auth) {
+      await initFirebase({ authOnly: false });
+      return getClient();
+    }
+    await attachFirestore();
+    return getClient();
+  }
+
   async function initFirebase(options) {
+    const authOnly = wantsAuthOnly(options);
+
     if (app && auth) {
+      if (!authOnly && initMode !== "full") {
+        await attachFirestore();
+      }
       return app;
     }
+
     if (!isConfigured()) {
       console.warn("[TN-170] Firebase config placeholders — paste keys in js/firebase-config.js");
       return null;
     }
 
-    const authOnly = wantsAuthOnly(options);
     await loadModules(authOnly);
 
     const { initializeApp, getApps, getApp } = modules.appMod;
@@ -193,33 +231,17 @@
     console.log("FIREBASE_AUTH_READY");
 
     if (!authOnly && modules.firestoreMod && modules.functionsMod) {
-      const { getFirestore } = modules.firestoreMod;
-      const { getFunctions, connectFunctionsEmulator } = modules.functionsMod;
-      db = getFirestore(app);
-      functions = getFunctions(app, config().functionsRegion || "us-central1");
-      if (global.location?.hostname === "localhost") {
-        try {
-          connectFunctionsEmulator(functions, "localhost", 5001);
-        } catch {
-          /* ignore */
-        }
-      }
-      initMode = "full";
+      await attachFirestore();
     } else {
       initMode = "auth";
+      global.TN170FirebaseClient = buildClientFacade("auth");
     }
 
-    const facade = buildClientFacade(initMode);
-    global.TN170FirebaseClient = facade;
     return app;
   }
 
   async function ensureFullClient() {
-    if (initMode === "full" && db && functions) {
-      return getClient();
-    }
-    await initFirebase({ authOnly: false });
-    return getClient();
+    return upgradeToFullClient();
   }
 
   async function whenReady(options) {
@@ -231,6 +253,9 @@
       });
     }
     await readyPromise;
+    if (options?.authOnly === false || (!options?.authOnly && global.SMTN170FirebaseData)) {
+      await upgradeToFullClient();
+    }
     return getClient();
   }
 

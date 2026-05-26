@@ -65,8 +65,24 @@
   }
 
   async function fetchProfile(userId) {
-    const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
-    if (!sb || !userId) return null;
+    const fb = global.SMTN170Firebase;
+    if (!fb || !userId) return null;
+
+    await fb.ensureFullClient?.();
+    const mod = fb.getFirestoreModule?.();
+    const db = fb.getFirestore?.();
+    const dataLayer = global.SMTN170FirebaseData;
+
+    if (mod && db) {
+      console.log("PROFILE_PATH_CHECKED", `profiles/${userId}`);
+      const snap = await mod.getDoc(mod.doc(db, "profiles", userId));
+      console.log("PROFILE_EXISTS", snap.exists());
+      if (!snap.exists()) return null;
+      return dataLayer?.fromFirestore?.(snap.data(), snap.id) || { id: snap.id, ...snap.data() };
+    }
+
+    const sb = global.TN170FirebaseClient || fb.getClient?.();
+    if (!sb?.from) return null;
     const { data, error } = await sb.from("profiles").select("*").eq("id", userId).maybeSingle();
     if (error) {
       console.warn("[TN-170] profile fetch", error.message);
@@ -94,9 +110,16 @@
       return null;
     }
     console.log("SESSION_FOUND");
+    console.log("AUTH_UID", user.id);
+    console.log("AUTH_EMAIL", user.email || "");
     const row = await fetchProfile(user.id);
-    if (row) console.log("PROFILE_LOAD_OK");
-    else console.log("PROFILE_LOAD_ERROR", "no profiles row — using session fallback");
+    if (row) {
+      console.log("PROFILE_LOAD_OK");
+      console.log("PROFILE_STATUS", Profile()?.getProfileStatus?.(row) || "(none)");
+      console.log("PROFILE_ROLE", String(row.role || "").toLowerCase().trim() || "(none)");
+    } else {
+      console.log("PROFILE_LOAD_ERROR", "no profiles row for uid");
+    }
     profile = row;
     session = mapProfile(row) || {
       userId: user.id,

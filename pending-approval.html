@@ -17,44 +17,18 @@
     <p id="pendingIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
     <p id="pendingEmail" class="login-unit"></p>
     <p class="login-unit"><strong>Status:</strong> Pending approval</p>
-    <button type="button" class="btn-gold btn-lg" style="width:100%;margin-top:20px" onclick="logout()">Log out</button>
+    <button type="button" id="pendingLogoutBtn" class="btn-gold btn-lg" style="width:100%;margin-top:20px">Log out</button>
     <p class="portal-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
   <script src="./js/firebase-config.js?v=1"></script>
-  <script src="./js/firebase-client.js?v=1"></script>
+  <script src="./js/firebase-client.js?v=3"></script>
   <script src="./js/firebase-data.js?v=2"></script>
-  <script src="./js/profile-service.js?v=1"></script>
-  <script src="./js/auth.js?v=11"></script>
+  <script src="./js/profile-service.js?v=2"></script>
+  <script src="./js/pending-pages.js?v=1"></script>
   <script>
-    async function logout() {
-      const client = window.SMTN170Firebase?.getClient?.();
-      if (client) await client.auth.signOut();
-      location.href = "login.html";
-    }
-
-    (async function () {
-      await window.SMTN170Firebase?.whenReady?.();
-      await window.SMTN170Auth?.init?.();
-      const s = window.SMTN170Auth?.loadSession?.();
-      if (!s) {
-        location.href = "login.html";
-        return;
-      }
-      if (window.SMTN170Auth?.isApproved?.(s)) {
-        location.href = "dashboard.html";
-        return;
-      }
-      if (window.SMTN170Auth?.isDenied?.(s)) {
-        location.href = "access-denied.html";
-        return;
-      }
-      const profile = window.SMTN170Auth?.getProfile?.() || s;
-      const name = window.SMTN170Profile?.computeDisplayName?.(profile);
-      const nameEl = document.getElementById("pendingIdentity");
-      const emailEl = document.getElementById("pendingEmail");
-      if (nameEl) nameEl.textContent = name || "Signed in";
-      if (emailEl) emailEl.textContent = s.email ? `Email: ${s.email}` : "";
-    })();
+    document.addEventListener("DOMContentLoaded", function () {
+      window.TN170PendingPages?.init?.();
+    });
   </script>
 </body>
 </html>

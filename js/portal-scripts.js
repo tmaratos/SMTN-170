@@ -25,7 +25,7 @@
     "./js/firebase-data.js?v=2",
     "./js/firebase-auth.js?v=1",
     "./js/steward-client.js?v=1",
-    "./js/auth-guard.js?v=9",
+    "./js/auth-guard.js?v=11",
     "./js/profile-service.js?v=2",
     "./js/auth.js?v=11",
     "./js/auth-session.js?v=8",
