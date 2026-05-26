@@ -1,0 +1,268 @@
+/**
+ * TN-170 — High-contrast text overrides for the schedule / org-chart
+ * Preview tab and the standalone print viewers.
+ * ----------------------------------------------------------------
+ * This stylesheet is loaded AFTER `print-export.css` and
+ * `report-builders.css` so its rules win the cascade. Every rule uses
+ * `!important` so that any future variable, portal-theme inheritance, or
+ * cached browser CSS cannot push text back into the washed-out tan/grey
+ * range that motivated this file.
+ *
+ * Acceptance criteria (preview surface + printed page):
+ *   - All body text reads at #111 / #1a1a1a / #2a2a2a (never lighter).
+ *   - Document title / subtitle, audience list, uniform cell, activity
+ *     titles, owner bullets, and the "Announcements" closing entry all
+ *     render as solid dark serif.
+ *   - Time ranges keep `#b91c1c` red.
+ *   - Audience pills + cell highlight backgrounds keep their fills; the
+ *     text inside stays dark.
+ *
+ * Scope: this file targets BOTH on-screen Preview surfaces
+ *   `.sb-preview-page`, `.ocb-preview-page`, `.print-page`
+ * AND the print media query (so "Save as PDF" matches what you see).
+ */
+
+/* ---- Design tokens (local — do not reuse portal variables which can
+   resolve to white inside the dark portal chrome). ---- */
+:root {
+  --tn-contrast-ink: #111111;
+  --tn-contrast-ink-strong: #000000;
+  --tn-contrast-ink-soft: #1a1a1a;
+  --tn-contrast-ink-mid: #2a2a2a;
+  --tn-contrast-ink-meta: #333333;
+  --tn-contrast-red: #b91c1c;
+}
+
+/* ============================================================ */
+/* 1. Preview / print surfaces — every nested text element gets */
+/*    a hard dark ink color override.                           */
+/* ============================================================ */
+
+.sb-preview-page,
+.ocb-preview-page,
+.print-page,
+.sched-doc,
+.org-chart-doc {
+  color: var(--tn-contrast-ink) !important;
+}
+
+/* Force a uniform dark ink on EVERY descendant of the preview/print
+   surfaces. Two exceptions follow below: `.time-range` keeps red and
+   `.sched-badge` text stays a slightly lighter dark to pop on its
+   coloured pill background. */
+.sb-preview-page *,
+.ocb-preview-page *,
+.print-page *,
+.sched-doc *,
+.org-chart-doc * {
+  color: var(--tn-contrast-ink) !important;
+}
+
+/* ============================================================ */
+/* 2. Document headers — title / subtitle / effective-date.     */
+/* ============================================================ */
+
+.sched-doc__title,
+.org-chart-doc__title h1,
+.org-chart-doc__title h2,
+.org-chart-doc__title h3 {
+  color: var(--tn-contrast-ink-strong) !important;
+  font-weight: 700 !important;
+}
+
+.sched-doc__subtitle {
+  color: var(--tn-contrast-ink-mid) !important;
+  font-weight: 600 !important;
+}
+
+.sched-doc__subtitle-meta,
+.org-chart-doc__updated {
+  color: var(--tn-contrast-ink-meta) !important;
+}
+
+/* ============================================================ */
+/* 3. Audience list / legend — keep visible dark text.          */
+/* ============================================================ */
+
+.sched-doc__audience-row,
+.sched-doc__audience-list,
+.sched-doc__legend,
+.sched-doc__legend-key,
+.sched-legend-item {
+  color: var(--tn-contrast-ink-meta) !important;
+}
+
+/* Audience pills keep their coloured fills; text inside stays dark on
+   green/cyan/yellow/white. */
+.sched-badge,
+.sched-badge--plain,
+.sched-badge--green,
+.sched-badge--cyan,
+.sched-badge--yellow {
+  color: var(--tn-contrast-ink-soft) !important;
+}
+
+/* ============================================================ */
+/* 4. Schedule grid table — headers, row labels, cells.         */
+/* ============================================================ */
+
+.sched-table th,
+.sched-table .row-label,
+.sched-table tbody td {
+  color: var(--tn-contrast-ink) !important;
+}
+
+/* Uniform row cells (first body row, non-label) — solid black bold ABU. */
+.sched-table tbody tr:first-child td:not(.row-label),
+.sched-cell--uniform,
+td[data-row="uniform"] {
+  color: var(--tn-contrast-ink-strong) !important;
+  font-weight: 700 !important;
+}
+
+/* Activity title (e.g. Anthem, Emphasis, Training Block #1, Announcements). */
+.activity-title,
+.sched-cell .activity-title,
+.sched-entry .activity-title {
+  color: var(--tn-contrast-ink-strong) !important;
+  font-weight: 700 !important;
+}
+
+/* Owner + bullets list. */
+.activity-owners,
+.activity-owners li,
+.sched-cell .activity-owners,
+.sched-cell .activity-owners li,
+.sched-entry .activity-owners,
+.sched-entry .activity-owners li {
+  color: var(--tn-contrast-ink-soft) !important;
+}
+
+/* Notes still readable, slightly muted but never washed out. */
+.activity-notes,
+.sched-cell .activity-notes,
+.sched-entry .activity-notes {
+  color: var(--tn-contrast-ink-meta) !important;
+  font-style: italic !important;
+}
+
+/* Footer extras + notes. */
+.sched-doc__footer,
+.sched-doc__extra,
+.sched-doc__notes,
+.sched-doc__footnote {
+  color: var(--tn-contrast-ink) !important;
+}
+
+/* Fallback placeholder / "—" cells stay readable. */
+.sched-cell .placeholder,
+.sched-entry .placeholder,
+.sched-fallback-text {
+  color: var(--tn-contrast-ink-soft) !important;
+  font-style: normal !important;
+}
+
+/* ============================================================ */
+/* 5. Org chart boxes — names + roles + vacant + headings.      */
+/* ============================================================ */
+
+.org-box,
+.org-box__name,
+.org-box__role,
+.org-box__title,
+.org-box__member,
+.org-additional__heading,
+.org-cadet-stack__heading {
+  color: var(--tn-contrast-ink) !important;
+}
+
+.org-box__name--vacant,
+.org-box__member--vacant {
+  color: var(--tn-contrast-ink-meta) !important;
+  font-style: italic !important;
+}
+
+/* ============================================================ */
+/* 6. Coloured exceptions — preserved against the universal     */
+/*    `.sched-doc *` override above by using a deeper selector. */
+/* ============================================================ */
+
+.sched-doc .time-range,
+.sched-cell .time-range,
+.sched-entry .time-range,
+.sb-preview-page .time-range,
+.ocb-preview-page .time-range,
+.print-page .time-range,
+span.time-range {
+  color: var(--tn-contrast-red) !important;
+  font-weight: 700 !important;
+}
+
+/* ============================================================ */
+/* 7. @media print — re-assert every override so "Save as PDF"  */
+/*    matches the on-screen preview exactly.                    */
+/* ============================================================ */
+
+@media print {
+  /* Force color preservation on every coloured element so the printer
+     keeps highlight fills + red times. */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .print-page,
+  .sb-preview-page,
+  .ocb-preview-page,
+  .sched-doc,
+  .org-chart-doc {
+    color: var(--tn-contrast-ink-strong) !important;
+    background: #ffffff !important;
+  }
+
+  .print-page *,
+  .sb-preview-page *,
+  .ocb-preview-page *,
+  .sched-doc *,
+  .org-chart-doc * {
+    color: var(--tn-contrast-ink-strong) !important;
+  }
+
+  .sched-doc__title,
+  .org-chart-doc__title h1,
+  .org-chart-doc__title h2,
+  .org-chart-doc__title h3,
+  .activity-title,
+  .sched-table th,
+  .sched-table .row-label,
+  .org-box__name,
+  .org-box__role,
+  .org-box__title,
+  .org-additional__heading {
+    color: var(--tn-contrast-ink-strong) !important;
+    font-weight: 700 !important;
+  }
+
+  .sched-doc__subtitle,
+  .sched-doc__subtitle-meta,
+  .sched-doc__legend,
+  .sched-doc__legend-key,
+  .sched-legend-item,
+  .org-chart-doc__updated,
+  .activity-notes,
+  .org-box__name--vacant,
+  .org-box__member--vacant {
+    color: var(--tn-contrast-ink-mid) !important;
+  }
+
+  .sched-doc .time-range,
+  .sched-cell .time-range,
+  .sched-entry .time-range,
+  .print-page .time-range,
+  span.time-range {
+    color: var(--tn-contrast-red) !important;
+  }
+}

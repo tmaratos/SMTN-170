@@ -17,8 +17,9 @@
  *   - Multi-entry blocks: a single cell can carry multiple stacked entries
  *     (e.g. Week 2 Block #1 has both "TBD" and "1920 - TBD").
  *   - Audience labels with highlight mapping: BCT (yellow), Flights (green),
- *     All Cadets (cyan), Parents (none). Editable label + toggle + highlight
- *     per audience.
+ *     All Cadets (cyan). Editable label + toggle + highlight per audience —
+ *     admins can add a custom label (e.g. "Parents") via the audience editor;
+ *     it is no longer part of the default seed.
  *   - "Load TN-170 June 2026 Example" prefill helper for round-trip testing.
  *   - Autosave to localStorage (debounced 1s); explicit Save to Firestore
  *     `monthlySchedules`. Clone Previous Month duplicates with regenerated
@@ -1117,7 +1118,8 @@
     w.document.write(`<!DOCTYPE html><html lang="en"><head>
       <meta charset="UTF-8" />
       <title>${escapeHtml(state.schedule?.title || "Monthly Schedule")}</title>
-      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=3" />
+      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=4" />
+      <link rel="stylesheet" href="${global.location.origin}/css/print-contrast.css?v=1" />
     </head><body class="sb-print-body">
       <main class="print-page">${html}</main>
       <script>setTimeout(function(){ window.print(); }, 350);<\/script>

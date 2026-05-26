@@ -51,11 +51,15 @@
     yellow: "sched-badge--yellow",
   };
 
+  // Default seed for NEW monthly schedules. "Parents" is intentionally NOT
+  // in this list — admins can still add it (or any other audience) via the
+  // audience-label editor in the Setup tab. Existing saved schedules that
+  // include Parents keep it (normalizeAudienceLabels only seeds defaults when
+  // the input list is empty and never injects Parents into a non-empty list).
   const DEFAULT_AUDIENCE_LABELS = [
     { label: "BCT", highlightType: "yellow", enabled: true },
     { label: "Flights", highlightType: "green", enabled: true },
     { label: "All Cadets", highlightType: "cyan", enabled: true },
-    { label: "Parents", highlightType: "none", enabled: true },
   ];
 
   const MONTH_NAMES = [
@@ -248,56 +252,53 @@
     return out;
   }
 
+  /**
+   * Render a single org-chart box. Per the TN-170 reference PDF every box is
+   * the same plain bordered rectangle on a white background: two lines, name
+   * on top in regular weight, position title underneath in italic. No status
+   * badges, no department descriptors, no notes — those fields stay in the
+   * editor for record keeping but the printed chart purposely mirrors the
+   * reference document exactly.
+   */
   function renderOrgBox(opts) {
-    const {
-      title,
-      memberName,
-      status,
-      department,
-      notes,
-      command,
-      placeholderTitle,
-    } = opts || {};
-    const klass = ["org-box"];
-    if (command) klass.push("org-box--command");
+    const { title, memberName, status, placeholderTitle } = opts || {};
     const isVacant = status === "vacant" || !memberName;
+    const klass = ["org-box"];
     if (isVacant) klass.push("org-box--vacant");
-    const titleText = title || placeholderTitle || "—";
-    const memberHtml = isVacant
-      ? `<p class="org-box__member org-box__member--vacant">Vacant</p>`
-      : `<p class="org-box__member">${escapeHtml(memberName)}</p>`;
-    const statusBadge =
-      status === "acting"
-        ? `<p class="org-box__member" style="font-style:italic;font-size:0.75rem;">(Acting)</p>`
-        : "";
-    const deptHtml = department
-      ? `<p class="org-box__member" style="font-size:0.72rem;color:#555;">${escapeHtml(
-          department
-        )}</p>`
-      : "";
-    const notesHtml = notes
-      ? `<p class="org-box__member" style="font-size:0.72rem;color:#666;font-style:italic;">${escapeHtml(
-          notes
-        )}</p>`
-      : "";
+    const roleText = title || placeholderTitle || "—";
+    const nameHtml = isVacant
+      ? `<p class="org-box__name org-box__name--vacant">Vacant</p>`
+      : `<p class="org-box__name">${escapeHtml(memberName)}</p>`;
     return `
       <div class="${klass.join(" ")}">
-        <h4 class="org-box__title">${escapeHtml(titleText)}</h4>
-        ${memberHtml}
-        ${statusBadge}
-        ${deptHtml}
-        ${notesHtml}
+        ${nameHtml}
+        <p class="org-box__role">${escapeHtml(roleText)}</p>
       </div>`;
   }
 
+  /**
+   * Render the Table of Organization to match the TN-170 reference PDF:
+   *   - Three-line centred title (squadron · unit number · report title) with
+   *     NO date line by default. If `effectiveDate` is set on the chart it is
+   *     shown beneath in tiny plain italic.
+   *   - Commander box centred at the top — same plain border as every other
+   *     box (no gold/yellow highlight).
+   *   - A single horizontal row of 8 plain boxes in this fixed order:
+   *     Safety · Administration · Public Affairs · Finance · Deputy Commander
+   *     for Cadets · Communications · Professional Development · Logistics.
+   *   - Beneath Deputy Commander for Cadets (position 5) a vertical branch
+   *     stacks the three cadet positions (Aerospace Education, Fitness
+   *     Officer, Cadet Structure) connected by a vertical line with short
+   *     horizontal branches to each box.
+   *   - Custom positions still render as a small "Additional Positions"
+   *     section below so the editor can record extras without breaking the
+   *     reference layout above.
+   */
   function renderOrgChartPrintView(orgChart) {
     const chart = orgChart || {};
     const squadronName = chart.squadronName || "Oak Ridge Composite Squadron";
     const unitNumber = chart.unitNumber || "TN 170";
     const reportTitle = chart.title || "Table of Organization";
-    const effective = chart.effectiveDate
-      ? formatLongDate(chart.effectiveDate)
-      : safeNow();
     const positions = safeArray(chart.positions);
 
     const commander = findCommander(positions);
@@ -305,71 +306,84 @@
     const cadetBranch = sortBy(findByPlacement(positions, "cadet_branch"), "sortOrder");
     const custom = sortBy(findByPlacement(positions, "custom"), "sortOrder");
 
+    const cadetBranchHtml = cadetBranch.length
+      ? `
+        <div class="org-cadet-branch" aria-label="Cadet Programs branch">
+          <div class="org-cadet-branch__spine" aria-hidden="true"></div>
+          <ul class="org-cadet-branch__items">
+            ${cadetBranch
+              .map(
+                (p) => `
+                <li class="org-cadet-branch__item">
+                  <span class="org-cadet-branch__elbow" aria-hidden="true"></span>
+                  ${renderOrgBox({
+                    title: p.title,
+                    memberName: p.memberName,
+                    status: p.status,
+                  })}
+                </li>`
+              )
+              .join("")}
+          </ul>
+        </div>`
+      : "";
+
+    const staffCellsHtml = staffRow
+      .map((slot) => {
+        const isDcCadets = /deputy commander for cadets/i.test(slot.slot);
+        const box = renderOrgBox({
+          title: slot.pos?.title || slot.slot,
+          memberName: slot.pos?.memberName,
+          status: slot.pos?.status || (slot.pos ? "filled" : "vacant"),
+          placeholderTitle: slot.slot,
+        });
+        return `
+          <div class="org-staff-cell${isDcCadets ? " org-staff-cell--dc-cadets" : ""}">
+            ${box}
+            ${isDcCadets ? cadetBranchHtml : ""}
+          </div>`;
+      })
+      .join("");
+
     const commanderHtml = `
       <div class="org-row org-row--commander">
         ${renderOrgBox({
           title: commander?.title || "Commander",
           memberName: commander?.memberName,
           status: commander?.status,
-          notes: commander?.notes,
-          command: true,
           placeholderTitle: "Commander",
         })}
       </div>
-      <div class="org-connector-down" aria-hidden="true"></div>`;
+      <div class="org-connector-down org-connector-down--commander" aria-hidden="true"></div>`;
 
     const staffHtml = `
-      <div class="org-staff-row">
-        ${staffRow
-          .map((slot) =>
-            renderOrgBox({
-              title: slot.pos?.title || slot.slot,
-              memberName: slot.pos?.memberName,
-              status: slot.pos?.status || (slot.pos ? "filled" : "vacant"),
-              department: slot.pos?.department,
-              notes: slot.pos?.notes,
-              placeholderTitle: slot.slot,
-              command: /deputy commander for cadets/i.test(slot.slot),
-            })
-          )
-          .join("")}
+      <div class="org-staff-row" role="list">
+        <div class="org-staff-row__beam" aria-hidden="true"></div>
+        ${staffCellsHtml}
       </div>`;
-
-    const cadetHtml = cadetBranch.length
-      ? `
-        <div class="org-connector-down" aria-hidden="true"></div>
-        <div class="org-cadet-stack">
-          <p class="org-cadet-stack__heading">Cadet Programs Branch</p>
-          ${cadetBranch
-            .map((p) =>
-              renderOrgBox({
-                title: p.title,
-                memberName: p.memberName,
-                status: p.status,
-                department: p.department,
-                notes: p.notes,
-              })
-            )
-            .join("")}
-        </div>`
-      : "";
 
     const customHtml = custom.length
       ? `
-        <div class="org-cadet-stack" style="margin-top:24px;">
-          <p class="org-cadet-stack__heading">Additional Positions</p>
-          ${custom
-            .map((p) =>
-              renderOrgBox({
-                title: p.title,
-                memberName: p.memberName,
-                status: p.status,
-                department: p.department,
-                notes: p.notes,
-              })
-            )
-            .join("")}
-        </div>`
+        <section class="org-additional">
+          <h4 class="org-additional__heading">Additional Positions</h4>
+          <div class="org-additional__grid">
+            ${custom
+              .map((p) =>
+                renderOrgBox({
+                  title: p.title,
+                  memberName: p.memberName,
+                  status: p.status,
+                })
+              )
+              .join("")}
+          </div>
+        </section>`
+      : "";
+
+    const effectiveLine = chart.effectiveDate
+      ? `<p class="org-chart-doc__updated">Effective ${escapeHtml(
+          formatLongDate(chart.effectiveDate)
+        )}</p>`
       : "";
 
     return `
@@ -378,11 +392,10 @@
           <h1>${escapeHtml(squadronName)}</h1>
           <h2>${escapeHtml(unitNumber)}</h2>
           <h3>${escapeHtml(reportTitle)}</h3>
-          <p class="org-chart-doc__updated">Effective ${escapeHtml(effective)}</p>
+          ${effectiveLine}
         </header>
         ${commanderHtml}
         ${staffHtml}
-        ${cadetHtml}
         ${customHtml}
       </article>`;
   }
@@ -966,7 +979,10 @@
       title: "Table of Organization",
       squadronName: "Oak Ridge Composite Squadron",
       unitNumber: "TN 170",
-      effectiveDate: new Date().toISOString().slice(0, 10),
+      // Match the TN-170 reference: no effective-date subtitle by default.
+      // Admins can still set this in the Builder header to opt in to a tiny
+      // italic "Effective …" line beneath the three-line title.
+      effectiveDate: "",
       status: "draft",
       positions,
     };

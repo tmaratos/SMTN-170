@@ -96,7 +96,7 @@
       audienceLabels:
         payload.audienceLabels && payload.audienceLabels.length
           ? payload.audienceLabels
-          : ["BCT", "Flights", "All Cadets", "Parents"],
+          : ["BCT", "Flights", "All Cadets"],
       weeks,
       extracurricularActivities:
         payload.extracurricularNote || payload.extras || "",

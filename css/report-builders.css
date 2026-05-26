@@ -487,10 +487,10 @@
 #scheduleBuilderRoot .sb-preview-page .org-chart-doc__updated,
 #scheduleBuilderRoot .sb-preview-page .sched-doc__subtitle,
 #scheduleBuilderRoot .sb-preview-page .sched-doc__legend,
-#scheduleBuilderRoot .sb-preview-page .org-box__member--vacant,
+#scheduleBuilderRoot .sb-preview-page .org-box__name--vacant,
 #orgChartApp .ocb-preview-page .activity-notes,
 #orgChartApp .ocb-preview-page .org-chart-doc__updated,
-#orgChartApp .ocb-preview-page .org-box__member--vacant {
+#orgChartApp .ocb-preview-page .org-box__name--vacant {
   color: var(--print-muted, #4b5563);
 }
 

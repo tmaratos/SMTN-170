@@ -132,190 +132,255 @@ body.ocb-print-body {
   font-family: "Georgia", "Times New Roman", serif;
 }
 
+/* Three-line centred title that mirrors the reference PDF. NO bottom border
+   so the page stays clean (the reference is plain text, no underline). */
 .org-chart-doc__title {
   text-align: center;
-  margin: 0 0 26px;
-  padding: 0 0 14px;
-  border-bottom: 1.2pt solid var(--print-rule);
+  margin: 0 0 22px;
+  padding: 0;
 }
 
 .org-chart-doc__title h1 {
-  font-size: 22pt;
-  margin: 0 0 4px;
+  font-size: 18pt;
+  margin: 0 0 2pt;
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--print-ink);
+  line-height: 1.2;
 }
 
 .org-chart-doc__title h2 {
   font-size: 14pt;
-  margin: 0 0 4px;
-  font-weight: 600;
+  margin: 0 0 2pt;
+  font-weight: 700;
   color: var(--print-ink);
+  line-height: 1.2;
 }
 
 .org-chart-doc__title h3 {
-  font-size: 12pt;
+  font-size: 13pt;
   margin: 0;
-  font-weight: 600;
-  font-style: italic;
-  color: var(--print-muted);
+  font-weight: 700;
+  color: var(--print-ink);
+  line-height: 1.2;
 }
 
+/* Effective-date line is OFF by default. The renderer only emits this <p>
+   when chart.effectiveDate is explicitly set, in which case it's a tiny
+   plain italic line below the three-line title. */
 .org-chart-doc__updated {
   text-align: center;
-  font-size: 9.5pt;
+  font-size: 9pt;
   color: var(--print-muted);
-  margin-top: 8px;
+  margin: 6pt 0 0;
   font-style: italic;
+  font-weight: 400;
 }
 
 .org-row {
   display: flex;
   justify-content: center;
   gap: 18px;
-  margin: 14px 0;
+  margin: 0;
   flex-wrap: wrap;
   position: relative;
 }
 
 .org-row--commander {
-  margin-bottom: 18px;
+  margin: 6pt 0 0;
 }
 
-.org-row--staff {
-  align-items: flex-start;
-}
-
+/* Plain bordered rectangle on white — same look for every box, including the
+   Commander. No yellow/gold tint anywhere. */
 .org-box {
-  border: 1.5pt solid var(--print-rule);
+  border: 1.2pt solid var(--print-rule);
   background: var(--print-paper);
-  padding: 10px 12px;
-  min-width: 160px;
-  max-width: 190px;
+  padding: 8pt 10pt;
+  min-width: 120pt;
+  max-width: 170pt;
   text-align: center;
   font-family: "Georgia", "Times New Roman", serif;
   position: relative;
+  box-sizing: border-box;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
   color-adjust: exact;
 }
 
-.org-box--command {
-  border-width: 2.5pt;
-  border-color: var(--print-rule);
-  box-shadow: inset 0 0 0 2pt var(--print-gold);
-  min-width: 240px;
-  max-width: 280px;
-  padding: 14px 16px;
-  background: #fffaf0;
+.org-row--commander .org-box {
+  min-width: 180pt;
+  max-width: 220pt;
+  padding: 9pt 12pt;
 }
 
-.org-box__title {
-  font-weight: 700;
-  font-size: 10.5pt;
+/* Two-line box content: name on top (regular ~10–11pt), role below in
+   italic (~10pt). When vacant the name slot shows "Vacant" in italic. */
+.org-box__name {
+  font-size: 11pt;
+  font-weight: 600;
+  margin: 0 0 2pt;
   line-height: 1.25;
-  margin: 0 0 4px;
+  color: var(--print-ink);
   letter-spacing: 0.01em;
 }
 
-.org-box--command .org-box__title {
-  font-size: 12.5pt;
-  letter-spacing: 0.02em;
-}
-
-.org-box__member {
-  font-size: 10pt;
-  margin: 0;
-  line-height: 1.3;
-  color: var(--print-ink);
-}
-
-.org-box--command .org-box__member {
-  font-size: 11.5pt;
-  font-weight: 600;
-}
-
-.org-box__member--vacant {
+.org-box__name--vacant {
   font-style: italic;
+  font-weight: 500;
   color: var(--print-muted);
 }
 
-.org-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+.org-box__role {
+  font-size: 10pt;
+  font-style: italic;
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.25;
+  color: var(--print-ink);
 }
 
+/* Connector lines — solid black, never dashed. Used for the Commander → staff
+   beam drop and the spine inside the cadet branch. */
 .org-connector-down {
   width: 0;
-  height: 24px;
-  border-left: 1.5pt solid var(--print-rule);
+  height: 18pt;
+  border-left: 1.2pt solid var(--print-rule);
   margin: 0 auto;
 }
 
-.org-connector-h {
-  height: 1.5pt;
-  background: var(--print-rule);
-  margin: 0 auto;
-  width: 80%;
+.org-connector-down--commander {
+  height: 22pt;
 }
 
+/* 8-cell staff row arranged left-to-right under the Commander. The renderer
+   emits exactly eight cells in fixed order; we use CSS grid so each cell
+   takes equal width and the cells line up under the horizontal beam above. */
 .org-staff-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
-  gap: 14px;
-  margin-top: 6px;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8pt;
+  margin: 0;
+  padding-top: 14pt;
   position: relative;
+  align-items: start;
 }
 
-.org-staff-row::before {
-  content: "";
+/* Horizontal beam that spans all eight staff cells. Sits above the cells
+   (in the padding-top gap) and is connected to each cell via a short
+   vertical drop drawn on each .org-staff-cell. */
+.org-staff-row__beam {
   position: absolute;
-  top: -12px;
-  left: 8%;
-  right: 8%;
-  height: 1.5pt;
+  top: 0;
+  left: calc(100% / 16); /* halfway across the first cell */
+  right: calc(100% / 16); /* halfway across the last cell */
+  height: 1.2pt;
   background: var(--print-rule);
 }
 
-.org-staff-row .org-box::before {
-  content: "";
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  height: 12px;
-  width: 0;
-  border-left: 1.5pt solid var(--print-rule);
-}
-
-.org-cadet-stack {
-  margin-top: 28px;
+.org-staff-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  position: relative;
+  padding-top: 14pt; /* room for the short vertical drop to the beam above */
 }
 
-.org-cadet-stack__heading {
-  font-weight: 700;
-  font-size: 11pt;
+.org-staff-cell::before {
+  /* Short vertical drop from the horizontal beam (above) to the top of this
+     cell's box. Drawn for every cell so the beam meets each box. */
+  content: "";
+  position: absolute;
+  top: -14pt;
+  left: 50%;
+  height: 28pt;
+  width: 0;
+  border-left: 1.2pt solid var(--print-rule);
+}
+
+/* The Deputy Commander for Cadets cell (position 5) carries the cadet branch
+   directly beneath it. The branch flows out of the bottom of the DC for
+   Cadets box and is otherwise just stacked content inside the same column. */
+.org-staff-cell--dc-cadets {
+  align-items: stretch;
+}
+
+.org-staff-cell--dc-cadets .org-box {
+  align-self: center;
+}
+
+/* Vertical branch from the DC for Cadets box to each cadet position. A
+   single vertical spine runs down the centre-left of the column and each
+   cadet box hangs off it via a short horizontal "elbow". */
+.org-cadet-branch {
+  position: relative;
+  margin: 0 auto;
+  padding: 10pt 0 0 18pt;
+  width: max-content;
+  max-width: 100%;
+}
+
+.org-cadet-branch__spine {
+  position: absolute;
+  left: 9pt;
+  top: 0;
+  bottom: 14pt; /* stop the spine at the last branch elbow */
+  width: 0;
+  border-left: 1.2pt solid var(--print-rule);
+}
+
+.org-cadet-branch__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10pt;
+}
+
+.org-cadet-branch__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.org-cadet-branch__elbow {
+  position: absolute;
+  left: -9pt;
+  top: 50%;
+  width: 9pt;
+  height: 0;
+  border-top: 1.2pt solid var(--print-rule);
+}
+
+.org-cadet-branch .org-box {
+  min-width: 130pt;
+  max-width: 170pt;
+}
+
+/* Custom / additional positions section — used only when admins record
+   extras (e.g. Chaplain) that aren't part of the reference layout. Renders
+   as a small labelled cluster beneath the chart. */
+.org-additional {
+  margin: 22pt 0 0;
+  padding: 12pt 14pt 10pt;
+  border-top: 0.8pt solid var(--print-rule);
+}
+
+.org-additional__heading {
   text-align: center;
-  margin: 0 0 8px;
-  border-bottom: 1.2pt solid var(--print-rule);
-  padding: 4px 12px;
-  letter-spacing: 0.04em;
+  font-size: 10pt;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: var(--print-tint);
-  align-self: stretch;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
+  margin: 0 0 8pt;
+  color: var(--print-muted);
 }
 
-.org-cadet-stack .org-box {
-  width: 240px;
-  max-width: 240px;
+.org-additional__grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10pt;
 }
 
 /* ============================================================ */
@@ -669,7 +734,7 @@ body.ocb-print-body {
     box-shadow: none !important;
   }
 
-  /* Force pill colors to actually print. */
+  /* Force pill colors and box borders to actually print. */
   .sched-badge,
   .sched-legend-swatch,
   .sched-cell,
@@ -679,12 +744,31 @@ body.ocb-print-body {
   .sched-doc__extra,
   .sched-doc__notes,
   .sched-doc__footnote,
-  .org-cadet-stack__heading,
   .org-box,
-  .org-box--command {
+  .org-staff-row__beam,
+  .org-staff-cell::before,
+  .org-cadet-branch__spine,
+  .org-cadet-branch__elbow,
+  .org-connector-down {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+  }
+
+  /* Make sure org-chart border / connector strokes stay crisp black on
+     paper — Chromium sometimes lightens 1.2pt hairlines on save-as-PDF. */
+  .org-box {
+    border-color: #000 !important;
+  }
+  .org-staff-row__beam,
+  .org-cadet-branch__spine,
+  .org-cadet-branch__elbow {
+    background: #000 !important;
+    border-color: #000 !important;
+  }
+  .org-staff-cell::before,
+  .org-connector-down {
+    border-left-color: #000 !important;
   }
 
   .sched-badge--yellow { background: var(--print-yellow) !important; }
