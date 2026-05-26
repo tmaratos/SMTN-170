@@ -165,11 +165,17 @@
     }
   }
 
+  let profileRendered = false;
+
   async function init() {
     const root = document.getElementById("profilePage");
-    if (!root) return;
-    root.innerHTML = '<p class="page-intro">Loading your profile…</p>';
-    await global.SMTN170Auth?.init?.();
+    if (!root || profileRendered) return;
+    if (!document.getElementById("profileForm")) {
+      root.innerHTML = '<p class="page-intro">Loading your profile…</p>';
+    }
+    if (!global.SMTN170Auth?.loadSession?.()) {
+      await global.SMTN170Auth?.init?.({ skipEvent: true });
+    }
     const row = getProfileRow();
     if (!row) {
       console.log("SESSION_MISSING_REDIRECT");
@@ -177,6 +183,7 @@
       return;
     }
     console.log("PROFILE_LOAD_OK");
+    profileRendered = true;
     renderForm(row);
   }
 
@@ -185,14 +192,6 @@
       init();
     }
   });
-
-  if (document.getElementById("profilePage")) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", init);
-    } else {
-      init();
-    }
-  }
 
   global.SMTN170ProfilePage = { init, renderForm };
 })(window);

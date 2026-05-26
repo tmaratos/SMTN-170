@@ -102,6 +102,34 @@
     global.SMTN170StewardLauncher?.rebind?.();
   }
 
+  function renderDashboardSkeleton(root, welcomeTitle, accountBlock) {
+    root.innerHTML = `
+      <div class="dash-workspace">
+        <header class="dash-hero-band">
+          <div class="card-info dash-hero-welcome">
+            <p class="dash-hero-eyebrow">TN-170 Oak Ridge Composite Squadron</p>
+            <h2 class="dash-hero-title">${escapeHtml(welcomeTitle)}</h2>
+            <p class="dash-hero-lead">Private Senior Member operations workspace for TN-170 — shared with all approved Senior Members.</p>
+            ${accountBlock}
+          </div>
+          <div class="card-info dash-hero-summary">
+            <h3 class="card-info-title">This week at a glance</h3>
+            <p class="dash-empty">Loading summary…</p>
+          </div>
+        </header>
+        <section class="card-assistant steward-launch-card" aria-label="Steward for CAP">
+          <h2>Steward for CAP</h2>
+          <p>Chat-style assistant for meetings, readiness, org chart, resource links, and CAP references.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
+            <button type="button" class="btn-gold" onclick="openSteward()">Open Steward</button>
+            <a class="btn-secondary" href="documents.html" style="display:inline-flex;align-items:center;text-decoration:none">Files &amp; Resources</a>
+          </div>
+        </section>
+      </div>`;
+    bindDashboardSteward();
+    global.SMTN170PortalNav?.bindLogout?.();
+  }
+
   async function renderDashboardV2() {
     const root = document.getElementById("dashboardV2");
     if (!root) return;
@@ -114,13 +142,21 @@
     const welcomeTitle = welcome.full || "Welcome back.";
     const accountBlock = global.SMTN170PortalNav?.renderAccountBlock?.() || "";
 
-    const summary = (await global.SMTN170Dashboard?.fetchSummary?.()) || {
+    renderDashboardSkeleton(root, welcomeTitle, accountBlock);
+
+    const loadSummary = () => global.SMTN170Dashboard?.fetchSummary?.() || Promise.resolve({
       configured: false,
       meetings: [],
       attention: [],
       flightReviews: { current: 0, dueSoon: 0, overdue: 0, total: 0 },
       inspection: { open: 0, total: 0 },
-    };
+    });
+
+    const summary = await (typeof requestIdleCallback === "function"
+      ? new Promise((resolve) => {
+          requestIdleCallback(() => loadSummary().then(resolve), { timeout: 1200 });
+        })
+      : loadSummary());
 
     const nextMeeting = summary.meetings[0];
     const fr = summary.flightReviews;
@@ -234,25 +270,6 @@
     global.SMTN170PortalNav?.bindLogout?.();
   }
 
-  function loadScriptOnce(src, cb) {
-    const base = src.split("?")[0];
-    if (document.querySelector(`script[src^="${base}"]`)) {
-      cb?.();
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = src;
-    s.onload = () => cb?.();
-    document.body.appendChild(s);
-  }
-
-  function bootPortalAssets(done) {
-    loadScriptOnce("./js/portal-pages.js?v=1", () => {
-      global.SMTN170Pages?.init?.();
-      done?.();
-    });
-  }
-
   const PORTAL_TAGLINE = "Private Senior Member operations workspace for TN-170";
   const LEGACY_TOPBAR = /parent|cadet-only|staff area|stay connected|squadron discord|public access|recruitment/i;
 
@@ -263,42 +280,22 @@
     document.querySelectorAll("[data-portal-discord]").forEach((el) => el.remove());
   }
 
-  function injectPortalLayoutCss() {
-    if (document.getElementById("portalLayoutCss")) return;
-    const link = document.createElement("link");
-    link.id = "portalLayoutCss";
-    link.rel = "stylesheet";
-    link.href = "./css/portal-layout.css?v=2";
-    document.head.appendChild(link);
-  }
+  let shellChromeReady = false;
 
-  function init() {
-    injectPortalLayoutCss();
+  function initShellChrome() {
+    if (shellChromeReady) return;
+    shellChromeReady = true;
     bindMobileNav();
     injectFooter();
     normalizeTopbarCopy();
-    renderDashboardV2().catch((e) => console.warn("[TN-170] dashboard", e));
-    bootPortalAssets(() => {
-      global.SMTN170StewardLauncher?.rebind?.();
-      bindDashboardSteward();
-      global.SMTN170Pages?.bindStewardContextActions?.();
-    });
   }
 
-  global.SMTN170Shell = { renderChip, statusClass, statusLabel, init, renderDashboardV2 };
+  global.SMTN170Shell = { renderChip, statusClass, statusLabel, initShellChrome, renderDashboardV2 };
 
   function onProfileChange() {
+    if (!document.getElementById("dashboardV2")) return;
     renderDashboardV2().catch((e) => console.warn("[TN-170] dashboard", e));
-    global.SMTN170PortalNav?.init?.();
   }
 
-  global.addEventListener("smtn170:auth-changed", onProfileChange);
   global.addEventListener("smtn170:profile-updated", onProfileChange);
-  global.addEventListener("smtn170:auth-ready", onProfileChange);
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
 })(window);

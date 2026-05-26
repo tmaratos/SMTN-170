@@ -420,8 +420,10 @@
   }
 
   function loadPortalScripts(page) {
+    const base = "./js/portal-scripts.js";
+    if (document.querySelector(`script[src^="${base}"]`)) return;
     const s = document.createElement("script");
-    s.src = "./js/portal-scripts.js?v=10";
+    s.src = `${base}?v=11`;
     if (page) s.dataset.page = page;
     document.body.appendChild(s);
   }

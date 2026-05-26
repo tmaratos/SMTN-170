@@ -81,9 +81,5 @@
 
   global.SMTN170ProfileBanner = { refresh, init };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  global.addEventListener("smtn170:auth-ready", init);
 })(window);

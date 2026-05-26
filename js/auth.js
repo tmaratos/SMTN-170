@@ -1,6 +1,6 @@
 /**
  * TN-170 auth — Firebase session + profiles (login entry: js/auth.js).
- * Requires: firebase-config.js, firebase-client.js, firebase-data.js, profile-service.js
+ * Requires: firebase-config.js, firebase-client.js, firebase-data.js, profile-service.js (v13)
  */
 (function initPortalAuth(global) {
   const LOGIN_PATH = "login.html";
@@ -151,6 +151,28 @@
     return data;
   }
 
+  function applyProfileRow(row, user) {
+    if (!row || !user?.uid) return null;
+    profile = row;
+    session = mapProfile(row) || session;
+    const profileOut = {
+      uid: user.uid,
+      email: user.email || row.email || "",
+      ...row,
+      id: user.uid,
+    };
+    global.TN170_CURRENT_PROFILE = profileOut;
+    return profileOut;
+  }
+
+  function cachedProfileForUid(uid) {
+    const cached = global.TN170_CURRENT_PROFILE;
+    if (!cached || !uid) return null;
+    const cachedUid = cached.uid || cached.id;
+    if (cachedUid !== uid) return null;
+    return cached;
+  }
+
   async function getCurrentUserProfile() {
     const fb = global.SMTN170Firebase;
     if (!fb) {
@@ -174,6 +196,12 @@
     const currentUser = { uid: user.uid, email: user.email || "" };
     global.TN170_CURRENT_USER = currentUser;
 
+    const cached = cachedProfileForUid(user.uid);
+    if (cached) {
+      const row = { ...cached, id: user.uid };
+      return applyProfileRow(row, user);
+    }
+
     const row = await fetchProfile(user.uid);
     if (!row) {
       global.TN170_CURRENT_PROFILE = null;
@@ -195,16 +223,7 @@
       return null;
     }
 
-    profile = row;
-    session = mapProfile(row) || session;
-    const profileOut = {
-      uid: user.uid,
-      email: user.email || row.email || "",
-      ...row,
-      id: user.uid,
-    };
-    global.TN170_CURRENT_PROFILE = profileOut;
-    return profileOut;
+    return applyProfileRow(row, user);
   }
 
   async function syncSessionFromFirebase() {
@@ -449,7 +468,12 @@
     });
   }
 
-  async function init() {
+  async function init(options) {
+    const skipEvent = options?.skipEvent === true;
+    if (initialized && session) {
+      applyNavVisibility();
+      return session;
+    }
     const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb && global.SMTN170Firebase?.whenReady) {
       await global.SMTN170Firebase.whenReady();
@@ -457,7 +481,10 @@
     await syncSessionFromFirebase();
     initialized = true;
     applyNavVisibility();
-    global.dispatchEvent(new CustomEvent("smtn170:auth-ready", { detail: { session } }));
+    if (!skipEvent) {
+      global.dispatchEvent(new CustomEvent("smtn170:auth-ready", { detail: { session } }));
+    }
+    return session;
   }
 
   /** Local-only fallback when Firebase is not configured (development). */
