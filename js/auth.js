@@ -9,6 +9,7 @@
 
   const ROLES = {
     COMMANDER: { id: "commander", label: "Commander" },
+    ADMIN: { id: "admin", label: "Admin" },
     COMMAND_STAFF: { id: "command_staff", label: "Command Staff" },
     SENIOR_MEMBER: { id: "senior_member", label: "Senior Member" },
     SENIOR_MEMBER_LIMITED: { id: "senior_member_limited", label: "Senior Member Limited" },
@@ -22,7 +23,7 @@
     DENIED: "denied",
   };
 
-  const ADMIN_ROLES = [ROLES.COMMANDER.id, ROLES.COMMAND_STAFF.id, "admin", "Admin"];
+  const ADMIN_ROLES = [ROLES.COMMANDER.id, ROLES.ADMIN.id];
   const ADMIN_ACTIONS = new Set([
     "approve_users",
     "change_roles",

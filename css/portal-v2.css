@@ -2237,9 +2237,109 @@ body.steward-open {
   margin-right: 6px;
 }
 
-/* --------------------------------------------------------------------------
-   Organization Chart — squadron staff structure (operational, not HR)
-   -------------------------------------------------------------------------- */
+.admin-pending-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.admin-pending-card {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-pending-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 16px;
+}
+
+.admin-pending-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-pending-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tn-muted, #8ea0b8);
+}
+
+.admin-pending-value {
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.admin-pending-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+.admin-pending-actions label {
+  font-size: 0.82rem;
+}
+
+.admin-pending-actions select {
+  min-width: 180px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--tn-line);
+  background: rgba(1, 8, 20, 0.8);
+  color: #fff;
+}
+
+.admin-pending-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-profile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.admin-profile-modal[hidden] {
+  display: none;
+}
+
+.admin-profile-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(1, 8, 20, 0.72);
+}
+
+.admin-profile-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 100%);
+  max-height: min(80vh, 720px);
+  overflow: auto;
+}
+
+.admin-profile-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.admin-detail-table th {
+  width: 34%;
+}
+
 
 .org-hero {
   padding: 24px 28px;

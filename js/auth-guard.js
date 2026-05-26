@@ -6,6 +6,7 @@
   const DASHBOARD = "dashboard.html";
   const PENDING = "pending-approval.html";
   const DENIED = "access-denied.html";
+  const ADMIN = "admin.html";
 
   let authChecked = false;
 
@@ -109,10 +110,26 @@
     return destinationForProfile(profile);
   }
 
+  function isAdminPage(page) {
+    return page === ADMIN;
+  }
+
+  function canAccessAdmin(profile) {
+    if (!profile) return false;
+    const status = normalizeStatus(profile);
+    if (!isActiveStatus(status)) return false;
+    const role = String(profile.role || "").toLowerCase();
+    return role === "admin" || role === "commander";
+  }
+
   async function enforceProfileAccess(userId) {
     const page = currentPage();
     const profile = await fetchProfileDoc(userId);
     const dest = destinationForProfile(profile);
+
+    if (isAdminPage(page) && !canAccessAdmin(profile)) {
+      return true;
+    }
 
     if (dest === DASHBOARD) {
       if (page === PENDING || page === DENIED || page === LOGIN) {
@@ -223,5 +240,6 @@
     resolvePostLoginUrl,
     fetchProfileDoc,
     destinationForProfile,
+    canAccessAdmin,
   };
 })(window);

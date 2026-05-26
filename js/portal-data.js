@@ -5,6 +5,7 @@
 (function initPortalData(global) {
   const ROLES = {
     COMMANDER: { id: "commander", label: "Commander" },
+    ADMIN: { id: "admin", label: "Admin" },
     COMMAND_STAFF: { id: "command_staff", label: "Command Staff" },
     SENIOR_MEMBER: { id: "senior_member", label: "Senior Member" },
     SENIOR_MEMBER_LIMITED: { id: "senior_member_limited", label: "Senior Member Limited" },

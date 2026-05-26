@@ -13,9 +13,10 @@
     <img src="./assets/BDB98475-52E2-4DC4-A6F0-43B6A3CED3EE.png" alt="TN-170" class="login-patch" style="margin-bottom:16px" />
     <p class="login-motto">Not Without Effort.</p>
     <h1 style="text-align:left">Awaiting approval</h1>
-    <p class="login-unit" style="text-align:left">Your profile has been submitted and is waiting for manual approval from squadron leadership.</p>
-    <p class="login-unit login-lead" style="text-align:left">You cannot access the portal until Commander or Command Staff approves your profile. You will receive the same workspace as all Senior Members once approved.</p>
+    <p class="login-unit" style="text-align:left">Your account is awaiting approval by squadron leadership.</p>
     <p id="pendingIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
+    <p id="pendingEmail" class="login-unit"></p>
+    <p class="login-unit"><strong>Status:</strong> Pending approval</p>
     <button type="button" class="btn-gold btn-lg" style="width:100%;margin-top:20px" onclick="logout()">Log out</button>
     <p class="portal-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
@@ -47,11 +48,12 @@
         location.href = "access-denied.html";
         return;
       }
-      const el = document.getElementById("pendingIdentity");
-      if (el) {
-        const name = window.SMTN170Profile?.computeDisplayName?.(window.SMTN170Auth?.getProfile?.() || s);
-        el.textContent = name ? `${name} · ${s.email}` : s.email || "Signed in";
-      }
+      const profile = window.SMTN170Auth?.getProfile?.() || s;
+      const name = window.SMTN170Profile?.computeDisplayName?.(profile);
+      const nameEl = document.getElementById("pendingIdentity");
+      const emailEl = document.getElementById("pendingEmail");
+      if (nameEl) nameEl.textContent = name || "Signed in";
+      if (emailEl) emailEl.textContent = s.email ? `Email: ${s.email}` : "";
     })();
   </script>
 </body>

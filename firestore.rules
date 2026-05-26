@@ -18,9 +18,13 @@ service cloud.firestore {
         && profile().status in ['approved', 'active'];
     }
 
-    function isAdmin() {
+    function isApprovalAdmin() {
       return isApproved()
-        && profile().role in ['commander', 'command_staff', 'admin'];
+        && profile().role in ['commander', 'admin'];
+    }
+
+    function isAdmin() {
+      return isApprovalAdmin();
     }
 
     function approvedMember() {
@@ -52,6 +56,16 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
     }
 
+    function adminProfileApprovalUpdate() {
+      let keys = request.resource.data.diff(resource.data).affectedKeys();
+      let statusOk = request.resource.data.status in ['active', 'denied'];
+      let approveOk = request.resource.data.status == 'active'
+        && keys.hasOnly(['status', 'role', 'approvedAt', 'approvedBy', 'updatedAt']);
+      let denyOk = request.resource.data.status == 'denied'
+        && keys.hasOnly(['status', 'deniedAt', 'deniedBy', 'updatedAt']);
+      return statusOk && (approveOk || denyOk);
+    }
+
     function inviteMarkUsed() {
       return signedIn()
         && resource.data.status == 'unused'
@@ -66,21 +80,21 @@ service cloud.firestore {
     }
 
     match /profiles/{userId} {
-      allow read: if signedIn() && (userId == uid() || isAdmin());
+      allow read: if signedIn() && (userId == uid() || isApprovalAdmin());
       allow create: if validInviteSignup(userId);
       allow update: if signedIn() && userId == uid() && safeProfilePatch();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update: if isApprovalAdmin() && adminProfileApprovalUpdate();
+      allow delete: if isApprovalAdmin();
     }
 
     match /inviteLinks/{inviteId} {
       allow read: if resource.data.status == 'unused' && inviteNotExpired(resource.data);
-      allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow read: if isApprovalAdmin();
+      allow create: if isApprovalAdmin()
         && request.resource.data.status == 'unused'
         && request.resource.data.token == inviteId;
       allow update: if inviteMarkUsed();
-      allow delete: if isAdmin();
+      allow delete: if isApprovalAdmin();
     }
 
     match /uploadedFiles/{docId} {
@@ -103,37 +117,37 @@ service cloud.firestore {
     match /meetings/{docId} {
       allow read: if isApproved();
       allow create, update: if isApproved();
-      allow delete: if isAdmin();
+      allow delete: if isApprovalAdmin();
     }
 
     match /tasks/{docId} {
       allow read: if isApproved();
       allow create, update: if isApproved();
-      allow delete: if isAdmin();
+      allow delete: if isApprovalAdmin();
     }
 
     match /flightReviews/{docId} {
       allow read: if isApproved();
       allow create, update: if isApproved();
-      allow delete: if isAdmin();
+      allow delete: if isApprovalAdmin();
     }
 
     match /inspectionItems/{docId} {
       allow read: if isApproved();
       allow create, update: if isApproved();
-      allow delete: if isAdmin();
+      allow delete: if isApprovalAdmin();
     }
 
     match /orgPositions/{docId} {
       allow read: if isApproved();
       allow create, update: if isApproved();
-      allow delete: if isAdmin();
+      allow delete: if isApprovalAdmin();
     }
 
     match /schedules/{docId} {
       allow read: if isApproved();
       allow create, update: if isApproved();
-      allow delete: if isAdmin();
+      allow delete: if isApprovalAdmin();
     }
 
     match /stewardConversations/{docId} {
@@ -147,7 +161,7 @@ service cloud.firestore {
     }
 
     match /auditLog/{docId} {
-      allow read: if isAdmin();
+      allow read: if isApprovalAdmin();
       allow create: if isApproved();
     }
 
