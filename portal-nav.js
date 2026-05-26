@@ -18,17 +18,22 @@
   /** @deprecated Use SIDEBAR_LINKS — kept for callers that read NAV_SECTIONS. */
   const NAV_SECTIONS = [{ id: "main", label: "", items: SIDEBAR_LINKS }];
 
-  /** Full-width dashboard quick actions (moved out of sidebar). */
+  /**
+   * Full-width dashboard quick actions (moved out of sidebar).
+   * Ordered by operational use frequency. Every important operational page
+   * gets a large, clearly labeled tile here so the dashboard is the one
+   * place a senior member needs to land to find anything.
+   */
   const QUICK_ACTIONS = [
+    { key: "schedule", href: "schedule.html", label: "Monthly Meeting Schedule", icon: "📋" },
+    { key: "orgchart", href: "orgchart.html", label: "Organization Chart", icon: "🌳" },
     { key: "calendar", href: "calendar.html", label: "Calendar", icon: "📅" },
-    { key: "schedule", href: "schedule.html", label: "Meetings", icon: "📋" },
-    { key: "files", href: "documents.html", label: "Files & Resources", icon: "📁" },
-    { key: "orgchart", href: "orgchart.html", label: "Org Chart", icon: "👥" },
+    { key: "tasks", href: "tasks.html", label: "Tasks", icon: "☑" },
     { key: "bfr", href: "flight-review.html", label: "Flight Reviews", icon: "✈" },
     { key: "sui", href: "sui-readiness.html", label: "Inspection Prep", icon: "✓" },
-    { key: "tasks", href: "tasks.html", label: "Tasks", icon: "☑" },
-    { key: "resources", href: "resources.html", label: "CAP References", icon: "📚" },
+    { key: "resources", href: "resources.html", label: "CAP References & Templates", icon: "📚" },
     { key: "senior", href: "senior-member.html", label: "Senior Member Workspace", icon: "⭐" },
+    { key: "admin", href: "admin.html", label: "Admin", icon: "🛡", requireAdmin: true },
   ];
 
   const NAV_HIDDEN = [
@@ -106,26 +111,29 @@
   const NAV_STEWARD = {
     home: { action: "navigate", label: "Home", target: "dashboard.html", help: "Return to the squadron dashboard" },
     calendar: { action: "navigate", label: "Calendar", target: "calendar.html", help: "View and add squadron calendar events" },
-    schedule: { action: "navigate", label: "Meetings", target: "schedule.html", help: "Build the monthly meeting schedule" },
+    schedule: { action: "navigate", label: "Monthly Meeting Schedule", target: "schedule.html", help: "Build the monthly meeting schedule" },
     files: { action: "navigate", label: "Files & Resources", target: "documents.html", help: "Browse squadron resource links" },
     orgchart: { action: "navigate", label: "Organization Chart", target: "orgchart.html", help: "Review staff structure and vacancies" },
     bfr: { action: "navigate", label: "Flight Reviews", target: "flight-review.html", help: "Track BFR status and review nights" },
     sui: { action: "navigate", label: "Inspection Prep", target: "sui-readiness.html", help: "Work through inspection checklist items" },
     tasks: { action: "navigate", label: "Tasks", target: "tasks.html", help: "View squadron tasks and follow-ups" },
     senior: { action: "navigate", label: "Senior Member Workspace", target: "senior-member.html", help: "Open the senior member operations hub" },
-    resources: { action: "navigate", label: "CAP References", target: "resources.html", help: "Open CAP reference materials and links" },
+    resources: { action: "navigate", label: "CAP References & Templates", target: "resources.html", help: "Open CAP reference materials, regulations, and squadron templates" },
     profile: { action: "navigate", label: "My Profile", target: "profile.html", help: "View and edit your portal profile" },
     admin: { action: "navigate", label: "Admin", target: "admin.html", help: "Approve users and manage roles (command staff only)" },
   };
 
   function renderQuickActionTiles() {
-    return QUICK_ACTIONS.map((item) => {
-      const attrs = stewardAttrs(item.key);
-      const icon = item.icon
-        ? `<span class="dash-action-icon" aria-hidden="true">${item.icon}</span>`
-        : "";
-      return `<a class="dash-action-tile dash-quick-action-tile" href="${item.href}"${attrs}>${icon}<span>${escapeHtml(item.label)}</span></a>`;
-    }).join("");
+    const isAdmin = canShowAdminNav();
+    return QUICK_ACTIONS.filter((item) => !item.requireAdmin || isAdmin)
+      .map((item) => {
+        const attrs = stewardAttrs(item.key);
+        const icon = item.icon
+          ? `<span class="dash-action-icon" aria-hidden="true">${item.icon}</span>`
+          : "";
+        return `<a class="dash-action-tile dash-quick-action-tile" href="${item.href}"${attrs}>${icon}<span>${escapeHtml(item.label)}</span></a>`;
+      })
+      .join("");
   }
 
   function stewardAttrs(key) {
