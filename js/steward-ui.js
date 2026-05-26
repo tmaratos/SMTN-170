@@ -1,6 +1,6 @@
 /**
  * Steward for CAP — UI only (GitHub Pages public repo).
- * All brain logic runs in Firebase Cloud Function stewardCore via js/steward-client.js.
+ * All brain logic runs on the Cloudflare Worker via js/steward-client.js.
  */
 (function initSteward(global) {
   const DISCLAIMER =

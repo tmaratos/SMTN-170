@@ -11,6 +11,8 @@ window.TN170_FIREBASE_CONFIG = {
   appId: "1:645835448409:web:e850d728cc857972df1148",
   measurementId: "G-50V6RHQ6NF",
   functionsRegion: "us-central1",
+  /** Set after deploying workers/steward — see workers/steward/README.md */
+  stewardWorkerUrl: "https://steward.YOUR_SUBDOMAIN.workers.dev",
 };
 
 window.SMTN170_FIREBASE_CONFIG = window.TN170_FIREBASE_CONFIG;

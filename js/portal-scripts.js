@@ -20,11 +20,11 @@
 
   const chain = [
     "./portal-config.js?v=3",
-    "./js/firebase-config.js?v=1",
+    "./js/firebase-config.js?v=2",
     "./js/firebase-client.js?v=2",
     "./js/firebase-data.js?v=2",
     "./js/firebase-auth.js?v=1",
-    "./js/steward-client.js?v=3",
+    "./js/steward-client.js?v=4",
     "./js/auth-guard.js?v=11",
     "./js/profile-service.js?v=2",
     "./js/auth.js?v=11",

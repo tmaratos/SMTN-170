@@ -4,6 +4,10 @@ supabase/.temp/
 # Steward brain — private deploy only (Option B)
 functions/src/steward/
 
+# Node / Workers
+node_modules/
+workers/steward/.wrangler/
+
 # OS / editor
 .DS_Store
 Thumbs.db
