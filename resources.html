@@ -10,10 +10,86 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>CAP References | TN-170</title>
+  <script type="application/json" id="steward-page-meta">
+  {"pageId":"resources","title":"CAP References","path":"resources.html","section":"Main","summary":"Curated direct links to official Civil Air Patrol publications, regulations, forms, and operational pages.","primaryActions":["Open CAP publications","Open eServices","Open regulations"],"forms":[],"buttons":["Open link","Open CAP search"],"relatedPages":["documents.html","senior-member.html"],"keywords":["CAP","references","regulations","forms","pamphlets","manuals","eServices","Axis","LMS","awards","uniforms","TN Wing","Southeast Region"]}
+  </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=7" />
   <link rel="stylesheet" href="./css/portal-layout.css?v=2" />
+  <style>
+    .cap-ref-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin: 0 0 8px;
+    }
+    .cap-ref-toolbar p {
+      margin: 0;
+      color: var(--tn-muted);
+      font-size: 0.95rem;
+    }
+    .cap-ref-sections {
+      display: grid;
+      gap: 18px;
+    }
+    .cap-ref-section .card-info-title {
+      margin-bottom: 14px;
+    }
+    .cap-ref-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .cap-ref-btn {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      min-height: 64px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 210, 31, 0.35);
+      background: linear-gradient(180deg, rgba(31, 95, 214, 0.18), rgba(7, 21, 37, 0.85));
+      color: #fff;
+      text-decoration: none;
+      transition: border-color 0.15s, background 0.15s, transform 0.05s;
+    }
+    .cap-ref-btn:hover,
+    .cap-ref-btn:focus-visible {
+      border-color: var(--tn-gold);
+      background: linear-gradient(180deg, rgba(31, 95, 214, 0.32), rgba(7, 21, 37, 0.92));
+      outline: none;
+    }
+    .cap-ref-btn:active {
+      transform: translateY(1px);
+    }
+    .cap-ref-btn-label {
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: 0.01em;
+    }
+    .cap-ref-btn-desc {
+      font-size: 0.88rem;
+      color: var(--tn-muted);
+      line-height: 1.4;
+    }
+    .cap-ref-btn-ext {
+      margin-left: 6px;
+      opacity: 0.7;
+    }
+    .cap-ref-note {
+      margin: 4px 0 0;
+      font-size: 0.9rem;
+      color: var(--tn-muted);
+      line-height: 1.5;
+    }
+    .cap-ref-note a {
+      color: var(--tn-cyan);
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body data-portal-page="resources">
   <div class="portal-app">
@@ -32,19 +108,158 @@
       <header class="portal-topbar">
         <div>
           <h1>CAP References</h1>
-          <p>Private Senior Member operations workspace for TN-170</p>
+          <p>Direct links to official Civil Air Patrol pages — opens in a new tab</p>
         </div>
       </header>
       <div class="portal-content portal-content--wide page-stack">
-        <section class="resource-grid">
-          <article class="panel"><h2>Schedules</h2><p>Monthly templates and previous schedule exports.</p></article>
-          <article class="panel"><h2>Safety</h2><p>Safety briefing notes and recurring safety references.</p></article>
-          <article class="panel"><h2>Aerospace Education</h2><p>AEX, STEM, lesson planning, and activity resources.</p></article>
-          <article class="panel"><h2>Training</h2><p>Training nights, leadership lessons, and meeting plans.</p></article>
-          <article class="panel"><h2>Forms</h2><p>Frequently used local forms and shared templates.</p></article>
-          <article class="panel"><h2>External Links</h2><p>eServices, CAP.gov, and wing references for approved Senior Members.</p></article>
-        </section>
-        <p class="small-note">Squadron uploads and directorate files belong in the <a href="documents.html">File Library</a>.</p>
+        <p class="page-intro">Curated, senior-friendly shortcuts to the official Civil Air Patrol website (<strong>gocivilairpatrol.com</strong>) and related resources. Every link below opens in a new tab so you don't lose your place in the portal.</p>
+
+        <div class="cap-ref-toolbar">
+          <a class="btn-gold" href="https://www.gocivilairpatrol.com/search" target="_blank" rel="noopener noreferrer">Open CAP search</a>
+          <p>Use the CAP search if you need to find something not listed below.</p>
+        </div>
+
+        <div class="cap-ref-sections">
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-pubs">
+            <h2 class="card-info-title" id="cap-ref-pubs">Publications &amp; Regulations</h2>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/publications" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">CAP Publications Library<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Main library: regulations, forms, manuals, pamphlets.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/publications/cap-regulations" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">CAP Regulations<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">CAPR index — current regulations by number.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/publications/cap-forms" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">CAP Forms<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">CAPF index — fillable squadron and member forms.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/publications/cap-pamphlets" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">CAP Pamphlets<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">CAPP index — pamphlets and guides.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/publications/cap-manuals" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">CAP Manuals<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">CAPM index — operating and program manuals.</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-member">
+            <h2 class="card-info-title" id="cap-ref-member">Membership &amp; eServices</h2>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn" href="https://www.capnhq.gov/" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">eServices Login<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">capnhq.gov — official member services portal.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Member Portal<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Member home on gocivilairpatrol.com.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/senior-member" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Senior Member Info<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Senior member programs and resources.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/cadet-programs" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Cadet Programs<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Cadet program overview and resources.</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-training">
+            <h2 class="card-info-title" id="cap-ref-training">Training &amp; Professional Development</h2>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/senior-member/professional-development" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Senior Member PD<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Professional Development program overview.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://lms.cap.gov/" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Axis (LMS)<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">lms.cap.gov — official Learning Management System.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/senior-member/professional-development/specialty-track-study-guides" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Specialty Track Study Guides<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Study guides for each specialty track.</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-ops">
+            <h2 class="card-info-title" id="cap-ref-ops">Operations</h2>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/operations" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Operations Home<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Top-level CAP operations page.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/operations/aircraft-operations-and-staneval" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Flight Ops &amp; Stan-Eval<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Aircraft operations and standardization/evaluation.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/emergency-services" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Emergency Services<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">ES program, qualifications, and resources.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/safety" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Safety<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Safety program, briefings, and reporting.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/communications" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Communications<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">CAP communications program and resources.</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-ae">
+            <h2 class="card-info-title" id="cap-ref-ae">Aerospace &amp; Cadet</h2>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/programs/aerospace-education" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Aerospace Education<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">AE program for members and educators.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/programs/aerospace-education/stem-kits" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">STEM Kits<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Order and manage STEM Kit activities.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/cadet-programs/cadet-promotions-and-achievements" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Cadet Promotions<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Cadet promotions, achievements, and milestones.</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-uniforms">
+            <h2 class="card-info-title" id="cap-ref-uniforms">Uniforms &amp; Awards</h2>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/publications/cap-regulations" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Uniforms (CAPR 39-1)<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Regulations index — filter for 39-1 (uniforms).</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/personnel-and-membership-services/awards-and-decorations" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Awards &amp; Decorations<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Awards, ribbons, and decorations guidance.</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-tn">
+            <h2 class="card-info-title" id="cap-ref-tn">Tennessee Wing</h2>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn" href="https://www.cap.news/tnwg/" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">TN Wing Home<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">Tennessee Wing news and updates.</span>
+              </a>
+              <a class="cap-ref-btn" href="https://www.gocivilairpatrol.com/members/southeast-region" target="_blank" rel="noopener noreferrer">
+                <span class="cap-ref-btn-label">Southeast Region<span class="cap-ref-btn-ext" aria-hidden="true">↗</span></span>
+                <span class="cap-ref-btn-desc">SER home on gocivilairpatrol.com.</span>
+              </a>
+            </div>
+          </section>
+        </div>
+
+        <p class="cap-ref-note">Squadron-uploaded files and shared link directory live on the <a href="documents.html">Files &amp; Resources</a> page.</p>
       </div>
       <div data-portal-footer></div>
     </div>
