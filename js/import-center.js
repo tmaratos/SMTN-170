@@ -1,4 +1,5 @@
 /**
+ * @deprecated V1 — upload/import removed. Use js/resource-links.js for Files & Resources.
  * TN-170 Import Center — smart import preview and confirm.
  */
 (function initImportCenter(global) {

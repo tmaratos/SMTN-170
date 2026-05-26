@@ -23,6 +23,14 @@ service cloud.firestore {
         && profile().role in ['commander', 'command_staff', 'admin'];
     }
 
+    function approvedMember() {
+      return isApproved();
+    }
+
+    function adminMember() {
+      return isAdmin();
+    }
+
     function safeProfilePatch() {
       let allowed = ['firstName', 'lastName', 'preferredName', 'rank', 'capId', 'phone', 'dutyPosition', 'profilePhotoUrl', 'updatedAt'];
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
@@ -101,6 +109,11 @@ service cloud.firestore {
     match /auditLog/{docId} {
       allow read: if isAdmin();
       allow create: if isApproved();
+    }
+
+    match /resourceLinks/{id} {
+      allow read, create, update: if approvedMember();
+      allow delete: if adminMember();
     }
   }
 }

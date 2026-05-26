@@ -1,4 +1,5 @@
 /**
+ * @deprecated V1 — Firebase Storage not used in portal runtime.
  * TN-170 Firebase Storage helpers — squadron-files/{uid}/..., imports/{uid}/...
  */
 (function initFirebaseStorage(global) {

@@ -9,12 +9,11 @@
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
-  <title>Upload & Files | TN-170</title>
+  <title>Files & Resources | TN-170</title>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=6" />
   <link rel="stylesheet" href="./css/portal-layout.css?v=2" />
-  <link rel="stylesheet" href="./css/doc-viewer.css?v=1" />
 </head>
 <body data-portal-page="files">
   <div class="portal-app">
@@ -32,21 +31,21 @@
     <div class="portal-main">
       <header class="portal-topbar">
         <div>
-          <h1>Upload &amp; Files</h1>
-          <p>Upload squadron documents, smart-import schedules and org chart data, preview files in-browser</p>
+          <h1>Files &amp; Resources</h1>
+          <p>Squadron resource links for schedules, minutes, forms, and reference materials</p>
         </div>
       </header>
       <div class="portal-content portal-content--wide">
         <div class="page-frame page-stack">
-          <div id="importCenterRoot"></div>
-          <div id="fileLibraryRoot">
-            <p class="page-intro">Loading file library…</p>
+          <div data-steward-context="files"></div>
+          <div id="resourceLinksRoot">
+            <p class="page-intro">Loading resources…</p>
           </div>
         </div>
       </div>
       <div data-portal-footer></div>
     </div>
   </div>
-  <script src="./js/portal-scripts.js?v=8" data-page="documents"></script>
+  <script src="./js/portal-scripts.js?v=9" data-page="documents"></script>
 </body>
 </html>

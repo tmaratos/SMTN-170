@@ -1,12 +1,12 @@
 /**
  * Standard script chain for protected portal pages.
- * Include once before </body>: <script src="./js/portal-scripts.js?v=8" data-page="dashboard"></script>
+ * Include once before </body>: <script src="./js/portal-scripts.js?v=9" data-page="dashboard"></script>
  */
 (function loadPortalScripts() {
   const PAGE_SCRIPTS = {
     schedule: ["./js/portal-data.js", "./js/schedule-builder.js"],
-    documents: ["./js/import-center.js?v=3", "./js/file-library.js?v=9"],
-    orgchart: ["./js/file-ingestion.js?v=7", "./js/org-chart.js?v=9"],
+    documents: ["./js/resource-links.js?v=1"],
+    orgchart: ["./js/org-chart.js?v=9"],
     "flight-review": ["./flight-review.js"],
     "sui-readiness": ["./sui-readiness.js?v=9"],
     admin: ["./js/portal-data.js", "./js/portal-admin.js"],
@@ -22,23 +22,19 @@
     "./portal-config.js?v=3",
     "./js/firebase-config.js?v=1",
     "./js/firebase-client.js?v=1",
-    "./js/firebase-data.js?v=1",
-    "./js/firebase-storage.js?v=1",
+    "./js/firebase-data.js?v=2",
     "./js/firebase-auth.js?v=1",
-    "./js/import-client.js?v=1",
     "./js/steward-client.js?v=1",
     "./js/auth-guard.js?v=8",
     "./js/profile-service.js?v=1",
     "./js/auth.js?v=10",
     "./js/auth-session.js?v=8",
-    "./portal-nav.js?v=15",
-    "./js/portal-shell.js?v=10",
+    "./portal-nav.js?v=16",
+    "./js/portal-shell.js?v=11",
     "./js/portal-pages.js?v=3",
     "./js/steward-api.js?v=3",
     "./js/steward-launcher.js?v=1",
-    "./js/steward.js?v=16",
-    "./js/doc-viewer.js?v=3",
-    "./js/file-ingestion.js?v=7",
+    "./js/steward.js?v=17",
     "./app.js?v=8",
     "./js/profile-banner.js?v=1",
     "./js/portal-bootstrap.js?v=8",
@@ -50,8 +46,7 @@
   function loadSequentially(urls, i) {
     if (i >= urls.length) {
       global.SMTN170ScheduleBuilder?.init?.();
-      global.SMTN170FileLibrary?.init?.();
-      global.SMTN170ImportCenter?.init?.();
+      global.SMTN170ResourceLinks?.init?.();
       global.SMTN170OrgChart?.init?.();
       global.SMTN170TasksPage?.init?.();
       global.SMTN170SuiReadiness?.init?.();

@@ -726,3 +726,86 @@ textarea {
     flex-direction: column;
   }
 }
+
+/* Files & Resources link directory */
+.rl-toolbar {
+  margin: 0 0 16px;
+}
+
+.rl-sections {
+  display: grid;
+  gap: 16px;
+}
+
+.rl-section .card-info-title {
+  margin-bottom: 12px;
+}
+
+.rl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.rl-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rl-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.rl-link {
+  color: var(--tn-cyan, #5ec8e8);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.rl-link:hover {
+  text-decoration: underline;
+}
+
+.rl-meta {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.rl-notes {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.rl-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rl-form label {
+  display: block;
+  margin-top: 12px;
+}
+
+.rl-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.rl-drive-note {
+  margin-top: -8px;
+}
+

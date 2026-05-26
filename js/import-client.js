@@ -1,4 +1,5 @@
 /**
+ * @deprecated V1 — upload/import Cloud Functions not used in portal runtime.
  * TN-170 Import Processor — Firebase Cloud Function httpsCallable client.
  */
 (function initImportClient(global) {

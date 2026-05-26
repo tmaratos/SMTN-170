@@ -36,20 +36,20 @@
       prompt: "Help me review the squadron organization chart and vacant positions.",
     },
     {
-      id: "upload-schedule",
-      icon: "↑",
-      title: "Upload Existing Schedule",
-      subtitle: "Smart import · Files",
+      id: "resources",
+      icon: "🔗",
+      title: "Find Resource Links",
+      subtitle: "Files & Resources directory",
       href: "documents.html",
-      prompt: "Help me import an existing meeting schedule into the portal.",
+      prompt: "Help me find squadron resource links for schedules, forms, and CAP references.",
     },
     {
-      id: "import-files",
-      icon: "📁",
-      title: "Import Squadron Files",
-      subtitle: "Smart import workflow",
-      href: "documents.html",
-      prompt: "What files have been uploaded and what still needs review before import?",
+      id: "tasks",
+      icon: "☑",
+      title: "Review Open Tasks",
+      subtitle: "Squadron follow-ups",
+      href: "tasks.html",
+      prompt: "Show open squadron tasks that need attention.",
     },
   ];
 
@@ -57,7 +57,7 @@
     "Build next month's meeting schedule",
     "Show overdue flight reviews",
     "Prepare inspection readiness checklist",
-    "Find latest uploaded safety files",
+    "Find squadron resource links",
     "Help update the organization chart",
     "Show open inspection items",
   ];
@@ -377,9 +377,9 @@
       const timeWord = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
       const name = (profile?.preferred_name || profile?.first_name || "").trim().split(/\s+/)[0];
       const nameBit = name ? `, ${name}` : "";
-      return `${timeWord}${nameBit}. Steward is ready for meeting schedules, flight review currency, inspection prep, file import, org chart updates, and CAP references. What operation should we run?`;
+      return `${timeWord}${nameBit}. Steward is ready to help find resource links, plan meetings, track tasks, review the org chart, and search CAP references. What operation should we run?`;
     }
-    return "Steward is ready for meeting schedules, flight review currency, inspection prep, file import, org chart updates, and CAP references. What operation should we run?";
+    return "Steward is ready to help find resource links, plan meetings, track tasks, review the org chart, and search CAP references. What operation should we run?";
   }
 
   function renderModeTabs() {
@@ -425,7 +425,7 @@
           <div class="steward-welcome-copy">
             <p><strong>Steward for CAP</strong> — mission support</p>
             <p>${greeting}</p>
-            <p class="steward-welcome-hint">Ask about schedules, readiness, org chart, or CAP guidance. Upload squadron files from the link below.</p>
+            <p class="steward-welcome-hint">Ask about schedules, readiness, org chart, resource links, or CAP guidance. Google Drive integration may be added later.</p>
           </div>
         </div>`;
       return;
@@ -498,15 +498,14 @@
       activeMode === "chat"
         ? WORKFLOW_ACTIONS
         : WORKFLOW_ACTIONS.filter((a) => {
-            if (activeMode === "cap") return a.id === "import-files";
-            if (activeMode === "files") return a.id === "import-files" || a.id === "upload-schedule";
-            if (activeMode === "meetings") return a.id === "schedule" || a.id === "upload-schedule";
+            if (activeMode === "cap") return a.id === "resources";
+            if (activeMode === "files") return a.id === "resources";
+            if (activeMode === "meetings") return a.id === "schedule" || a.id === "resources";
             if (activeMode === "readiness") return a.id === "bfr" || a.id === "inspection";
             if (activeMode === "org") return a.id === "org";
             return true;
           });
 
-    const uploadChip = `<a href="documents.html" class="steward-chip steward-chip--link">↑ Upload &amp; import files</a>`;
     const chips = actions
       .map((a) => {
         if (a.href) {
@@ -516,7 +515,7 @@
         return `<button type="button" class="steward-chip" data-workflow-id="${escapeHtml(a.id)}" data-prompt="${escapeHtml(a.prompt || "")}">${escapeHtml(label)}</button>`;
       })
       .join("");
-    root.innerHTML = uploadChip + chips;
+    root.innerHTML = chips;
   }
 
   function renderContextList(items, emptyLabel) {
@@ -541,7 +540,7 @@
     const schedItems = ctx.schedules.map(
       (s) => `<li><a class="steward-ctx-link" href="calendar.html">${escapeHtml(s.label)}</a></li>`
     );
-    const uploadItems = ctx.uploads.map(
+    const resourceItems = ctx.resources.map(
       (u) => `<li><a class="steward-ctx-link" href="documents.html">${escapeHtml(u.label)}</a></li>`
     );
     const taskItems = ctx.tasks.map(
@@ -562,8 +561,9 @@
         <ul class="steward-ctx-list">${renderContextList(schedItems, "No upcoming meetings")}</ul>
       </div>
       <div class="steward-ctx-block">
-        <h3 class="steward-ctx-head">Recent uploads</h3>
-        <ul class="steward-ctx-list">${renderContextList(uploadItems, "No recent uploads")}</ul>
+        <h3 class="steward-ctx-head">Resource links</h3>
+        <ul class="steward-ctx-list">${renderContextList(resourceItems, "No resource links yet")}</ul>
+        <a href="documents.html" class="steward-ctx-action">Open Files &amp; Resources</a>
       </div>
       <div class="steward-ctx-block">
         <h3 class="steward-ctx-head">Recent tasks</h3>
@@ -577,7 +577,7 @@
 
   async function loadWorkspaceContext() {
     const sb = getSupabase();
-    const empty = { operations: [], schedules: [], uploads: [], tasks: [], expirations: [] };
+    const empty = { operations: [], schedules: [], resources: [], tasks: [], expirations: [] };
     if (!sb) {
       state.workspaceContext = empty;
       return empty;
@@ -589,9 +589,10 @@
     let meetings = [];
     let tasks = [];
     let fr = [];
+    let resourceLinks = [];
 
     try {
-      const [mRes, tRes, fRes] = await Promise.all([
+      const [mRes, tRes, fRes, rRes] = await Promise.all([
         sb
           .from("meetings")
           .select("title, meeting_date")
@@ -605,19 +606,18 @@
           .order("due_date", { ascending: true, nullsFirst: false })
           .limit(5),
         sb.from("flight_reviews").select("department, status").in("status", ["due_soon", "overdue", "needs_review"]).limit(6),
+        sb
+          .from("resource_links")
+          .select("title, category, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(5),
       ]);
       if (!mRes.error) meetings = mRes.data || [];
       if (!tRes.error) tasks = tRes.data || [];
       if (!fRes.error) fr = fRes.data || [];
+      if (!rRes.error) resourceLinks = rRes.data || [];
     } catch (err) {
       console.warn("[Steward] workspace context", err);
-    }
-
-    let uploads = [];
-    try {
-      uploads = (await global.SMTN170FileIngestion?.listUploadedFiles?.(5)) || [];
-    } catch {
-      /* ignore */
     }
 
     const fmtDate = (d) => {
@@ -637,8 +637,8 @@
       schedules: meetings.map((m) => ({
         label: `${fmtDate(m.meeting_date)} · ${m.title || "Meeting"}`,
       })),
-      uploads: uploads.map((f) => ({
-        label: (f.name || "File").slice(0, 40),
+      resources: resourceLinks.map((r) => ({
+        label: `${(r.category || "Resource").slice(0, 20)} · ${(r.title || "Link").slice(0, 32)}`,
       })),
       tasks: tasks.map((t) => ({
         label: `${t.title || "Task"}${t.due_date ? ` · due ${fmtDate(t.due_date)}` : ""}`,
@@ -670,46 +670,28 @@
   }
 
   async function buildFileContextForMessage(trimmed) {
-    if (!global.SMTN170FileIngestion?.listUploadedFiles) return "";
     const lower = trimmed.toLowerCase();
-    const wantsFiles =
-      /what files|uploaded files|files are uploaded|files in the portal|squadron files/i.test(lower);
-    const wantsOrg =
-      /org chart|organization chart|use this org|draft positions/i.test(lower);
-    const wantsIngest =
-      /update the site from uploaded|ingest|index uploaded|process uploaded/i.test(lower);
+    const wantsLinks =
+      /resource link|files & resources|squadron files|find.*link|where.*schedule|where.*form/i.test(lower);
+    if (!wantsLinks) return "";
 
-    if (!wantsFiles && !wantsOrg && !wantsIngest) return "";
+    const sb = getSupabase();
+    if (!sb) return "";
 
-    const files = await global.SMTN170FileIngestion.listUploadedFiles(25);
-    if (!files.length) {
-      return "\n\n[Portal file index: no uploaded_files records yet.]";
-    }
-
-    const lines = files.map((f) => {
-      const cat = global.SMTN170FileIngestion.detectFileCategory(f.name, f.mime_type, f.folder);
-      return `- ${f.name} (${cat}, folder: ${f.folder || "general"}, ${f.created_at || f.updated_at || ""})`;
-    });
-
-    let extra = `\n\n[Portal uploaded_files — ${files.length} recent file(s):\n${lines.join("\n")}]`;
-
-    if (wantsOrg) {
-      const org = files.find(
-        (f) => global.SMTN170FileIngestion.detectFileCategory(f.name, f.mime_type, f.folder) === "org_chart"
-      );
-      if (org) {
-        extra += `\n[Latest org_chart upload: "${org.name}". Text/CSV can create draft org_positions after review; PDF/image needs OCR or manual entry.]`;
+    try {
+      const { data, error } = await sb
+        .from("resource_links")
+        .select("title, category, url")
+        .order("category", { ascending: true })
+        .limit(25);
+      if (error || !data?.length) {
+        return "\n\n[Portal resource links: none saved yet — add links on Files & Resources.]";
       }
+      const lines = data.map((r) => `- ${r.title} (${r.category}): ${r.url}`);
+      return `\n\n[Portal resourceLinks — ${data.length} link(s):\n${lines.join("\n")}]`;
+    } catch {
+      return "";
     }
-
-    if (wantsIngest) {
-      const last = global.SMTN170FileIngestion.getLastResult?.();
-      if (last?.needsReview && last.drafts?.length) {
-        extra += `\n[Pending ingestion: ${last.drafts.length} draft ${last.type || "record"}(s) awaiting review on this device.]`;
-      }
-    }
-
-    return extra;
   }
 
   async function sendMessage(text) {
@@ -1044,7 +1026,6 @@
             <h2 id="stewardTitle">Steward for CAP</h2>
             <p class="steward-gpt-status steward-status"><span class="steward-status-dot" aria-hidden="true"></span> Operational standby</p>
           </div>
-          <a href="documents.html" class="steward-upload-btn" id="stewardUploadLink">Upload files</a>
           <button type="button" class="steward-gpt-close" id="stewardClose" aria-label="Close Steward">✕</button>
         </header>
 
@@ -1074,14 +1055,13 @@
             <footer class="steward-gpt-composer">
               <div class="steward-chips" id="stewardPrompts"></div>
               <form class="steward-composer-box" id="stewardForm">
-                <a href="documents.html" class="steward-attach-btn" title="Upload squadron files" aria-label="Upload files">+</a>
                 <label class="visually-hidden" for="stewardInput">Message Steward</label>
                 <textarea id="stewardInput" name="message" rows="1" placeholder="Message Steward…" autocomplete="off"></textarea>
                 <button type="submit" class="steward-send-icon" id="stewardSend" aria-label="Send message">
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
               </form>
-              <p class="steward-composer-foot">${escapeHtml(DISCLAIMER)} Files are stored in Firebase; schedule and org data import after review in Upload &amp; Files.</p>
+              <p class="steward-composer-foot">${escapeHtml(DISCLAIMER)} Resource links are managed on Files &amp; Resources. Google Drive integration may be added later.</p>
             </footer>
           </div>
         </div>

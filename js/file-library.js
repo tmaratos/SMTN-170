@@ -1,4 +1,5 @@
 /**
+ * @deprecated V1 — upload/import removed. Use js/resource-links.js for Files & Resources.
  * TN-170 Squadron File Library — simple shared drive (Firebase Storage + uploadedFiles).
  */
 (function initFileLibrary(global) {

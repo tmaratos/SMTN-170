@@ -30,9 +30,9 @@
       prompts: ["What inspection items should we check this month?", "Show open inspection items."],
     },
     files: {
-      title: "Files and forms",
-      body: "Ask Steward how to organize squadron documents and where to file meeting minutes and readiness packets.",
-      prompts: ["Help categorize uploaded files.", "Where should meeting minutes be filed?"],
+      title: "Files & Resources",
+      body: "Ask Steward to help find squadron resource links for schedules, forms, safety materials, and CAP references.",
+      prompts: ["Find squadron resource links.", "Where should meeting minutes be linked?"],
     },
     senior: {
       title: "Senior Member Workspace",

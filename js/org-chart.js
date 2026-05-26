@@ -598,7 +598,7 @@
       <h1>TN-170 Oak Ridge Composite Squadron</h1>
       <p class="meta">Organization Chart · ${new Date().toLocaleString()} · TN-170 Senior Member operations portal</p>
       <table><thead><tr><th>Department</th><th>Position</th><th>Member</th><th>Status</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>
-      <p class="meta" style="margin-top:20px">Future: org_chart_snapshots + printable PDF via Supabase.</p></body></html>`);
+      <p class="meta" style="margin-top:20px">TN-170 Organization Chart export.</p></body></html>`);
     w.document.close();
     w.focus();
     setTimeout(() => w.print(), 400);
@@ -702,15 +702,9 @@
     if (!root) return;
     const data = getChartData();
     const m = getMetrics(data.positions);
-    const importList = importedFiles.length
-      ? `<ul class="org-import-list">${importedFiles
-          .map((f) => `<li><strong>${escapeHtml(f.name)}</strong> · ${escapeHtml(formatWhen(f.created_at))}</li>`)
-          .join("")}</ul>`
-      : "";
 
     root.innerHTML = `
-      ${renderDraftReviewPanel()}
-      ${importNotice && !pendingIngest?.drafts?.length ? `<div class="card-info org-notice" role="status">${escapeHtml(importNotice)}</div>` : ""}
+      ${importNotice ? `<div class="card-info org-notice" role="status">${escapeHtml(importNotice)}</div>` : ""}
       <header class="org-hero card-info">
         <div class="org-hero-text">
           <p class="org-hero-eyebrow">Squadron staff structure</p>
@@ -719,11 +713,9 @@
         </div>
         <div class="org-hero-actions">
           <button type="button" class="btn-gold btn-lg" data-action="add-position">Add Position</button>
-          <button type="button" class="btn-outline btn-lg" data-action="import-org-chart">Import Existing Org Chart</button>
-          <input type="file" id="orgChartImportInput" accept="image/*,.pdf,application/pdf,.csv,.txt,text/csv,text/plain" hidden />
           <button type="button" class="btn-outline btn-lg" data-action="view-vacancies">View Vacancies (${m.vacant})</button>
           <button type="button" class="btn-outline btn-lg" data-action="export-chart">Export Chart</button>
-          <button type="button" class="btn-outline btn-lg btn-steward-lg" data-steward-ask="Help draft organization chart positions from the uploaded org chart.">Ask Steward</button>
+          <button type="button" class="btn-outline btn-lg btn-steward-lg" data-steward-ask="Help me review vacant positions and staffing on the organization chart.">Ask Steward</button>
         </div>
         <div class="org-hero-stats">
           <span class="org-stat"><strong>${m.filled}</strong> Filled</span>
@@ -758,19 +750,11 @@
         </aside>
         <div class="org-main workspace-col">
           <div id="orgChartDisplay">${renderChart(data.positions)}</div>
-          ${
-            importedFiles.length
-              ? `<section class="card-info org-imports-panel" style="margin-top:20px"><h3>Imported org charts</h3>${importList}
-            <p class="page-intro" style="margin-top:12px">Uploaded. Steward can help draft positions from this file after document parsing is enabled.</p>
-            <button type="button" class="btn-outline" data-steward-ask="Help draft organization chart positions from the uploaded org chart.">Open Steward to draft positions</button></section>`
-              : ""
-          }
         </div>
       </div>
       <div id="orgEditorHost"></div>`;
 
     bindEvents();
-    bindImportInput();
     global.SMTN170Pages?.injectStewardContexts?.();
     global.SMTN170Pages?.bindStewardContextActions?.();
     global.SMTN170Steward?.rebind?.();
@@ -810,28 +794,6 @@
       if (!btn) return;
       const action = btn.dataset.action;
       if (action === "add-position") openEditor(null);
-      if (action === "import-org-chart") document.getElementById("orgChartImportInput")?.click();
-      if (action === "approve-all-drafts" && pendingIngest?.drafts?.length) {
-        global.SMTN170FileIngestion.commitDrafts(pendingIngest)
-          .then(async () => {
-            pendingIngest = null;
-            importNotice = "All draft positions saved.";
-            await hydrateFromSupabase();
-            render();
-          })
-          .catch((e) => alert(e.message));
-      }
-      if (action === "discard-all-drafts") {
-        pendingIngest = null;
-        importNotice = "Draft positions discarded.";
-        render();
-      }
-      const draftBtn = e.target.closest("[data-draft-action]");
-      if (draftBtn) {
-        const idx = Number(draftBtn.dataset.idx);
-        if (draftBtn.dataset.draftAction === "approve") approveDraftPosition(idx);
-        if (draftBtn.dataset.draftAction === "discard") discardDraftPosition(idx);
-      }
       if (action === "edit-position") openEditor(btn.dataset.orgId);
       if (action === "close-editor") closeEditor();
       if (action === "view-vacancies") {
@@ -976,9 +938,8 @@
 
   async function hydrateFromSupabase() {
     const fromDb = await SUPABASE.fetchPositions();
-    chartData = { positions: fromDb || [], source: fromDb?.length ? "supabase" : "empty" };
+    chartData = { positions: fromDb || [], source: fromDb?.length ? "firestore" : "empty" };
     if (chartData.positions.length) save(chartData);
-    importedFiles = await fetchImportedOrgCharts();
   }
 
   async function init() {

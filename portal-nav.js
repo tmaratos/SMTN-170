@@ -16,7 +16,7 @@
         { key: "home", href: "dashboard.html", label: "Home" },
         { key: "calendar", href: "calendar.html", label: "Calendar" },
         { key: "schedule", href: "schedule.html", label: "Meetings" },
-        { key: "files", href: "documents.html", label: "Upload & Files", highlight: true },
+        { key: "files", href: "documents.html", label: "Files & Resources" },
         { key: "orgchart", href: "orgchart.html", label: "Organization Chart" },
       ],
     },

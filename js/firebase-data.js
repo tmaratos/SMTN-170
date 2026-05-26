@@ -17,6 +17,7 @@
     steward_conversations: "stewardConversations",
     steward_chat_messages: "stewardMessages",
     audit_log: "auditLog",
+    resource_links: "resourceLinks",
   };
 
   const FIELD_MAP = {
@@ -71,6 +72,7 @@
     target_table: "targetTable",
     target_id: "targetId",
     pending_action: "pendingAction",
+    last_reviewed_at: "lastReviewedAt",
   };
 
   const CAMEL_MAP = Object.fromEntries(Object.entries(FIELD_MAP).map(([k, v]) => [v, k]));
