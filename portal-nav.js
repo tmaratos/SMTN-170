@@ -104,18 +104,38 @@
       <span class="portal-nav-account-role">${escapeHtml(lines.roleLabel)}</span>
       <span class="portal-nav-account-email">${escapeHtml(lines.email)}</span>
       <div class="portal-nav-account-actions">
-        <a href="profile.html" class="portal-nav-account-btn">My Profile</a>
-        <button type="button" class="portal-nav-account-btn portal-nav-account-btn--logout" id="portalNavLogout">Log Out</button>
+        <a href="profile.html" class="portal-nav-account-btn" data-steward-action="navigate" data-steward-label="My Profile" data-steward-target="profile.html" data-steward-help="View and edit your portal profile">My Profile</a>
+        <button type="button" class="portal-nav-account-btn portal-nav-account-btn--logout" id="portalNavLogout" data-steward-action="logout" data-steward-label="Log Out" data-steward-help="Sign out of the TN-170 portal">Log Out</button>
       </div>
     </div>`;
   }
 
+  const NAV_STEWARD = {
+    home: { action: "navigate", label: "Home", target: "dashboard.html", help: "Return to the squadron dashboard" },
+    calendar: { action: "navigate", label: "Calendar", target: "calendar.html", help: "View and add squadron calendar events" },
+    schedule: { action: "navigate", label: "Meetings", target: "schedule.html", help: "Build the monthly meeting schedule" },
+    files: { action: "navigate", label: "Files & Resources", target: "documents.html", help: "Browse squadron resource links" },
+    orgchart: { action: "navigate", label: "Organization Chart", target: "orgchart.html", help: "Review staff structure and vacancies" },
+    bfr: { action: "navigate", label: "Flight Reviews", target: "flight-review.html", help: "Track BFR status and review nights" },
+    sui: { action: "navigate", label: "Inspection Prep", target: "sui-readiness.html", help: "Work through inspection checklist items" },
+    tasks: { action: "navigate", label: "Tasks", target: "tasks.html", help: "View squadron tasks and follow-ups" },
+    senior: { action: "navigate", label: "Senior Member Workspace", target: "senior-member.html", help: "Open the senior member operations hub" },
+    profile: { action: "navigate", label: "My Profile", target: "profile.html", help: "View and edit your portal profile" },
+    admin: { action: "navigate", label: "Admin", target: "admin.html", help: "Approve users and manage roles (command staff only)" },
+  };
+
+  function stewardAttrs(key) {
+    const s = NAV_STEWARD[key];
+    if (!s) return "";
+    return ` data-steward-action="${escapeHtml(s.action)}" data-steward-label="${escapeHtml(s.label)}" data-steward-target="${escapeHtml(s.target)}" data-steward-help="${escapeHtml(s.help)}"`;
+  }
+
   function renderNavLink(n, active) {
     if (n.stewardOpen) {
-      return `<button type="button" class="portal-nav-link portal-nav-link--steward ${active === n.key ? "active" : ""}" data-steward-open>${escapeHtml(n.label)}</button>`;
+      return `<button type="button" class="portal-nav-link portal-nav-link--steward ${active === n.key ? "active" : ""}" data-steward-open${stewardAttrs(n.key)}>${escapeHtml(n.label)}</button>`;
     }
     const featured = n.highlight ? " portal-nav-link--featured" : "";
-    return `<a href="${n.href}" class="portal-nav-link${featured} ${active === n.key ? "active" : ""}"${n.requireAdmin ? ' data-require-admin="true"' : ""}>${escapeHtml(n.label)}</a>`;
+    return `<a href="${n.href}" class="portal-nav-link${featured} ${active === n.key ? "active" : ""}"${n.requireAdmin ? ' data-require-admin="true"' : ""}${stewardAttrs(n.key)}>${escapeHtml(n.label)}</a>`;
   }
 
   function renderNav(active) {

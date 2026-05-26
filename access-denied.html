@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <title>Access denied | TN-170</title>
+  <script type="application/json" id="steward-page-meta">
+  {"pageId":"denied","title":"Access Denied","path":"access-denied.html","section":"Account","summary":"Your profile was not approved for the TN-170 Senior Member portal.","primaryActions":["Log out"],"forms":[],"buttons":["Log out"],"relatedPages":["login.html"],"keywords":["denied","access denied","not approved"],"public":true}
+  </script>
 </head>
 <body class="login-v2">
   <main class="login-card-v2" style="max-width:520px;text-align:left">
@@ -16,7 +19,7 @@
     <p class="login-unit" style="text-align:left">Your profile was not approved for the TN-170 Senior Member portal.</p>
     <p class="login-unit login-lead" style="text-align:left">If you believe this is an error, contact squadron leadership.</p>
     <p id="deniedIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
-    <button type="button" id="pendingLogoutBtn" class="btn-gold btn-lg" style="width:100%;margin-top:20px">Log out</button>
+    <button type="button" id="pendingLogoutBtn" class="btn-gold btn-lg" style="width:100%;margin-top:20px" data-steward-action="logout" data-steward-label="Log out" data-steward-help="Sign out and return to login">Log out</button>
     <p class="portal-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
   <script src="./js/firebase-config.js?v=1"></script>

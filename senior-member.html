@@ -10,6 +10,9 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Senior Member Workspace | TN-170</title>
+  <script type="application/json" id="steward-page-meta">
+  {"pageId":"senior","title":"Senior Member Workspace","path":"senior-member.html","section":"Operations","summary":"Hub for flight reviews, inspection prep, meetings, files, and org chart.","primaryActions":["Open flight reviews","Open inspection prep","Open meeting planner"],"forms":[],"buttons":["Flight reviews","Inspection prep","Meeting planner"],"relatedPages":["flight-review.html","sui-readiness.html","schedule.html"],"keywords":["senior member","workspace","operations","staff planning"]}
+  </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=7" />
@@ -40,11 +43,11 @@
           <p class="page-intro">Approved Senior Members share one operations workspace — meetings, files, readiness, org chart, and Steward. Roles are for identity and audit only.</p>
           <div data-steward-context="senior"></div>
           <div class="card-grid-2">
-            <a class="card-action hub-card" href="flight-review.html"><h3>Flight reviews</h3><p>Department packets, due dates, and review nights.</p></a>
-            <a class="card-action hub-card" href="sui-readiness.html"><h3>Inspection prep</h3><p>Checklist by work area and commander review.</p></a>
-            <a class="card-info hub-card" href="schedule.html"><h3>Meeting planner</h3><p>Build the monthly meeting schedule and print.</p></a>
-            <a class="card-info hub-card" href="documents.html"><h3>Files &amp; Resources</h3><p>Squadron resource links for schedules, forms, and references.</p></a>
-            <a class="card-action hub-card" href="orgchart.html"><h3>Organization chart</h3><p>Leadership structure, vacancies, and staff assignments.</p></a>
+            <a class="card-action hub-card" href="flight-review.html" data-steward-action="navigate" data-steward-label="Flight reviews" data-steward-target="flight-review.html" data-steward-help="Track BFR packets and review nights"><h3>Flight reviews</h3><p>Department packets, due dates, and review nights.</p></a>
+            <a class="card-action hub-card" href="sui-readiness.html" data-steward-action="navigate" data-steward-label="Inspection prep" data-steward-target="sui-readiness.html" data-steward-help="Work through inspection checklist items"><h3>Inspection prep</h3><p>Checklist by work area and commander review.</p></a>
+            <a class="card-info hub-card" href="schedule.html" data-steward-action="navigate" data-steward-label="Meeting planner" data-steward-target="schedule.html" data-steward-help="Build the monthly meeting schedule"><h3>Meeting planner</h3><p>Build the monthly meeting schedule and print.</p></a>
+            <a class="card-info hub-card" href="documents.html" data-steward-action="navigate" data-steward-label="Files & Resources" data-steward-target="documents.html" data-steward-help="Browse squadron resource links"><h3>Files &amp; Resources</h3><p>Squadron resource links for schedules, forms, and references.</p></a>
+            <a class="card-action hub-card" href="orgchart.html" data-steward-action="navigate" data-steward-label="Organization chart" data-steward-target="orgchart.html" data-steward-help="Review leadership structure and vacancies"><h3>Organization chart</h3><p>Leadership structure, vacancies, and staff assignments.</p></a>
           </div>
           <article class="card-info"><h2 style="margin:0 0 10px;font-size:1.15rem">Staff planning</h2><p style="margin:0">Track staff planning notes, meeting preparation, and command briefing items.</p></article>
         </div>

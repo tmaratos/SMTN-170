@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <title>Awaiting approval | TN-170</title>
+  <script type="application/json" id="steward-page-meta">
+  {"pageId":"pending","title":"Awaiting Approval","path":"pending-approval.html","section":"Account","summary":"Your account is awaiting approval by squadron leadership.","primaryActions":["Log out"],"forms":[],"buttons":["Log out"],"relatedPages":["login.html"],"keywords":["pending","approval","awaiting"],"public":true}
+  </script>
 </head>
 <body class="login-v2">
   <main class="login-card-v2" style="max-width:520px;text-align:left">
@@ -17,7 +20,7 @@
     <p id="pendingIdentity" class="login-unit" style="margin-top:16px;font-weight:700;color:var(--tn-gold)"></p>
     <p id="pendingEmail" class="login-unit"></p>
     <p class="login-unit"><strong>Status:</strong> Pending approval</p>
-    <button type="button" id="pendingLogoutBtn" class="btn-gold btn-lg" style="width:100%;margin-top:20px">Log out</button>
+    <button type="button" id="pendingLogoutBtn" class="btn-gold btn-lg" style="width:100%;margin-top:20px" data-steward-action="logout" data-steward-label="Log out" data-steward-help="Sign out and return to login">Log out</button>
     <p class="portal-fbi" style="margin-top:24px;text-align:center">Steward for CAP · Built by Faith Based Innovations</p>
   </main>
   <script src="./js/firebase-config.js?v=1"></script>

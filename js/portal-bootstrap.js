@@ -18,6 +18,7 @@
       global.SMTN170PortalNav?.init?.();
       global.SMTN170Steward?.rebind?.();
       global.SMTN170Pages?.bindStewardContextActions?.();
+      global.StewardSiteIndex?.build?.().catch((err) => console.warn("[StewardSiteIndex]", err));
     }
   }
 

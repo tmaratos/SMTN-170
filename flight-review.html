@@ -10,6 +10,9 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Flight Reviews | TN-170</title>
+  <script type="application/json" id="steward-page-meta">
+  {"pageId":"bfr","title":"Flight Reviews","path":"flight-review.html","section":"Readiness","summary":"Track BFR packets, department flight review status, and schedule review nights.","primaryActions":["Schedule review night","View department status"],"forms":["frScheduleForm"],"buttons":["Post to calendar"],"relatedPages":["calendar.html","documents.html"],"keywords":["BFR","flight review","biannual flight review","currency","expiration"]}
+  </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=4" />
   <link rel="stylesheet" href="./portal-nav.css?v=5" />
   <link rel="stylesheet" href="./css/portal-layout.css?v=2" />
@@ -55,7 +58,7 @@
                 <input name="reviewer" placeholder="Rank and name" />
                 <label>Location</label>
                 <input name="location" value="Squadron Classroom" />
-                <button type="submit" class="btn-gold">Post to calendar</button>
+                <button type="submit" class="btn-gold" data-steward-action="submit" data-steward-label="Post to calendar" data-steward-target="calendar.html" data-steward-help="Schedule a flight review night on the squadron calendar">Post to calendar</button>
               </form>
               <p class="fr-portal-note" style="margin-top:16px"><strong>Later:</strong> Officer roles and file links. Add packet links under <a href="documents.html" style="color:var(--tn-cyan);font-weight:800">Files &amp; Resources</a>.</p>
             </aside>

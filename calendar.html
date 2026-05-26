@@ -10,6 +10,9 @@
   <link rel="manifest" href="./assets/site.webmanifest" />
   <meta name="theme-color" content="#030914" />
   <title>Calendar | TN-170</title>
+  <script type="application/json" id="steward-page-meta">
+  {"pageId":"calendar","title":"Calendar","path":"calendar.html","section":"Main","summary":"Post squadron events and review upcoming meeting nights and activities.","primaryActions":["Add event","Open meeting planner"],"forms":["calendarAddForm"],"buttons":["Add to calendar","Meeting planner"],"relatedPages":["schedule.html","flight-review.html"],"keywords":["calendar","events","meetings","schedule"]}
+  </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
   <link rel="stylesheet" href="./portal-nav.css?v=6" />
@@ -35,7 +38,7 @@
           <h1>Calendar</h1>
           <p>Private Senior Member operations workspace for TN-170</p>
         </div>
-        <a class="btn-gold" href="schedule.html">Meeting planner</a>
+        <a class="btn-gold" href="schedule.html" data-steward-action="navigate" data-steward-label="Meeting planner" data-steward-target="schedule.html" data-steward-help="Build the monthly squadron meeting schedule">Meeting planner</a>
       </header>
       <div class="portal-content portal-content--wide">
         <div class="page-frame">
@@ -55,7 +58,7 @@
                 <input type="time" name="endTime" />
                 <label>Location</label>
                 <input name="location" placeholder="Squadron classroom" />
-                <button type="submit" class="btn-gold">Add to calendar</button>
+                <button type="submit" class="btn-gold" data-steward-action="submit" data-steward-label="Add to calendar" data-steward-help="Post a new event on the squadron calendar">Add to calendar</button>
               </form>
             </article>
             <article class="workspace-panel card-action">

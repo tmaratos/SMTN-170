@@ -24,8 +24,9 @@
     "./js/firebase-client.js?v=2",
     "./js/firebase-data.js?v=2",
     "./js/firebase-auth.js?v=1",
-    "./js/steward-client.js?v=4",
+    "./js/steward-client.js?v=5",
     "./js/auth-guard.js?v=11",
+    "./js/steward-site-index.js?v=1",
     "./js/profile-service.js?v=2",
     "./js/auth.js?v=11",
     "./js/auth-session.js?v=8",
@@ -33,7 +34,7 @@
     "./js/portal-shell.js?v=11",
     "./js/portal-pages.js?v=3",
     "./js/steward-launcher.js?v=3",
-    "./js/steward-ui.js?v=3",
+    "./js/steward-ui.js?v=4",
     "./app.js?v=8",
     "./js/profile-banner.js?v=1",
     "./js/portal-bootstrap.js?v=8",
@@ -49,6 +50,9 @@
       global.SMTN170OrgChart?.init?.();
       global.SMTN170TasksPage?.init?.();
       global.SMTN170SuiReadiness?.init?.();
+      if (global.TN170_AUTH_SESSION_OK && global.StewardSiteIndex?.build) {
+        global.StewardSiteIndex.build().catch((err) => console.warn("[StewardSiteIndex]", err));
+      }
       return;
     }
     const s = document.createElement("script");

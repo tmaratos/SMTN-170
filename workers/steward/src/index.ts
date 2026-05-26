@@ -12,6 +12,17 @@ interface StewardRequest {
   pageTitle?: string;
   pendingActionId?: string;
   confirmation?: boolean;
+  siteIndexSummary?: SiteIndexSummary;
+}
+
+interface SiteIndexSummary {
+  currentPage?: { path?: string; title?: string; summary?: string };
+  matchingPages?: Array<{ path: string; title?: string; score?: number }>;
+  matchingActions?: Array<{ label: string; target: string }>;
+  nav?: Array<{ label: string; target: string; section?: string }>;
+  userRole?: string;
+  canAccessAdmin?: boolean;
+  navigationIntent?: boolean;
 }
 
 interface Profile {
@@ -31,6 +42,7 @@ interface LlmPayload {
   intent?: string;
   suggestions?: string[];
   capSearchQuery?: string | null;
+  navigateTo?: { path?: string; label?: string } | null;
   writeRequest?: {
     summary?: string;
     actionId?: string;
@@ -44,6 +56,7 @@ interface StewardResponse {
   intent?: string | null;
   suggestions?: string[];
   openUrl?: string | null;
+  navigateTo?: { path: string; label: string } | null;
   pendingConfirmation?: {
     id: string;
     action_id: string;
@@ -231,25 +244,100 @@ function buildSystemPrompt(profile: Profile): string {
     "Do not describe yourself as AI, a chatbot, or a language model.",
     "You do not speak with official CAP authority; official publications and command guidance remain authoritative.",
     "Help with meetings, schedules, tasks, organization chart, inspection readiness, BFR/flight review tracking, resource links, admin references, and locating official CAP regulations/forms/publications on gocivilairpatrol.com.",
-    "Never offer or perform file upload, import, OCR, or document parsing.",
+    "Use the provided siteIndexSummary to answer portal navigation questions — suggest the correct portal page (calendar, meetings/schedule, tasks, flight reviews, inspection prep, files & resources, org chart, profile, admin).",
+    "Never offer or perform file upload, import, OCR, or document parsing. Files & Resources is link-only in V1.",
     "Never claim you changed portal records. For create/update/delete requests, explain what would be done and that the member must confirm before any change is recorded.",
     "For admin-only topics (approving users, changing roles, deleting accounts), only assist command staff; otherwise direct members to their commander.",
     `Signed-in member: ${name} (role: ${role}).`,
     `Always end your reply with this disclaimer on its own line: ${DISCLAIMER}`,
     "",
     "Respond with JSON only (no markdown fences) using this schema:",
-    '{"reply":"string","intent":"general|cap|meetings|tasks|flight_reviews|inspection|org_chart|files|profile|help|admin","suggestions":["short follow-up prompts, max 3"],"capSearchQuery":null,"writeRequest":null,"adminOnly":false}',
+    '{"reply":"string","intent":"general|cap|meetings|tasks|flight_reviews|inspection|org_chart|files|profile|help|admin|navigate","suggestions":["short follow-up prompts, max 3"],"capSearchQuery":null,"writeRequest":null,"adminOnly":false,"navigateTo":null}',
+    "Set navigateTo to {\"path\":\"page.html\",\"label\":\"Human label\"} when the user asks to open/go to a portal page and siteIndexSummary indicates a clear destination.",
+    "Navigation mappings: approve users → admin.html; BFR/flight reviews → flight-review.html; create meeting → schedule.html or calendar.html; resource links → documents.html.",
     "Set capSearchQuery to a concise Google site search phrase when the user asks about CAP regulations, CAPR/CAPM, forms, uniforms, inspection guidance, aerospace, ES, cadet program, safety, or official CAP publications.",
     "Set writeRequest to {\"summary\":\"...\",\"actionId\":\"snake_case_id\"} when the user asks to create, update, assign, complete, rename, categorize, or delete portal records. Never set writeRequest for read-only questions.",
     "Set adminOnly true when the request requires commander/admin privileges.",
   ].join("\n");
 }
 
+function formatSiteIndexContext(summary?: SiteIndexSummary): string {
+  if (!summary) return "";
+  const parts = ["Portal site index summary:"];
+  if (summary.currentPage) {
+    parts.push(
+      `Current page: ${summary.currentPage.title || ""} (${summary.currentPage.path || ""}) — ${summary.currentPage.summary || ""}`.trim()
+    );
+  }
+  if (summary.matchingPages?.length) {
+    parts.push(
+      "Matching pages: " +
+        summary.matchingPages.map((p) => `${p.title || p.path} (${p.path})`).join("; ")
+    );
+  }
+  if (summary.matchingActions?.length) {
+    parts.push(
+      "Matching actions: " + summary.matchingActions.map((a) => `${a.label} → ${a.target}`).join("; ")
+    );
+  }
+  if (summary.nav?.length) {
+    parts.push("Nav: " + summary.nav.map((n) => `${n.label} (${n.target})`).join("; "));
+  }
+  parts.push(`User role: ${summary.userRole || "member"}. Admin access: ${summary.canAccessAdmin ? "yes" : "no"}.`);
+  if (summary.navigationIntent) parts.push("User message appears to be a portal navigation request.");
+  return parts.join("\n");
+}
+
+function deriveNavigateTo(
+  message: string,
+  summary: SiteIndexSummary | undefined,
+  profile: Profile
+): { path: string; label: string } | null {
+  const q = message.trim().toLowerCase();
+  const adminOk = isAdminProfile(profile) && summary?.canAccessAdmin !== false;
+
+  const routes: Array<{ patterns: RegExp[]; path: string; label: string; adminOnly?: boolean }> = [
+    { patterns: [/approve\s+users?/, /user\s+management/, /pending\s+members?/], path: "admin.html", label: "Admin", adminOnly: true },
+    { patterns: [/\bbfr\b/, /flight\s+review/], path: "flight-review.html", label: "Flight Reviews" },
+    { patterns: [/create\s+(a\s+)?meeting/, /meeting\s+schedule/, /build\s+(the\s+)?schedule/, /meeting\s+planner/], path: "schedule.html", label: "Meetings" },
+    { patterns: [/take\s+me\s+to\s+(the\s+)?calendar/, /open\s+calendar/, /go\s+to\s+calendar/, /^calendar$/], path: "calendar.html", label: "Calendar" },
+    { patterns: [/inspection/, /\bsui\b/, /readiness\s+checklist/], path: "sui-readiness.html", label: "Inspection Prep" },
+    { patterns: [/org\s*chart/, /organization\s+chart/], path: "orgchart.html", label: "Organization Chart" },
+    { patterns: [/resource\s+links?/, /files?\s+(&|and)\s+resources?/], path: "documents.html", label: "Files & Resources" },
+    { patterns: [/\btasks?\b/, /open\s+tasks?/], path: "tasks.html", label: "Tasks" },
+    { patterns: [/my\s+profile/], path: "profile.html", label: "My Profile" },
+    { patterns: [/dashboard/, /\bhome\b/], path: "dashboard.html", label: "Home" },
+  ];
+
+  for (const route of routes) {
+    if (route.adminOnly && !adminOk) continue;
+    if (route.patterns.some((p) => p.test(q))) {
+      return { path: route.path, label: route.label };
+    }
+  }
+
+  const top = summary?.matchingActions?.[0] || null;
+  if (top?.target) {
+    if (top.target === "admin.html" && !adminOk) return null;
+    return { path: top.target, label: top.label || top.target };
+  }
+
+  const page = summary?.matchingPages?.[0];
+  if (page?.path && summary?.navigationIntent) {
+    if (page.path === "admin.html" && !adminOk) return null;
+    return { path: page.path, label: page.title || page.path };
+  }
+
+  return null;
+}
+
 async function callOpenAI(env: Env, profile: Profile, body: StewardRequest): Promise<LlmPayload> {
+  const siteContext = formatSiteIndexContext(body.siteIndexSummary);
   const userContent = [
     body.message ? `User message: ${body.message}` : "",
     body.pagePath ? `Page path: ${body.pagePath}` : "",
     body.pageTitle ? `Page title: ${body.pageTitle}` : "",
+    siteContext,
   ]
     .filter(Boolean)
     .join("\n");
@@ -363,6 +451,15 @@ async function handleSteward(env: Env, profile: Profile, body: StewardRequest): 
   const capQuery = deriveCapQuery(message, llm);
   const openUrl = capQuery ? buildCapSearchUrl(capQuery) : null;
 
+  let navigateTo =
+    llm.navigateTo?.path && llm.navigateTo?.label
+      ? { path: llm.navigateTo.path, label: llm.navigateTo.label }
+      : deriveNavigateTo(message, body.siteIndexSummary, profile);
+
+  if (navigateTo?.path === "admin.html" && !isAdminProfile(profile)) {
+    navigateTo = null;
+  }
+
   const write = llm.writeRequest;
   const wantsWrite = !!(write?.summary || (looksLikeWrite(message) && llm.intent !== "cap" && llm.intent !== "help"));
   const actionId = (write?.actionId || "portal_write").toLowerCase();
@@ -389,6 +486,7 @@ async function handleSteward(env: Env, profile: Profile, body: StewardRequest): 
       intent: llm.intent || "write",
       suggestions: llm.suggestions?.slice(0, 3) || [],
       openUrl,
+      navigateTo: null,
       pendingConfirmation: {
         id: pendingId,
         action_id: actionId,
@@ -398,12 +496,25 @@ async function handleSteward(env: Env, profile: Profile, body: StewardRequest): 
     };
   }
 
+  if (navigateTo && (body.siteIndexSummary?.navigationIntent || llm.intent === "navigate")) {
+    return {
+      ok: true,
+      reply: `${reply}\n\nUse the button below to open ${navigateTo.label}.`,
+      intent: "navigate",
+      suggestions: llm.suggestions?.slice(0, 3) || [],
+      openUrl,
+      navigateTo,
+      pendingConfirmation: null,
+    };
+  }
+
   return {
     ok: true,
     reply,
     intent: capQuery ? "cap" : llm.intent || "general",
     suggestions: llm.suggestions?.slice(0, 3) || [],
     openUrl,
+    navigateTo,
     pendingConfirmation: null,
   };
 }

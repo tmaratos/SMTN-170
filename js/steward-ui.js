@@ -96,6 +96,7 @@
     dataConnected: false,
     pendingConfirmation: null,
     workspaceContext: null,
+    openedUrls: {},
   };
 
   function titleFromMessage(text) {
@@ -105,7 +106,9 @@
   }
 
   function canUseStewardCore() {
-    return !!(global.SMTN170StewardClient?.isConfigured?.() && getUserId());
+    const profile = global.SMTN170Auth?.getProfile?.() || global.SMTN170Auth?.loadSession?.();
+    const approved = global.SMTN170Profile?.isProfileStatusApproved?.(profile);
+    return !!(global.SMTN170StewardClient?.isConfigured?.() && getUserId() && approved);
   }
 
   function getClientApi() {
@@ -230,9 +233,60 @@
     </div>`;
   }
 
+  function renderNavigateButton(navigateTo) {
+    const targetPath = typeof navigateTo === "string" ? navigateTo : navigateTo?.path;
+    if (!targetPath) return "";
+    const path = escapeHtml(targetPath);
+    const label = escapeHtml((typeof navigateTo === "object" ? navigateTo?.label : "") || "Open page");
+    return `<div class="steward-cap-actions">
+      <a href="${path}" class="steward-cap-btn steward-cap-btn--primary steward-nav-btn" data-steward-navigate="${path}">${label}</a>
+    </div>`;
+  }
+
+  function tryLocalNavigation(message) {
+    const api = global.StewardSiteIndex;
+    if (!api?.getNavigationTarget) return null;
+    const target = api.getNavigationTarget(message);
+    if (!target?.path) return null;
+    if (target.path === "admin.html" && !api.get?.()?.canAccessAdmin) return null;
+    return target;
+  }
+
+  function handleNavigationIntent(message, fromWorker) {
+    const target = fromWorker || tryLocalNavigation(message);
+    if (!target?.path) return false;
+    const label = target.label || "Open page";
+    state.messages.push({
+      id: "nav-" + Date.now(),
+      role: "steward",
+      text: `Opening ${label}.`,
+      at: new Date().toISOString(),
+      navigateTo: target,
+      actions: [{ href: target.path, label: `Open ${label}` }],
+    });
+    renderMessages();
+    global.location.href = target.path;
+    return true;
+  }
+
+  function shouldAutoOpenCapUrl(userMessage, url) {
+    if (!url || !/gocivilairpatrol\.com/i.test(url)) return false;
+    const text = String(userMessage || "").toLowerCase();
+    return /(find|search|open)\b/.test(text) && /(cap|capr|publication|reference|form)/.test(text);
+  }
+
+  function rememberOpenedUrl(url) {
+    if (!url) return;
+    state.openedUrls[url] = true;
+  }
+
+  function hasOpenedUrl(url) {
+    return !!(url && state.openedUrls[url]);
+  }
+
   function renderCapActions(capSearchUrl) {
     if (!capSearchUrl) return "";
-    return renderOpenUrlButton(capSearchUrl, "Open CAP Reference");
+    return renderOpenUrlButton(capSearchUrl, "Open official CAP search");
   }
 
   async function ensureActiveConversation() {
@@ -357,7 +411,9 @@
           const body = formatMessageHtml(m.text);
           const openUrlActions =
             m.role === "steward"
-              ? renderCapActions(m.capSearchUrl) || renderOpenUrlButton(m.openUrl, m.openUrlLabel)
+              ? renderCapActions(m.capSearchUrl) ||
+                renderNavigateButton(m.navigateTo) ||
+                renderOpenUrlButton(m.openUrl, m.openUrlLabel)
               : "";
           const suggestionActions = m.role === "steward" ? renderMessageActions(m) : "";
           return `<div class="steward-msg steward-msg--${m.role}" data-msg-id="${escapeHtml(m.id || "")}">
@@ -533,6 +589,11 @@
 
   function pushStewardReplyFromApi(result) {
     const api = getClientApi();
+    const navRaw = result.navigateTo || result.navigate_to || null;
+    const navigateTo =
+      typeof navRaw === "string"
+        ? { path: navRaw, label: result.navigateLabel || result.navigate_label || "Open Page" }
+        : navRaw;
     const openUrl = result.openUrl || result.open_url || null;
     const capFromSearch = result.cap_search?.searchUrl || null;
     const capFromText = api?.parseCapUrlFromText?.(result.reply) || null;
@@ -541,11 +602,6 @@
       capFromText ||
       (openUrl && /gocivilairpatrol\.com/i.test(openUrl) ? openUrl : null);
     const messageOpenUrl = openUrl && !capSearchUrl ? openUrl : null;
-    if (result.cap_search?.openInNewTab && capSearchUrl) {
-      api?.openCapUrl?.(capSearchUrl);
-    } else if (openUrl && !result.pending_confirmation && !result.pendingConfirmation) {
-      api?.openCapUrl?.(openUrl);
-    }
     state.messages.push({
       id: result.steward_message_id || result.stewardMessageId || "steward-" + Date.now(),
       role: "steward",
@@ -554,8 +610,9 @@
       capSearchUrl,
       openUrl: messageOpenUrl,
       openUrlLabel: result.openUrlLabel || result.open_url_label || null,
+      navigateTo,
       suggestions: result.suggestions || [],
-      actions: result.actions || [],
+      actions: result.actions || (navigateTo ? [{ href: navigateTo.path, label: navigateTo.label || "Open page" }] : []),
     });
     state.pendingConfirmation = result.pending_confirmation || result.pendingConfirmation || null;
     renderDataStatus(!!result.data_connected || !!result.dataConnected);
@@ -600,18 +657,28 @@
       renderMessages();
       if (input) input.value = "";
 
+      await global.StewardSiteIndex?.build?.().catch(() => {});
+
+      const localNav = global.StewardSiteIndex?.isNavigationIntent?.(trimmed)
+        ? tryLocalNavigation(trimmed)
+        : null;
+
       const result = await getClientApi().invoke({
         message: trimmed,
         ...pageContext(),
       });
+
+      if (localNav && !result.navigateTo && !result.navigate_to) {
+        result.navigateTo = localNav;
+      }
 
       if (result.conversation_id || result.conversationId) {
         state.conversationId = result.conversation_id || result.conversationId;
       }
 
       const userIdx = state.messages.findIndex((m) => m.id === optimisticId);
-      if (userIdx >= 0) {
-        if (result.user_message_id) state.messages[userIdx].id = result.user_message_id;
+      if (userIdx >= 0 && result.user_message_id) {
+        state.messages[userIdx].id = result.user_message_id;
       }
 
       if (
@@ -624,6 +691,11 @@
       }
 
       pushStewardReplyFromApi(result);
+      const openUrl = result.openUrl || result.open_url || result.cap_search?.searchUrl || null;
+      if (shouldAutoOpenCapUrl(trimmed, openUrl) && !hasOpenedUrl(openUrl)) {
+        getClientApi()?.openCapUrl?.(openUrl);
+        rememberOpenedUrl(openUrl);
+      }
       saveLocalFallback();
       renderMessages();
       input?.focus();
@@ -832,7 +904,13 @@
       renderMessages();
     } catch (err) {
       console.error("[Steward] confirm", err);
-      alert(stewardErrorMessage(err));
+      state.messages.push({
+        id: "err-" + Date.now(),
+        role: "steward",
+        text: stewardErrorMessage(err),
+        at: new Date().toISOString(),
+      });
+      renderMessages();
     } finally {
       setThinking(false);
     }
@@ -852,7 +930,13 @@
       renderMessages();
     } catch (err) {
       console.error("[Steward] cancel", err);
-      alert(stewardErrorMessage(err));
+      state.messages.push({
+        id: "err-" + Date.now(),
+        role: "steward",
+        text: stewardErrorMessage(err),
+        at: new Date().toISOString(),
+      });
+      renderMessages();
     } finally {
       setThinking(false);
     }
