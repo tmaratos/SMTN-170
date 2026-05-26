@@ -44,6 +44,20 @@
     yellow: "hl-yellow",
   };
 
+  const HIGHLIGHT_BADGE_CLASSES = {
+    none: "sched-badge--plain",
+    green: "sched-badge--green",
+    cyan: "sched-badge--cyan",
+    yellow: "sched-badge--yellow",
+  };
+
+  const DEFAULT_AUDIENCE_LABELS = [
+    { label: "BCT", highlightType: "yellow", enabled: true },
+    { label: "Flights", highlightType: "green", enabled: true },
+    { label: "All Cadets", highlightType: "cyan", enabled: true },
+    { label: "Parents", highlightType: "none", enabled: true },
+  ];
+
   const MONTH_NAMES = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -61,6 +75,108 @@
 
   function safeArray(value) {
     return Array.isArray(value) ? value : [];
+  }
+
+  /**
+   * Convert legacy or partial audience-label data to the canonical object form.
+   * Accepts either a flat string array (legacy: ["BCT","Flights",...]) or the
+   * new object-array form. Returns objects of shape
+   *   { label, highlightType, enabled }.
+   */
+  function normalizeAudienceLabels(value) {
+    const list = safeArray(value);
+    if (!list.length) return DEFAULT_AUDIENCE_LABELS.map((a) => ({ ...a }));
+    return list.map((entry, i) => {
+      if (typeof entry === "string") {
+        const seed =
+          DEFAULT_AUDIENCE_LABELS.find(
+            (d) => d.label.toLowerCase() === entry.toLowerCase()
+          ) || DEFAULT_AUDIENCE_LABELS[i] || { label: entry, highlightType: "none", enabled: true };
+        return { label: entry, highlightType: seed.highlightType, enabled: true };
+      }
+      if (entry && typeof entry === "object") {
+        const seed =
+          DEFAULT_AUDIENCE_LABELS.find(
+            (d) => d.label.toLowerCase() === String(entry.label || "").toLowerCase()
+          ) || { highlightType: "none" };
+        return {
+          label: String(entry.label || ""),
+          highlightType: HIGHLIGHT_CLASSES[entry.highlightType]
+            ? entry.highlightType
+            : seed.highlightType || "none",
+          enabled: entry.enabled !== false,
+        };
+      }
+      return { label: "", highlightType: "none", enabled: true };
+    });
+  }
+
+  /**
+   * Convert any single-entry or legacy block into the canonical block shape.
+   * Always returns top-level convenience fields (for backward compat with the
+   * old single-entry renderer) AND an `entries` array of length >= 1.
+   */
+  function normalizeBlock(block, fallback) {
+    const fb = fallback || {
+      startTime: "",
+      endTime: "",
+      durationLabel: "",
+      title: "",
+      owner: "",
+      bullets: [],
+      notes: "",
+      highlightType: "none",
+    };
+    const top = block && typeof block === "object" ? block : {};
+    const rawEntries = safeArray(top.entries).filter(
+      (e) => e && typeof e === "object"
+    );
+    const entries = rawEntries.length
+      ? rawEntries.map((e) => normalizeEntry(e, fb))
+      : [normalizeEntry(top, fb)];
+    const head = entries[0];
+    return {
+      startTime: head.startTime,
+      endTime: head.endTime,
+      durationLabel: head.durationLabel,
+      title: head.title,
+      owner: head.owner,
+      bullets: head.bullets,
+      notes: head.notes,
+      highlightType: head.highlightType,
+      entries,
+    };
+  }
+
+  function normalizeEntry(entry, fallback) {
+    const fb = fallback || {};
+    const e = entry && typeof entry === "object" ? entry : {};
+    return {
+      startTime: e.startTime == null ? fb.startTime || "" : String(e.startTime),
+      endTime: e.endTime == null ? fb.endTime || "" : String(e.endTime),
+      durationLabel:
+        e.durationLabel == null ? fb.durationLabel || "" : String(e.durationLabel),
+      title: e.title == null ? fb.title || "" : String(e.title),
+      owner: e.owner == null ? fb.owner || "" : String(e.owner),
+      bullets: safeArray(e.bullets).filter(Boolean),
+      notes: e.notes == null ? fb.notes || "" : String(e.notes),
+      highlightType: HIGHLIGHT_CLASSES[e.highlightType]
+        ? e.highlightType
+        : fb.highlightType || "none",
+    };
+  }
+
+  function emptyEntry(highlightType) {
+    return {
+      startTime: "",
+      endTime: "",
+      durationLabel: "",
+      title: "",
+      owner: "",
+      bullets: [],
+      notes: "",
+      highlightType: highlightType || "none",
+    };
   }
 
   function safeNow() {
@@ -270,9 +386,8 @@
       </article>`;
   }
 
-  function renderBlockCell(block, highlightType) {
-    const safe = block || {};
-    const cls = HIGHLIGHT_CLASSES[highlightType || "none"] || "hl-none";
+  function renderBlockEntryInner(entry) {
+    const safe = entry || {};
     const time =
       safe.startTime || safe.endTime
         ? `<span class="time-range">${escapeHtml(safe.startTime || "")}${
@@ -298,12 +413,30 @@
     const notes = safe.notes
       ? `<p class="activity-notes">${escapeHtml(safe.notes)}</p>`
       : "";
-    return `<td class="sched-cell ${cls}">${time}${title}${bulletsHtml}${owner}${notes}</td>`;
+    return `${time}${title}${bulletsHtml}${owner}${notes}`;
   }
 
-  function pickHighlight(block) {
-    if (!block) return "none";
-    return block.highlightType || "none";
+  /**
+   * Render one schedule cell. A block can carry multiple entries; they're
+   * stacked vertically, separated by a thin divider. Each entry can have its
+   * own highlight (we wrap each in a sub-pane carrying its own bg class).
+   */
+  function renderBlockCell(block) {
+    const norm = normalizeBlock(block);
+    const entries = norm.entries;
+    if (entries.length <= 1) {
+      const e = entries[0];
+      const cls = HIGHLIGHT_CLASSES[e.highlightType] || "hl-none";
+      return `<td class="sched-cell ${cls}">${renderBlockEntryInner(e)}</td>`;
+    }
+    // multi-entry — outer cell stays neutral; each entry colors its own pane
+    const inner = entries
+      .map((e) => {
+        const cls = HIGHLIGHT_CLASSES[e.highlightType] || "hl-none";
+        return `<div class="sched-entry ${cls}">${renderBlockEntryInner(e)}</div>`;
+      })
+      .join("");
+    return `<td class="sched-cell sched-cell--multi">${inner}</td>`;
   }
 
   function formatWeekDate(date) {
@@ -342,9 +475,9 @@
     const monthName = MONTH_NAMES[(month - 1) % 12] || "";
     const titleLine =
       sched.title || `Monthly Squadron Meeting Schedule — ${monthName} ${year}`;
-    const audiences = safeArray(sched.audienceLabels).length
-      ? safeArray(sched.audienceLabels)
-      : ["BCT", "Flights", "All Cadets", "Parents"];
+    const audiences = normalizeAudienceLabels(sched.audienceLabels).filter(
+      (a) => a.enabled && a.label
+    );
 
     const weeks = safeArray(sched.weeks);
     const weekHeaders = weeks
@@ -380,24 +513,26 @@
         ([label, key]) => `
         <tr>
           <td class="row-label">${escapeHtml(label)}</td>
-          ${weeks
-            .map((w) => renderBlockCell(w?.[key], pickHighlight(w?.[key])))
-            .join("")}
+          ${weeks.map((w) => renderBlockCell(w?.[key])).join("")}
         </tr>`
       )
       .join("");
+
+    const audienceLegend = audiences.length
+      ? audiences
+          .map((a) => {
+            const cls = HIGHLIGHT_BADGE_CLASSES[a.highlightType] || "sched-badge--plain";
+            return `<span class="sched-badge ${cls}">${escapeHtml(a.label)}</span>`;
+          })
+          .join("")
+      : "";
 
     const legendHtml = `
       <div class="sched-doc__legend">
         <span class="sched-badge sched-badge--green">Main training</span>
         <span class="sched-badge sched-badge--cyan">Safety / Special</span>
         <span class="sched-badge sched-badge--yellow">Exam / Leadership</span>
-        ${audiences
-          .map(
-            (a) =>
-              `<span class="sched-badge sched-badge--plain">${escapeHtml(a)}</span>`
-          )
-          .join("")}
+        ${audienceLegend}
       </div>`;
 
     const extraHtml = sched.extracurricularActivities
@@ -447,11 +582,12 @@
         startTime: "1900",
         endTime: "1905",
         durationLabel: "5m",
-        title: "Anthem & Opening",
-        owner: "Cadet Commander",
+        title: "Anthem",
+        owner: "",
         bullets: [],
         notes: "",
         highlightType: "none",
+        entries: [],
       },
       emphasis: {
         startTime: "1905",
@@ -461,7 +597,8 @@
         owner: "",
         bullets: [],
         notes: "",
-        highlightType: "cyan",
+        highlightType: "none",
+        entries: [],
       },
       block1: {
         startTime: "1920",
@@ -472,6 +609,7 @@
         bullets: [],
         notes: "",
         highlightType: "green",
+        entries: [],
       },
       block2: {
         startTime: "2005",
@@ -482,16 +620,18 @@
         bullets: [],
         notes: "",
         highlightType: "green",
+        entries: [],
       },
       closing: {
         startTime: "2050",
         endTime: "2100",
         durationLabel: "10m",
-        title: "Announcements & Dismissal",
-        owner: "Cadet Commander",
+        title: "Announcements",
+        owner: "",
         bullets: [],
         notes: "",
         highlightType: "none",
+        entries: [],
       },
     };
   }
@@ -533,9 +673,240 @@
       year: y,
       status: "draft",
       firstMeetingDate: firstMeetingDate || "",
-      audienceLabels: ["BCT", "Flights", "All Cadets", "Parents"],
+      audienceLabels: DEFAULT_AUDIENCE_LABELS.map((a) => ({ ...a })),
       weeks,
       extracurricularActivities: "",
+      notes: "",
+    };
+  }
+
+  /**
+   * Reference example used by the "Load TN-170 June 2026 Example" helper button
+   * in the schedule builder. Includes multi-entry blocks, varying highlights,
+   * and the canonical audience-label highlight mapping so the round-trip
+   * (load → save → preview → print) can be smoke-tested against the real
+   * Google Docs-style document.
+   */
+  function tn170JuneExample() {
+    const mk = (overrides) => ({
+      startTime: "",
+      endTime: "",
+      durationLabel: "",
+      title: "",
+      owner: "",
+      bullets: [],
+      notes: "",
+      highlightType: "none",
+      ...overrides,
+    });
+    const week = (label, date, uniform, blocks) => ({
+      id: uid("wk"),
+      label,
+      date,
+      uniform,
+      ...blocks,
+    });
+
+    const weeks = [
+      week("Week 1", "2026-06-02", "PT", {
+        opening: mk({
+          startTime: "1900",
+          endTime: "1905",
+          durationLabel: "5m",
+          title: "Anthem",
+        }),
+        emphasis: mk({
+          startTime: "1905",
+          endTime: "1920",
+          durationLabel: "15m",
+          title: "Calisthenics",
+          owner: "Flt. Sergeants",
+          highlightType: "none",
+        }),
+        block1: mk({
+          startTime: "1920",
+          endTime: "2005",
+          durationLabel: "45m",
+          title: "CPFT",
+          owner: "1st Lt. Johnson, Z",
+          highlightType: "green",
+        }),
+        block2: mk({
+          startTime: "2005",
+          endTime: "2050",
+          durationLabel: "45m",
+          title: "Bloodborne Pathogens Protection",
+          owner: "1st Lt. Johnson, Z",
+          highlightType: "green",
+        }),
+        closing: mk({
+          startTime: "2050",
+          endTime: "2100",
+          durationLabel: "10m",
+          title: "Announcements",
+        }),
+      }),
+      week("Week 2", "2026-06-09", "ABU", {
+        opening: mk({
+          startTime: "1900",
+          endTime: "1905",
+          durationLabel: "5m",
+          title: "Anthem",
+        }),
+        emphasis: mk({
+          startTime: "1905",
+          endTime: "1920",
+          durationLabel: "15m",
+          title: "Safety Briefing: Hot Weather Injuries",
+          owner: "Maj Juneau, C",
+          highlightType: "cyan",
+        }),
+        block1: {
+          startTime: "1920",
+          endTime: "2005",
+          durationLabel: "45m",
+          title: "",
+          owner: "",
+          bullets: [],
+          notes: "",
+          highlightType: "none",
+          entries: [
+            mk({ title: "TBD", owner: "TBD" }),
+            mk({ startTime: "1920", title: "TBD", owner: "TBD" }),
+          ],
+        },
+        block2: mk({
+          startTime: "2005",
+          endTime: "2050",
+          durationLabel: "45m",
+          title: "Drill",
+          owner: "Flt. Sergeants",
+          highlightType: "green",
+        }),
+        closing: mk({
+          startTime: "2050",
+          endTime: "2100",
+          durationLabel: "10m",
+          title: "Announcements",
+        }),
+      }),
+      week("Week 3", "2026-06-16", "ABU", {
+        opening: mk({
+          startTime: "1900",
+          endTime: "1905",
+          durationLabel: "5m",
+          title: "Anthem",
+        }),
+        emphasis: mk({
+          startTime: "1905",
+          endTime: "1920",
+          durationLabel: "15m",
+          title: "TBD",
+          owner: "TBD",
+        }),
+        block1: {
+          startTime: "1920",
+          endTime: "2005",
+          durationLabel: "45m",
+          title: "",
+          owner: "",
+          bullets: [],
+          notes: "",
+          highlightType: "none",
+          entries: [
+            mk({
+              title: "AE Lecture: Intro into Circuits, LEDs",
+              owner: "2nd Lt. Maratos, T",
+              highlightType: "green",
+            }),
+            mk({
+              startTime: "1920",
+              title: "TBD",
+              owner: "Flt. Commander",
+            }),
+          ],
+        },
+        block2: mk({
+          startTime: "2005",
+          endTime: "2050",
+          durationLabel: "45m",
+          title: "Drill",
+          owner: "Flt. Sergeants",
+          highlightType: "green",
+        }),
+        closing: mk({
+          startTime: "2050",
+          endTime: "2100",
+          durationLabel: "10m",
+          title: "Announcements",
+        }),
+      }),
+      week("Week 4", "2026-06-23", "Blues", {
+        opening: mk({
+          startTime: "1900",
+          endTime: "1905",
+          durationLabel: "5m",
+          title: "Anthem",
+        }),
+        emphasis: mk({
+          startTime: "1905",
+          endTime: "1920",
+          durationLabel: "15m",
+          title: "Cadet Advisory Council",
+          owner: "CAC Representatives",
+        }),
+        block1: {
+          startTime: "1920",
+          endTime: "2005",
+          durationLabel: "45m",
+          title: "",
+          owner: "",
+          bullets: [],
+          notes: "",
+          highlightType: "none",
+          entries: [
+            mk({
+              title: "Testing Period",
+              owner: "TBD",
+            }),
+            mk({
+              startTime: "1920",
+              endTime: "2005",
+              durationLabel: "45m",
+              title: "Leadership 1 Exam",
+              owner: "",
+              highlightType: "yellow",
+            }),
+          ],
+        },
+        block2: mk({
+          startTime: "2005",
+          endTime: "2050",
+          durationLabel: "45m",
+          title: "Drill",
+          owner: "Flt. Sergeants",
+          highlightType: "green",
+        }),
+        closing: mk({
+          startTime: "2050",
+          endTime: "2100",
+          durationLabel: "10m",
+          title: "Announcements",
+        }),
+      }),
+    ];
+
+    return {
+      id: uid("sched"),
+      title: "June 2026 Monthly Squadron Meeting Schedule",
+      month: 6,
+      year: 2026,
+      status: "draft",
+      firstMeetingDate: "2026-06-02",
+      audienceLabels: DEFAULT_AUDIENCE_LABELS.map((a) => ({ ...a })),
+      weeks,
+      extracurricularActivities:
+        "5th Night Fun Night (June 30th), NESA (June 21st - 27th)",
       notes: "",
     };
   }
@@ -629,8 +1000,9 @@
       if (!w.date) warnings.push(`Week ${i + 1} is missing a date.`);
       if (!w.uniform) warnings.push(`Week ${i + 1} is missing a uniform.`);
       ["opening", "emphasis", "block1", "block2", "closing"].forEach((key) => {
-        const b = w[key];
-        if (!b?.title)
+        const norm = normalizeBlock(w?.[key]);
+        const titled = norm.entries.some((e) => e.title);
+        if (!titled)
           warnings.push(`Week ${i + 1} – ${key} block is incomplete.`);
       });
     });
@@ -642,6 +1014,9 @@
     CADET_BRANCH_DEFAULTS,
     STATUS_LABEL,
     MONTH_NAMES,
+    HIGHLIGHT_CLASSES,
+    HIGHLIGHT_BADGE_CLASSES,
+    DEFAULT_AUDIENCE_LABELS,
     escapeHtml,
     escapeAttr,
     uid,
@@ -659,5 +1034,10 @@
     safeArray,
     formatWeekDate,
     formatLongDate,
+    normalizeAudienceLabels,
+    normalizeBlock,
+    normalizeEntry,
+    emptyEntry,
+    tn170JuneExample,
   };
 })(window);

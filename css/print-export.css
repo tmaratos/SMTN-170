@@ -369,6 +369,25 @@ body {
 .sched-cell.hl-yellow { background: #fff3cd; }
 .sched-cell.hl-none   { background: transparent; }
 
+.sched-cell--multi {
+  padding: 0;
+  background: transparent;
+}
+
+.sched-cell--multi .sched-entry {
+  padding: 8px 10px;
+  border-bottom: 1px dashed var(--print-ink);
+}
+
+.sched-cell--multi .sched-entry:last-child {
+  border-bottom: 0;
+}
+
+.sched-entry.hl-green  { background: #d4edda; }
+.sched-entry.hl-cyan   { background: #d1ecf1; }
+.sched-entry.hl-yellow { background: #fff3cd; }
+.sched-entry.hl-none   { background: transparent; }
+
 .sched-doc__footnote {
   margin-top: 18px;
   font-size: 0.85rem;
