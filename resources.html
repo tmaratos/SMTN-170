@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#030914" />
   <title>CAP References | TN-170</title>
   <script type="application/json" id="steward-page-meta">
-  {"pageId":"resources","title":"CAP References","path":"resources.html","section":"Main","summary":"Curated direct links to official Civil Air Patrol publications, regulations, forms, and operational pages.","primaryActions":["Open CAP publications","Open eServices","Open regulations"],"forms":[],"buttons":["Open link","Open CAP search"],"relatedPages":["documents.html","senior-member.html"],"keywords":["CAP","references","regulations","forms","pamphlets","manuals","eServices","Axis","LMS","awards","uniforms","TN Wing","Southeast Region"]}
+  {"pageId":"resources","title":"CAP References","path":"resources.html","section":"Main","summary":"Curated direct links to official Civil Air Patrol publications, regulations, forms, and operational pages, plus direct download buttons for squadron PowerPoint, memorandum (Word), and PDF templates.","primaryActions":["Download squadron templates","Open CAP publications","Open eServices","Open regulations"],"forms":[],"buttons":["Download template","Open link","Open CAP search"],"relatedPages":["documents.html","senior-member.html"],"keywords":["CAP","references","regulations","forms","pamphlets","manuals","eServices","Axis","LMS","awards","uniforms","TN Wing","Southeast Region","squadron templates","powerpoint template","pptx","memorandum template","word template","docx","briefing template","letterhead","direct download"]}
   </script>
   <link rel="stylesheet" href="./css/portal-v2.css?v=6" />
   <link rel="stylesheet" href="./css/portal-ops.css?v=1" />
@@ -89,6 +89,44 @@
       color: var(--tn-cyan);
       font-weight: 700;
     }
+    .cap-ref-subhead {
+      margin: 6px 0 8px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--tn-gold);
+    }
+    .cap-ref-subhead + .cap-ref-grid {
+      margin-bottom: 14px;
+    }
+    .cap-ref-btn-type {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(255, 210, 31, 0.18);
+      color: var(--tn-gold);
+      border: 1px solid rgba(255, 210, 31, 0.35);
+      vertical-align: middle;
+    }
+    .cap-ref-btn-type.is-pptx { background: rgba(214, 92, 31, 0.18); color: #ffb98a; border-color: rgba(214, 92, 31, 0.45); }
+    .cap-ref-btn-type.is-docx { background: rgba(31, 110, 214, 0.18); color: #9ec5ff; border-color: rgba(31, 110, 214, 0.45); }
+    .cap-ref-btn-type.is-pdf  { background: rgba(214, 31, 76, 0.18); color: #ffa3b8; border-color: rgba(214, 31, 76, 0.45); }
+    .cap-ref-btn.is-placeholder {
+      opacity: 0.65;
+      cursor: not-allowed;
+      border-style: dashed;
+    }
+    .cap-ref-btn.is-placeholder:hover,
+    .cap-ref-btn.is-placeholder:focus-visible {
+      border-color: rgba(255, 210, 31, 0.35);
+      background: linear-gradient(180deg, rgba(31, 95, 214, 0.18), rgba(7, 21, 37, 0.85));
+    }
   </style>
 </head>
 <body data-portal-page="resources">
@@ -120,6 +158,70 @@
         </div>
 
         <div class="cap-ref-sections">
+          <!-- squadron templates -->
+          <section class="card-info cap-ref-section" aria-labelledby="cap-ref-templates">
+            <h2 class="card-info-title" id="cap-ref-templates">Squadron Templates (Direct Download)</h2>
+            <p class="cap-ref-note">
+              Click a button below to download the template directly to your computer.
+              Files are hosted in the squadron repository — no login required.
+            </p>
+
+            <h3 class="cap-ref-subhead">PowerPoint Templates</h3>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn is-placeholder" href="#" aria-disabled="true" onclick="event.preventDefault(); return false;">
+                <span class="cap-ref-btn-label">
+                  Squadron Meeting Briefing
+                  <span class="cap-ref-btn-type is-pptx">PPTX</span>
+                </span>
+                <span class="cap-ref-btn-desc">Coming soon — slide deck for weekly squadron meetings.</span>
+              </a>
+              <a class="cap-ref-btn is-placeholder" href="#" aria-disabled="true" onclick="event.preventDefault(); return false;">
+                <span class="cap-ref-btn-label">
+                  Safety Briefing
+                  <span class="cap-ref-btn-type is-pptx">PPTX</span>
+                </span>
+                <span class="cap-ref-btn-desc">Coming soon — monthly safety briefing template.</span>
+              </a>
+            </div>
+
+            <h3 class="cap-ref-subhead">Memorandum Templates</h3>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn is-placeholder" href="#" aria-disabled="true" onclick="event.preventDefault(); return false;">
+                <span class="cap-ref-btn-label">
+                  Memorandum Template
+                  <span class="cap-ref-btn-type is-docx">DOCX</span>
+                </span>
+                <span class="cap-ref-btn-desc">Coming soon — standard squadron memorandum (Word).</span>
+              </a>
+              <a class="cap-ref-btn is-placeholder" href="#" aria-disabled="true" onclick="event.preventDefault(); return false;">
+                <span class="cap-ref-btn-label">
+                  Squadron Letterhead
+                  <span class="cap-ref-btn-type is-docx">DOCX</span>
+                </span>
+                <span class="cap-ref-btn-desc">Coming soon — letterhead for official correspondence.</span>
+              </a>
+            </div>
+
+            <h3 class="cap-ref-subhead">Other Templates</h3>
+            <div class="cap-ref-grid">
+              <a class="cap-ref-btn is-placeholder" href="#" aria-disabled="true" onclick="event.preventDefault(); return false;">
+                <span class="cap-ref-btn-label">
+                  Squadron Letterhead
+                  <span class="cap-ref-btn-type is-pdf">PDF</span>
+                </span>
+                <span class="cap-ref-btn-desc">Coming soon — printable PDF letterhead.</span>
+              </a>
+            </div>
+
+            <p class="cap-ref-note">
+              Templates will appear here as command staff uploads them to
+              <code>assets/templates/</code>. To add a new template, drop the file
+              into that folder and add a matching <code>&lt;a&gt;</code> line in
+              <code>resources.html</code> — see <code>assets/templates/README.md</code>
+              for the exact pattern.
+            </p>
+          </section>
+
           <section class="card-info cap-ref-section" aria-labelledby="cap-ref-pubs">
             <h2 class="card-info-title" id="cap-ref-pubs">Publications &amp; Regulations</h2>
             <div class="cap-ref-grid">
