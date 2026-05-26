@@ -109,7 +109,13 @@
   }
 
   function getClientApi() {
-    return global.SMTN170StewardClient || global.SMTN170StewardApi;
+    return global.SMTN170StewardClient;
+  }
+
+  function stewardErrorMessage(err, fallback) {
+    const msg = err?.message ? String(err.message) : fallback || "Please try again later.";
+    if (msg.startsWith("Steward is unavailable right now:")) return msg;
+    return "Steward is unavailable right now: " + msg;
   }
 
   function escapeHtml(t) {
@@ -214,13 +220,19 @@
     return text + "\n\n" + CAP_SEARCH_MARKER + url;
   }
 
-  function renderCapActions(capSearchUrl) {
-    if (!capSearchUrl) return "";
-    const safeUrl = escapeHtml(capSearchUrl);
+  function renderOpenUrlButton(openUrl, label) {
+    if (!openUrl) return "";
+    const safeUrl = escapeHtml(openUrl);
+    const btnLabel = escapeHtml(label || "Open link");
     return `<div class="steward-cap-actions">
-      <a href="${safeUrl}" class="steward-cap-btn steward-cap-btn--primary" target="_blank" rel="noopener noreferrer" data-cap-open-tab="${safeUrl}">Open CAP Reference</a>
+      <a href="${safeUrl}" class="steward-cap-btn steward-cap-btn--primary" target="_blank" rel="noopener noreferrer" data-cap-open-tab="${safeUrl}">${btnLabel}</a>
       <button type="button" class="steward-cap-btn steward-cap-btn--secondary" data-cap-open-tab="${safeUrl}">Open in new tab</button>
     </div>`;
+  }
+
+  function renderCapActions(capSearchUrl) {
+    if (!capSearchUrl) return "";
+    return renderOpenUrlButton(capSearchUrl, "Open CAP Reference");
   }
 
   async function ensureActiveConversation() {
@@ -343,7 +355,10 @@
           const avatar = isUser ? "You" : "S";
           const time = m.at ? `<time class="steward-msg-time">${escapeHtml(formatTime(m.at))}</time>` : "";
           const body = formatMessageHtml(m.text);
-          const capActions = m.role === "steward" ? renderCapActions(m.capSearchUrl) : "";
+          const openUrlActions =
+            m.role === "steward"
+              ? renderCapActions(m.capSearchUrl) || renderOpenUrlButton(m.openUrl, m.openUrlLabel)
+              : "";
           const suggestionActions = m.role === "steward" ? renderMessageActions(m) : "";
           return `<div class="steward-msg steward-msg--${m.role}" data-msg-id="${escapeHtml(m.id || "")}">
           <div class="steward-msg-meta">
@@ -351,7 +366,7 @@
             <span class="steward-msg-label">${escapeHtml(label)}</span>
             ${time}
           </div>
-          <div class="steward-msg-bubble">${body}${capActions}${suggestionActions}</div>
+          <div class="steward-msg-bubble">${body}${openUrlActions}${suggestionActions}</div>
         </div>`;
         })
         .join("") + renderConfirmBar();
@@ -518,24 +533,27 @@
 
   function pushStewardReplyFromApi(result) {
     const api = getClientApi();
-    const capUrl =
-      result.openUrl ||
-      result.open_url ||
-      result.cap_search?.searchUrl ||
-      api?.parseCapUrlFromText?.(result.reply) ||
-      null;
-    if (result.cap_search?.openInNewTab && capUrl) {
-      api?.openCapUrl?.(capUrl);
-    } else if ((result.openUrl || result.open_url) && !result.pending_confirmation && !result.pendingConfirmation) {
-      api?.openCapUrl?.(capUrl);
+    const openUrl = result.openUrl || result.open_url || null;
+    const capFromSearch = result.cap_search?.searchUrl || null;
+    const capFromText = api?.parseCapUrlFromText?.(result.reply) || null;
+    const capSearchUrl =
+      capFromSearch ||
+      capFromText ||
+      (openUrl && /gocivilairpatrol\.com/i.test(openUrl) ? openUrl : null);
+    const messageOpenUrl = openUrl && !capSearchUrl ? openUrl : null;
+    if (result.cap_search?.openInNewTab && capSearchUrl) {
+      api?.openCapUrl?.(capSearchUrl);
+    } else if (openUrl && !result.pending_confirmation && !result.pendingConfirmation) {
+      api?.openCapUrl?.(openUrl);
     }
     state.messages.push({
       id: result.steward_message_id || result.stewardMessageId || "steward-" + Date.now(),
       role: "steward",
       text: api?.stripCapMarker?.(result.reply) || result.reply || "",
       at: result.steward_message_at || result.stewardMessageAt || new Date().toISOString(),
-      capSearchUrl: capUrl,
-      intent: result.intent || null,
+      capSearchUrl,
+      openUrl: messageOpenUrl,
+      openUrlLabel: result.openUrlLabel || result.open_url_label || null,
       suggestions: result.suggestions || [],
       actions: result.actions || [],
     });
@@ -560,7 +578,7 @@
       state.messages.push({
         id: "err-" + Date.now(),
         role: "steward",
-        text: "Steward is unavailable right now. Please try again later.",
+        text: stewardErrorMessage(null, "Sign in required"),
         at: new Date().toISOString(),
       });
       renderMessages();
@@ -582,16 +600,9 @@
       renderMessages();
       if (input) input.value = "";
 
-      const convId =
-        state.conversationId && !String(state.conversationId).startsWith("local-")
-          ? state.conversationId
-          : undefined;
-
       const result = await getClientApi().invoke({
         message: trimmed,
         ...pageContext(),
-        conversationId: convId,
-        activeMode,
       });
 
       if (result.conversation_id || result.conversationId) {
@@ -622,7 +633,7 @@
       state.messages.push({
         id: "err-" + Date.now(),
         role: "steward",
-        text: "Steward is unavailable right now. Please try again later.",
+        text: stewardErrorMessage(err),
         at: new Date().toISOString(),
       });
       renderMessages();
@@ -813,17 +824,15 @@
     try {
       const result = await getClientApi().invoke({
         ...pageContext(),
-        conversationId: state.conversationId,
         pendingActionId: state.pendingConfirmation.action_id || state.pendingConfirmation.id,
         confirmation: true,
-        activeMode,
       });
       pushStewardReplyFromApi(result);
       saveLocalFallback();
       renderMessages();
     } catch (err) {
       console.error("[Steward] confirm", err);
-      alert("Steward is unavailable right now. Please try again later.");
+      alert(stewardErrorMessage(err));
     } finally {
       setThinking(false);
     }
@@ -835,17 +844,15 @@
     try {
       const result = await getClientApi().invoke({
         ...pageContext(),
-        conversationId: state.conversationId,
         pendingActionId: state.pendingConfirmation?.action_id || state.pendingConfirmation?.id,
         confirmation: false,
-        activeMode,
       });
       pushStewardReplyFromApi(result);
       saveLocalFallback();
       renderMessages();
     } catch (err) {
       console.error("[Steward] cancel", err);
-      alert("Steward is unavailable right now. Please try again later.");
+      alert(stewardErrorMessage(err));
     } finally {
       setThinking(false);
     }

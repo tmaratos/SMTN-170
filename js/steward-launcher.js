@@ -11,7 +11,7 @@
           return;
         }
         if (Date.now() - start > (maxMs || 10000)) {
-          reject(new Error("Steward is unavailable right now. Please try again later."));
+          reject(new Error("Steward UI did not load"));
           return;
         }
         setTimeout(tick, 40);
@@ -26,7 +26,7 @@
       return steward.openSteward(promptText);
     } catch (err) {
       console.error("[openSteward]", err);
-      alert(err.message || "Steward is unavailable right now. Please try again later.");
+      alert("Steward is unavailable right now: " + (err.message || "Please try again later."));
     }
   };
 })(window);

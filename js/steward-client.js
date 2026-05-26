@@ -4,52 +4,69 @@
  */
 (function initStewardClient(global) {
   const CAP_SEARCH_MARKER = "CAP_SEARCH_URL:";
-  const UNAVAILABLE = "Steward is unavailable right now. Please try again later.";
+  const UNAVAILABLE_PREFIX = "Steward is unavailable right now: ";
+
+  function formatUnavailable(error) {
+    const detail = error?.message ? String(error.message) : "Please try again later.";
+    if (detail.startsWith(UNAVAILABLE_PREFIX)) return detail;
+    return UNAVAILABLE_PREFIX + detail;
+  }
 
   function isConfigured() {
     return global.SMTN170Firebase?.isConfigured?.() ?? false;
   }
 
+  async function ensureAuthToken() {
+    await global.SMTN170Firebase?.ensureFullClient?.();
+    const auth = global.SMTN170Firebase?.getAuth?.();
+    const user = auth?.currentUser;
+    if (!user) throw new Error("Sign in required");
+    await user.getIdToken();
+    return user;
+  }
+
   async function getCallable() {
-    await global.SMTN170Firebase?.whenReady?.();
+    await global.SMTN170Firebase?.ensureFullClient?.();
     const mod = global.SMTN170Firebase?.getFunctionsModule?.();
     const fn = global.SMTN170Firebase?.getFunctions?.();
-    if (!mod || !fn) throw new Error(UNAVAILABLE);
+    if (!mod || !fn) throw new Error("Firebase Functions is not available");
     return mod.httpsCallable(fn, "stewardCore");
   }
 
   function normalizePayload(body) {
     const src = body || {};
     const confirmation = src.confirmation;
-    return {
+    const payload = {
       message: src.message,
       pagePath: src.pagePath || src.page_path || global.location?.pathname || "",
       pageTitle: src.pageTitle || src.page_title || (typeof document !== "undefined" ? document.title : ""),
-      conversationId: src.conversationId || src.conversation_id,
-      pendingActionId: src.pendingActionId || src.pending_action_id,
-      confirmation: confirmation === true || confirmation === false ? confirmation : undefined,
-      activeMode: src.activeMode || src.active_mode,
-      // Legacy confirm/cancel flags for deployed function versions
-      confirm_pending: confirmation === true,
-      cancel_pending: confirmation === false,
     };
+    const pendingActionId = src.pendingActionId || src.pending_action_id;
+    if (pendingActionId) payload.pendingActionId = pendingActionId;
+    if (confirmation === true || confirmation === false) payload.confirmation = confirmation;
+    return payload;
   }
 
   async function invoke(body) {
-    if (!isConfigured()) {
-      throw new Error(UNAVAILABLE);
+    try {
+      if (!isConfigured()) {
+        throw new Error("Firebase is not configured");
+      }
+      await ensureAuthToken();
+      const callable = await getCallable();
+      const payload = normalizePayload(body);
+      if (!payload.message && payload.confirmation == null) {
+        throw new Error("Message or confirmation required");
+      }
+      const res = await callable(payload);
+      const data = res.data || {};
+      if (data.ok === false) {
+        throw new Error(data.error || data.message || "Request failed");
+      }
+      return data;
+    } catch (err) {
+      throw new Error(formatUnavailable(err));
     }
-    const callable = await getCallable();
-    const payload = normalizePayload(body);
-    if (!payload.message && payload.confirmation == null && !payload.confirm_pending && !payload.cancel_pending) {
-      throw new Error(UNAVAILABLE);
-    }
-    const res = await callable(payload);
-    const data = res.data || {};
-    if (data.ok === false) {
-      throw new Error(data.error || data.message || UNAVAILABLE);
-    }
-    return data;
   }
 
   function openCapUrl(url) {
@@ -66,22 +83,6 @@
     return (text || "").replace(/\n*CAP_SEARCH_URL:https?:\/\/[^\s]+/g, "").trim();
   }
 
-  /** Global launcher used by steward-launcher and portal pages */
-  async function openSteward(promptText) {
-    if (global.SMTN170Steward?.openWithPrompt) {
-      await global.SMTN170Steward.openWithPrompt(promptText);
-      return;
-    }
-    if (global.SMTN170Steward?.open) {
-      global.SMTN170Steward.open();
-      if (promptText && global.SMTN170Steward?.sendMessage) {
-        await global.SMTN170Steward.sendMessage(promptText);
-      }
-      return;
-    }
-    global.location.href = "dashboard.html#steward";
-  }
-
   global.SMTN170StewardClient = {
     CAP_SEARCH_MARKER,
     isConfigured,
@@ -89,9 +90,5 @@
     openCapUrl,
     parseCapUrlFromText,
     stripCapMarker,
-    openSteward,
   };
-
-  /** Legacy alias */
-  global.SMTN170StewardApi = global.SMTN170StewardClient;
 })(window);

@@ -299,6 +299,16 @@
     return global.SMTN170FirebaseData?.subscribeCollection?.(table, filter, cb);
   }
 
+  async function getFunctionsReady() {
+    if (!functions) await ensureFullClient();
+    return functions;
+  }
+
+  async function getFunctionsModuleReady() {
+    if (!modules.functionsMod) await ensureFullClient();
+    return modules.functionsMod;
+  }
+
   const api = {
     whenReady,
     ensureFullClient,
@@ -308,6 +318,8 @@
     getFirestoreModule,
     getFunctions: getFunctionsInstance,
     getFunctionsModule,
+    getFunctionsReady,
+    getFunctionsModuleReady,
     getSession,
     onAuthStateChange,
     subscribeTable,
