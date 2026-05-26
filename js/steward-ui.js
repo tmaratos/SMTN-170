@@ -73,11 +73,11 @@
 
   const MODES = [
     { id: "chat", label: "Chat" },
-    { id: "files", label: "Files" },
+    { id: "files", label: "Resources" },
     { id: "meetings", label: "Meetings" },
     { id: "readiness", label: "Readiness" },
     { id: "org", label: "Org Chart" },
-    { id: "cap", label: "CAP Website" },
+    { id: "cap", label: "CAP References" },
   ];
 
   const CAP_SEARCH_MARKER = "CAP_SEARCH_URL:";
@@ -229,7 +229,6 @@
     const btnLabel = escapeHtml(label || "Open link");
     return `<div class="steward-cap-actions">
       <a href="${safeUrl}" class="steward-cap-btn steward-cap-btn--primary" target="_blank" rel="noopener noreferrer" data-cap-open-tab="${safeUrl}">${btnLabel}</a>
-      <button type="button" class="steward-cap-btn steward-cap-btn--secondary" data-cap-open-tab="${safeUrl}">Open in new tab</button>
     </div>`;
   }
 
@@ -265,7 +264,6 @@
       actions: [{ href: target.path, label: `Open ${label}` }],
     });
     renderMessages();
-    global.location.href = target.path;
     return true;
   }
 
@@ -379,7 +377,7 @@
     if (document.querySelector('link[href*="steward-workspace.css"]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "./css/steward-workspace.css?v=4";
+    link.href = "./css/steward-workspace.css?v=5";
     document.head.appendChild(link);
   }
 
@@ -395,7 +393,7 @@
           <div class="steward-welcome-copy">
             <p><strong>Steward for CAP</strong> — mission support</p>
             <p>${greeting}</p>
-            <p class="steward-welcome-hint">Ask about schedules, readiness, org chart, resource links, or CAP guidance. Google Drive integration may be added later.</p>
+            <p class="steward-welcome-hint">Ask about schedules, readiness, org chart, resource links, or CAP guidance.</p>
           </div>
         </div>`;
       return;
@@ -979,7 +977,7 @@
           <button type="button" class="steward-gpt-close" id="stewardClose" aria-label="Close Steward">✕</button>
         </header>
 
-        <div class="steward-gpt-body">
+        <div class="steward-panel-body">
           <div class="steward-ctx-scrim" id="stewardCtxScrim" aria-hidden="true"></div>
           <aside class="steward-ctx-drawer" aria-label="History and squadron context">
             <div class="steward-op-title-row">
@@ -990,30 +988,28 @@
             <div id="stewardWorkspaceContext"><p class="steward-ctx-loading">Loading…</p></div>
           </aside>
 
-          <div class="steward-gpt-main">
-            <div class="steward-mode-pills" id="stewardModeTabs" role="tablist" aria-label="Steward focus areas"></div>
-            <div class="steward-conversation-pane">
-              <div class="steward-messages" id="stewardMessages" role="log" aria-live="polite"></div>
-              <div class="steward-typing" id="stewardTyping" hidden aria-live="polite">
-                <div class="steward-msg steward-msg--steward">
-                  <div class="steward-msg-bubble">
-                    <span class="steward-typing-dots" aria-label="Steward is working"><span></span><span></span><span></span></span>
-                  </div>
+          <div class="steward-mode-pills" id="stewardModeTabs" role="tablist" aria-label="Steward focus areas"></div>
+          <div class="steward-conversation-pane">
+            <div class="steward-messages" id="stewardMessages" role="log" aria-live="polite"></div>
+            <div class="steward-typing" id="stewardTyping" hidden aria-live="polite">
+              <div class="steward-msg steward-msg--steward">
+                <div class="steward-msg-bubble">
+                  <span class="steward-typing-dots" aria-label="Steward is working"><span></span><span></span><span></span></span>
                 </div>
               </div>
             </div>
-            <footer class="steward-gpt-composer">
-              <div class="steward-chips" id="stewardPrompts"></div>
-              <form class="steward-composer-box" id="stewardForm">
-                <label class="visually-hidden" for="stewardInput">Message Steward</label>
-                <textarea id="stewardInput" name="message" rows="1" placeholder="Message Steward…" autocomplete="off"></textarea>
-                <button type="submit" class="steward-send-icon" id="stewardSend" aria-label="Send message">
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                </button>
-              </form>
-              <p class="steward-composer-foot">${escapeHtml(DISCLAIMER)} Resource links are managed on Files &amp; Resources. Google Drive integration may be added later.</p>
-            </footer>
           </div>
+          <footer class="steward-gpt-composer">
+            <div class="steward-chips" id="stewardPrompts"></div>
+            <form class="steward-composer-box" id="stewardForm">
+              <label class="visually-hidden" for="stewardInput">Message Steward</label>
+              <textarea id="stewardInput" name="message" rows="1" placeholder="Message Steward…" autocomplete="off"></textarea>
+              <button type="submit" class="steward-send-icon" id="stewardSend" aria-label="Send message">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </form>
+            <p class="steward-composer-foot">${escapeHtml(DISCLAIMER)}</p>
+          </footer>
         </div>
       </section>`;
 

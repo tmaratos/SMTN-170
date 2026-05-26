@@ -320,11 +320,9 @@ body.menu-open {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* —— Steward panel (overrides legacy narrow drawer in portal-v2) —— */
+/* —— Steward panel: floating right card (details in steward-workspace.css) —— */
 #stewardPanel.steward-panel {
   min-width: 0 !important;
-  width: min(1180px, calc(100vw - 32px)) !important;
-  max-width: calc(100vw - 32px) !important;
 }
 
 .steward-fab {
