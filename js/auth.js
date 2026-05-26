@@ -196,6 +196,7 @@
   }
 
   async function signIn(email, password) {
+    await global.SMTN170Firebase?.whenReady?.({ authOnly: true });
     const sb = global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.();
     if (!sb) {
       throw new Error(
@@ -204,7 +205,15 @@
       );
     }
     const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
-    if (error) throw error;
+    if (error) {
+      const formatted = global.SMTN170FirebaseAuth?.formatAuthError?.(error);
+      if (formatted && formatted !== error.message) {
+        const err = new Error(formatted);
+        err.code = error.code;
+        throw err;
+      }
+      throw error;
+    }
     await syncSessionFromFirebase();
     return session;
   }

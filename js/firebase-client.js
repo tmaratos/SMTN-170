@@ -1,6 +1,6 @@
 /**
- * TN-170 Firebase browser client — modular SDK via CDN dynamic import.
- * Auth + Firestore + Cloud Functions only (V1 — no Storage).
+ * TN-170 Firebase browser client — modular SDK (CDN or dynamic import).
+ * Initializes Firebase exactly once. Login pages load auth only (no Storage/Functions).
  */
 (function initFirebaseClient(global) {
   const FB_VERSION = "10.14.1";
@@ -11,6 +11,7 @@
   let db = null;
   let functions = null;
   let readyPromise = null;
+  let initMode = null;
   let modules = {};
 
   function config() {
@@ -22,7 +23,53 @@
     return !!(c.apiKey && c.projectId && c.apiKey !== "YOUR_API_KEY");
   }
 
-  async function loadModules() {
+  function isLoginPage() {
+    const page = (global.location?.pathname || "").split("/").pop() || "";
+    return page === "login.html" || page === "" && global.location?.pathname?.endsWith("/");
+  }
+
+  function wantsAuthOnly(options) {
+    if (options?.authOnly === true) return true;
+    if (options?.authOnly === false) return false;
+    return isLoginPage() || !global.SMTN170FirebaseData;
+  }
+
+  async function waitForPreloadedModules(timeoutMs) {
+    const deadline = Date.now() + (timeoutMs || 15000);
+    while (Date.now() < deadline) {
+      if (global.__TN170_FIREBASE_MODULES__?.appMod && global.__TN170_FIREBASE_MODULES__?.authMod) {
+        return global.__TN170_FIREBASE_MODULES__;
+      }
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    return null;
+  }
+
+  async function loadModules(authOnly) {
+    const preloaded = await waitForPreloadedModules(5000);
+    if (preloaded?.appMod && preloaded?.authMod) {
+      modules.appMod = preloaded.appMod;
+      modules.authMod = preloaded.authMod;
+      if (!authOnly) {
+        const [firestoreMod, functionsMod] = await Promise.all([
+          import(`${BASE}/firebase-firestore.js`),
+          import(`${BASE}/firebase-functions.js`),
+        ]);
+        modules.firestoreMod = firestoreMod;
+        modules.functionsMod = functionsMod;
+      }
+      return modules;
+    }
+
+    if (authOnly) {
+      const [appMod, authMod] = await Promise.all([
+        import(`${BASE}/firebase-app.js`),
+        import(`${BASE}/firebase-auth.js`),
+      ]);
+      modules = { appMod, authMod };
+      return modules;
+    }
+
     const [appMod, authMod, firestoreMod, functionsMod] = await Promise.all([
       import(`${BASE}/firebase-app.js`),
       import(`${BASE}/firebase-auth.js`),
@@ -33,8 +80,21 @@
     return modules;
   }
 
+  function isNetworkAuthError(error) {
+    if (!error) return false;
+    const code = String(error.code || "");
+    const message = String(error.message || error);
+    return (
+      code === "auth/network-request-failed" ||
+      message.includes("Failed to fetch") ||
+      message.includes("NetworkError") ||
+      (error.name === "TypeError" && message.includes("fetch"))
+    );
+  }
+
   function buildAuthFacade() {
-    const { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } = modules.authMod;
+    const { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } =
+      modules.authMod;
 
     async function sessionFromUser(user) {
       if (!user) return null;
@@ -60,14 +120,17 @@
         return { data: { user: { id: user.uid, email: user.email } }, error: null };
       },
       signInWithPassword: async ({ email, password }) => {
+        console.log("LOGIN_ATTEMPT_STARTED");
         try {
           const cred = await signInWithEmailAndPassword(auth, email, password);
+          console.log("LOGIN_ATTEMPT_SUCCESS");
           return { data: { session: await sessionFromUser(cred.user), user: cred.user }, error: null };
         } catch (error) {
+          console.log("LOGIN_ATTEMPT_FAILED", error?.code || "", error?.message || error);
           return { data: { session: null }, error };
         }
       },
-      signUp: async ({ email, password, options }) => {
+      signUp: async ({ email, password }) => {
         try {
           const cred = await createUserWithEmailAndPassword(auth, email, password);
           return { data: { user: cred.user, session: await sessionFromUser(cred.user) }, error: null };
@@ -86,51 +149,84 @@
     };
   }
 
-  function buildClientFacade() {
+  function buildClientFacade(mode) {
     const data = global.SMTN170FirebaseData;
-    return {
+    const facade = {
       auth: buildAuthFacade(),
-      from: (table) => data.from(table),
-      channel: (name) => ({
+      channel: () => ({
         on: () => ({ subscribe: () => {} }),
       }),
     };
+    if (mode === "full" && data) {
+      facade.from = (table) => data.from(table);
+    } else if (mode === "full") {
+      facade.from = () => {
+        throw new Error("Firestore data layer is not loaded on this page.");
+      };
+    }
+    return facade;
   }
 
-  async function initFirebase() {
-    if (app) return app;
+  async function initFirebase(options) {
+    if (app && auth) {
+      return app;
+    }
     if (!isConfigured()) {
       console.warn("[TN-170] Firebase config placeholders — paste keys in js/firebase-config.js");
       return null;
     }
-    await loadModules();
-    const { initializeApp } = modules.appMod;
+
+    const authOnly = wantsAuthOnly(options);
+    await loadModules(authOnly);
+
+    const { initializeApp, getApps, getApp } = modules.appMod;
     const { getAuth } = modules.authMod;
-    const { getFirestore } = modules.firestoreMod;
-    const { getFunctions, connectFunctionsEmulator } = modules.functionsMod;
 
-    app = initializeApp(config());
-    auth = getAuth(app);
-    db = getFirestore(app);
-    functions = getFunctions(app, config().functionsRegion || "us-central1");
-
-    if (global.location?.hostname === "localhost") {
-      try {
-        connectFunctionsEmulator(functions, "localhost", 5001);
-      } catch {
-        /* ignore */
-      }
+    if (getApps().length) {
+      app = getApp();
+    } else {
+      app = initializeApp(config());
+      console.log("FIREBASE_APP_INITIALIZED");
     }
 
-    const facade = buildClientFacade();
+    auth = getAuth(app);
+    console.log("FIREBASE_AUTH_READY");
+
+    if (!authOnly && modules.firestoreMod && modules.functionsMod) {
+      const { getFirestore } = modules.firestoreMod;
+      const { getFunctions, connectFunctionsEmulator } = modules.functionsMod;
+      db = getFirestore(app);
+      functions = getFunctions(app, config().functionsRegion || "us-central1");
+      if (global.location?.hostname === "localhost") {
+        try {
+          connectFunctionsEmulator(functions, "localhost", 5001);
+        } catch {
+          /* ignore */
+        }
+      }
+      initMode = "full";
+    } else {
+      initMode = "auth";
+    }
+
+    const facade = buildClientFacade(initMode);
     global.TN170FirebaseClient = facade;
     return app;
   }
 
-  async function whenReady() {
+  async function ensureFullClient() {
+    if (initMode === "full" && db && functions) {
+      return getClient();
+    }
+    await initFirebase({ authOnly: false });
+    return getClient();
+  }
+
+  async function whenReady(options) {
     if (!readyPromise) {
-      readyPromise = initFirebase().catch((err) => {
+      readyPromise = initFirebase(options).catch((err) => {
         console.error("[TN-170] Firebase init failed", err);
+        readyPromise = null;
         return null;
       });
     }
@@ -180,6 +276,7 @@
 
   const api = {
     whenReady,
+    ensureFullClient,
     getClient,
     getAuth: getAuthInstance,
     getFirestore,
@@ -190,6 +287,7 @@
     onAuthStateChange,
     subscribeTable,
     isConfigured,
+    isNetworkAuthError,
   };
 
   global.SMTN170Firebase = api;

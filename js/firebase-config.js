@@ -22,3 +22,5 @@ window.FIREBASE_CONFIG = {
     return !!(c.apiKey && c.projectId && c.apiKey !== "YOUR_API_KEY");
   },
 };
+
+console.log("FIREBASE_CONFIG_LOADED");

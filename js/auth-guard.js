@@ -35,10 +35,15 @@
     return (global.location.pathname || "").split("/").pop() || "";
   }
 
-  async function waitForFirebase(maxMs) {
+  function isLoginPage() {
+    return currentPage() === LOGIN;
+  }
+
+  async function waitForFirebase(maxMs, options) {
+    const authOnly = options?.authOnly ?? isLoginPage();
     const start = Date.now();
     while (Date.now() - start < (maxMs || 10000)) {
-      await global.SMTN170Firebase?.whenReady?.();
+      await global.SMTN170Firebase?.whenReady?.({ authOnly });
       const client = global.SMTN170Firebase?.getClient?.();
       if (client) return client;
       await new Promise((r) => setTimeout(r, 50));
@@ -70,7 +75,7 @@
 
   async function fetchProfileDoc(userId) {
     const fb = global.SMTN170Firebase;
-    await fb?.whenReady?.();
+    await fb?.ensureFullClient?.();
     const mod = fb?.getFirestoreModule?.();
     const db = fb?.getFirestore?.();
     if (!mod || !db || !userId) return null;
@@ -176,7 +181,7 @@
 
   async function runLoginPage() {
     if (authChecked) return;
-    const client = await waitForFirebase();
+    const client = await waitForFirebase(10000, { authOnly: true });
     if (!client) {
       authChecked = true;
       return;
