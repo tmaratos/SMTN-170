@@ -59,6 +59,38 @@
 }
 
 /* ---------------------------------------------------------------- */
+/* 1b. Page-level landscape framing.                                */
+/*                                                                  */
+/* Both builders default to a landscape feel on desktop so the      */
+/* Preview tab (and the print dialog) match the printed page. We    */
+/* tighten the portal-content padding ONLY on these two pages so    */
+/* the builder grid and the 1100px-wide preview sheet have room to  */
+/* breathe; every other page (dashboard, profile, calendar, etc.)   */
+/* keeps its standard padding.                                      */
+/* ---------------------------------------------------------------- */
+
+body[data-portal-page="schedule"] .portal-content,
+body[data-portal-page="orgchart"] .portal-content {
+  padding-inline: clamp(10px, 1vw, 22px);
+}
+
+body[data-portal-page="schedule"] .portal-content--wide,
+body[data-portal-page="orgchart"] .portal-content--wide {
+  max-width: none;
+  width: 100%;
+}
+
+/* On mobile, restore the standard portal padding so form controls
+   don't crowd the screen edges. The landscape framing above is for
+   desktop preview/print only. */
+@media (max-width: 760px) {
+  body[data-portal-page="schedule"] .portal-content,
+  body[data-portal-page="orgchart"] .portal-content {
+    padding-inline: 14px;
+  }
+}
+
+/* ---------------------------------------------------------------- */
 /* 2. Builder roots — dark surface defaults.                        */
 /* ---------------------------------------------------------------- */
 
@@ -449,19 +481,28 @@
 #orgChartApp .ocb-preview-wrap {
   background: transparent;
   padding: 4px 0 24px;
+  /* Allow the landscape sheet to scroll horizontally on narrow viewports
+     (mobile) instead of squeezing the table contents into an unreadable
+     column. On desktop the wrap is wider than 1100px so no scrollbar
+     appears. */
+  overflow-x: auto;
 }
 
 #scheduleBuilderRoot .sb-preview-page,
 #orgChartApp .ocb-preview-page {
   /* Re-anchor the print look in case any other stylesheet drags it back to
-     the portal palette. */
+     the portal palette, and shape the on-screen sheet as a Letter
+     LANDSCAPE page (11" wide x 8.5" tall) so the Preview tab matches the
+     printer/PDF output before the user ever opens the print dialog. */
   color: #000000;
   background: #ffffff;
   margin: 16px auto;
-  max-width: 1100px;
+  width: min(100%, 1100px);
+  min-height: 850px; /* 11 / 8.5 of 1100px — visual landscape proportion */
   padding: 32px 40px;
   border-radius: 6px;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
 }
 
 /* Force every nested element inside the preview paper to inherit the black
@@ -556,5 +597,18 @@
   #scheduleBuilderRoot .sb-preview-page,
   #orgChartApp .ocb-preview-page {
     padding: 18px 16px;
+  }
+}
+
+/* On narrow screens, drop the landscape min-height so the preview sheet
+   shrinks to fit the viewport. Readability of the actual schedule table
+   beats the visual landscape proportion here — the printed output is
+   still landscape via @page in `print-export.css`. */
+@media (max-width: 900px) {
+  #scheduleBuilderRoot .sb-preview-page,
+  #orgChartApp .ocb-preview-page {
+    min-height: 0;
+    width: 100%;
+    margin: 12px auto;
   }
 }

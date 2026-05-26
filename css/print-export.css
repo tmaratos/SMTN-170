@@ -14,6 +14,16 @@
  * Browser native window.print() + @media print only — no paid PDF libraries.
  */
 
+/* Top-level @page rule — must sit outside `@media print` so Chromium-based
+   browsers default the print dialog orientation to LANDSCAPE the moment
+   the user presses Ctrl+P. The duplicated rule inside `@media print`
+   below also sets margins; this top-level rule covers older versions of
+   Chrome / Edge that ignore @page inside @media. */
+@page {
+  size: letter landscape;
+  margin: 0.45in;
+}
+
 :root {
   --print-ink: #0b0b0b;
   --print-paper: #ffffff;
