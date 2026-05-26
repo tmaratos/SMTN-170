@@ -1,0 +1,425 @@
+/**
+ * TN-170 — Print/Export shared styles for standalone document views.
+ * Used by orgchart-print.html and schedule-print.html. Browser native
+ * window.print() + @media print only — no paid PDF libraries.
+ */
+
+:root {
+  --print-ink: #000;
+  --print-paper: #fff;
+  --print-rule: #1a1a1a;
+  --print-muted: #444;
+  --print-red: #c0392b;
+}
+
+html,
+body {
+  background: #f3f4f6;
+  color: var(--print-ink);
+  font-family: "Georgia", "Times New Roman", serif;
+  margin: 0;
+  padding: 0;
+}
+
+.print-page {
+  background: var(--print-paper);
+  color: var(--print-ink);
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 32px 40px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+.print-page__loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--print-muted);
+  font-style: italic;
+}
+
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #111827;
+  color: #fff;
+  padding: 10px 20px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #1f2937;
+}
+
+.print-toolbar__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-right: auto;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.print-toolbar button {
+  background: #2563eb;
+  color: #fff;
+  border: 0;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.print-toolbar button.secondary {
+  background: transparent;
+  border: 1px solid #4b5563;
+}
+
+.print-toolbar button:hover {
+  filter: brightness(1.1);
+}
+
+/* ---- Org Chart document ---- */
+
+.org-chart-doc {
+  color: var(--print-ink);
+  background: var(--print-paper);
+}
+
+.org-chart-doc__title {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.org-chart-doc__title h1 {
+  font-size: 1.6rem;
+  margin: 0 0 4px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.org-chart-doc__title h2 {
+  font-size: 1.2rem;
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.org-chart-doc__title h3 {
+  font-size: 1.05rem;
+  margin: 0;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.org-chart-doc__updated {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--print-muted);
+  margin-top: 8px;
+}
+
+.org-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.org-row--commander {
+  margin-bottom: 28px;
+}
+
+.org-row--staff {
+  align-items: flex-start;
+}
+
+.org-box {
+  border: 1.5px solid var(--print-rule);
+  background: var(--print-paper);
+  padding: 8px 10px;
+  min-width: 150px;
+  max-width: 180px;
+  text-align: center;
+  font-family: "Georgia", "Times New Roman", serif;
+  position: relative;
+}
+
+.org-box--command {
+  border-width: 2.5px;
+  min-width: 220px;
+  max-width: 260px;
+  padding: 12px 14px;
+  background: #f8fafc;
+}
+
+.org-box__title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  line-height: 1.2;
+  margin: 0 0 4px;
+}
+
+.org-box--command .org-box__title {
+  font-size: 1rem;
+}
+
+.org-box__member {
+  font-size: 0.82rem;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.org-box__member--vacant {
+  font-style: italic;
+  color: var(--print-muted);
+}
+
+.org-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.org-connector-down {
+  width: 0;
+  height: 22px;
+  border-left: 1.5px solid var(--print-rule);
+  margin: 0 auto;
+}
+
+.org-connector-h {
+  height: 1.5px;
+  background: var(--print-rule);
+  margin: 0 auto;
+  width: 80%;
+}
+
+.org-staff-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+  position: relative;
+}
+
+.org-staff-row::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 8%;
+  right: 8%;
+  height: 1.5px;
+  background: var(--print-rule);
+}
+
+.org-staff-row .org-box::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  height: 10px;
+  width: 0;
+  border-left: 1.5px solid var(--print-rule);
+}
+
+.org-cadet-stack {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.org-cadet-stack__heading {
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-align: center;
+  margin: 0 0 6px;
+  border-bottom: 1.5px solid var(--print-rule);
+  padding-bottom: 2px;
+  align-self: stretch;
+}
+
+.org-cadet-stack .org-box {
+  width: 220px;
+  max-width: 220px;
+}
+
+/* ---- Meeting Schedule document ---- */
+
+.sched-doc {
+  color: var(--print-ink);
+  background: var(--print-paper);
+  font-family: "Georgia", "Times New Roman", serif;
+}
+
+.sched-doc__title-row {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.sched-doc__title {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.sched-doc__subtitle {
+  font-size: 0.95rem;
+  color: var(--print-muted);
+  margin: 0 0 8px;
+}
+
+.sched-doc__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+}
+
+.sched-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--print-ink);
+  font-weight: 600;
+  font-size: 0.8rem;
+  background: #fff;
+}
+
+.sched-badge--yellow { background: #fff3cd; }
+.sched-badge--green  { background: #d4edda; }
+.sched-badge--cyan   { background: #d1ecf1; }
+.sched-badge--plain  { background: #fff; }
+
+.sched-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+
+.sched-table th,
+.sched-table td {
+  border: 1px solid var(--print-ink);
+  padding: 8px 10px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.sched-table thead th {
+  background: #f3f4f6;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.sched-table .row-label {
+  font-weight: 700;
+  background: #f3f4f6;
+  width: 110px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.sched-cell .time-range {
+  color: var(--print-red);
+  font-weight: 600;
+  font-size: 0.82rem;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.sched-cell .activity-title {
+  font-weight: 700;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.sched-cell .activity-owner {
+  list-style: disc;
+  margin: 4px 0 0 18px;
+  padding: 0;
+  font-size: 0.82rem;
+}
+
+.sched-cell .activity-owner li {
+  margin: 0;
+}
+
+.sched-cell .activity-notes {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--print-muted);
+  font-style: italic;
+}
+
+.sched-cell.hl-green  { background: #d4edda; }
+.sched-cell.hl-cyan   { background: #d1ecf1; }
+.sched-cell.hl-yellow { background: #fff3cd; }
+.sched-cell.hl-none   { background: transparent; }
+
+.sched-doc__footnote {
+  margin-top: 18px;
+  font-size: 0.85rem;
+  border-top: 1px solid var(--print-ink);
+  padding-top: 8px;
+}
+
+.sched-doc__footnote strong { margin-right: 4px; }
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .portal-sidebar,
+  .portal-nav,
+  .steward-fab,
+  [data-portal-footer],
+  .print-toolbar,
+  button {
+    display: none !important;
+  }
+
+  .print-page {
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+  }
+
+  .org-chart-doc,
+  .sched-doc {
+    box-shadow: none !important;
+  }
+
+  .org-box {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sched-table tr,
+  .sched-table td {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: letter landscape;
+    margin: 0.4in;
+  }
+}

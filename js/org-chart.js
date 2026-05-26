@@ -605,6 +605,35 @@
     // Future: FIRESTORE.saveSnapshot('print-' + Date.now())
   }
 
+  /**
+   * Open the standalone Org Chart print/PDF document view in a new tab.
+   * The standalone page loads orgPositions from Firestore and auto-calls
+   * window.print() so the user can save as PDF via the browser dialog.
+   */
+  function printOrgChart() {
+    const url = "./orgchart-print.html";
+    const w = global.open(url, "_blank", "noopener");
+    if (!w) {
+      alert("Allow pop-ups to open the organization chart print view.");
+    }
+  }
+
+  /** Alias used by Steward and other modules. */
+  function exportOrgChartPdf() {
+    printOrgChart();
+  }
+
+  /**
+   * Render the org chart "document view" HTML (for embedding/testing).
+   * The actual print uses the standalone orgchart-print.html page.
+   */
+  function generateOrgChartDocumentView() {
+    if (global.SMTN170OrgChartPrint?.renderDocument) {
+      return global.SMTN170OrgChartPrint.renderDocument(getChartData().positions || []);
+    }
+    return "";
+  }
+
   function openEditor(id) {
     const data = getChartData();
     const pos = id ? data.positions.find((p) => p.id === id) : null;
@@ -714,7 +743,9 @@
         <div class="org-hero-actions">
           <button type="button" class="btn-gold btn-lg" data-action="add-position">Add Position</button>
           <button type="button" class="btn-outline btn-lg" data-action="view-vacancies">View Vacancies (${m.vacant})</button>
-          <button type="button" class="btn-outline btn-lg" data-action="export-chart">Export Chart</button>
+          <button type="button" class="btn-outline btn-lg" data-action="print-org-chart" data-steward-action="print" data-steward-label="Print Org Chart" data-steward-help="Open the printable organization chart document">Print Org Chart</button>
+          <button type="button" class="btn-outline btn-lg" data-action="export-org-chart-pdf" data-steward-action="export" data-steward-label="Export Org Chart PDF" data-steward-help="Open the print view and save as PDF">Export Org Chart PDF</button>
+          <button type="button" class="btn-outline btn-lg" data-action="export-chart">Export Chart (table)</button>
           <button type="button" class="btn-outline btn-lg btn-steward-lg" data-steward-ask="Help me review vacant positions and staffing on the organization chart.">Ask Steward</button>
         </div>
         <div class="org-hero-stats">
@@ -801,6 +832,8 @@
         render();
       }
       if (action === "export-chart") exportChartPrint(getChartData());
+      if (action === "print-org-chart") printOrgChart();
+      if (action === "export-org-chart-pdf") exportOrgChartPdf();
       if (action === "delete-position") deletePosition(btn.dataset.orgId);
       if (action === "toggle-dept") {
         const dept = btn.dataset.dept;
@@ -963,6 +996,9 @@
     init,
     openEditor,
     exportChartPrint,
+    printOrgChart,
+    exportOrgChartPdf,
+    generateOrgChartDocumentView,
     hydrateFromFirestore,
     parseOrgChartUpload,
     draftOrgPositionsFromUpload,

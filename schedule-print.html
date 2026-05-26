@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="./assets/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Monthly Meeting Schedule (Print) | TN-170</title>
+  <link rel="stylesheet" href="./css/print-export.css?v=1" />
+</head>
+<body data-portal-page="schedule-print">
+  <div class="print-toolbar" role="toolbar" aria-label="Print actions">
+    <span class="print-toolbar__title">TN-170 Meeting Schedule — Print View</span>
+    <button type="button" id="printBtn" class="primary">Print / Save as PDF</button>
+    <button type="button" class="secondary" onclick="window.close()">Close</button>
+  </div>
+
+  <main class="print-page">
+    <div id="schedulePrintRoot">
+      <p class="print-page__loading">Loading meeting schedule…</p>
+    </div>
+  </main>
+
+  <script src="./portal-config.js?v=3"></script>
+  <script src="./js/firebase-config.js?v=3"></script>
+  <script src="./js/firebase-client.js?v=2"></script>
+  <script src="./js/firebase-data.js?v=2"></script>
+  <script src="./js/auth-guard.js?v=14"></script>
+  <script src="./js/schedule-print.js?v=1"></script>
+  <script>
+    (async function bootPrintPage() {
+      try {
+        const ok = await window.TN170AuthGuard?.ensureProtectedSession?.();
+        if (ok === false) return;
+        await window.SMTN170Firebase?.whenReady?.({ authOnly: false });
+      } catch (err) {
+        console.warn("[schedule-print] firebase boot", err);
+      }
+    })();
+
+    document.getElementById("printBtn")?.addEventListener("click", function () {
+      window.print();
+    });
+  </script>
+</body>
+</html>
