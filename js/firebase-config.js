@@ -3,7 +3,7 @@
  * These are safe for the browser (not service account keys).
  */
 window.TN170_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDaervKws3XFCRwBmvxEuwQdZfpbL1Gk0",
+  apiKey: "AIzaSyDZaervKws3XFCRwBmvxEuwQdZfpbL1Gk0",
   authDomain: "tn-170-portal.firebaseapp.com",
   projectId: "tn-170-portal",
   storageBucket: "tn-170-portal.firebasestorage.app",
