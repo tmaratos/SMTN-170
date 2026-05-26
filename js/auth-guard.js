@@ -423,7 +423,7 @@
     const base = "./js/portal-scripts.js";
     if (document.querySelector(`script[src^="${base}"]`)) return;
     const s = document.createElement("script");
-    s.src = `${base}?v=11`;
+    s.src = `${base}?v=12`;
     if (page) s.dataset.page = page;
     document.body.appendChild(s);
   }

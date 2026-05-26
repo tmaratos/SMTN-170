@@ -9,7 +9,8 @@
 }
 
 .portal-nav-section,
-.portal-nav-group {
+.portal-nav-group,
+.portal-nav-list {
   margin-top: 0;
   padding-top: 0;
   border-top: 0;

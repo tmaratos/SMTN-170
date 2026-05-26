@@ -23,6 +23,8 @@
   function getProfileRow() {
     const profile = global.SMTN170Auth?.getProfile?.();
     if (profile) return profile;
+    const cached = global.TN170_CURRENT_PROFILE;
+    if (cached) return cached;
     const session = global.SMTN170Auth?.loadSession?.();
     if (!session) return null;
     return {
@@ -37,10 +39,31 @@
       duty_position: session.dutyPosition || "",
       profile_photo_url: session.profilePhotoUrl || "",
       role: session.role,
-      status: session.status,
       status: session.status || session.accountStatus,
       updated_at: session.updatedAt || null,
     };
+  }
+
+  async function waitForProfileData() {
+    let row = getProfileRow();
+    if (row) return row;
+
+    if (!global.SMTN170Auth?.loadSession?.()) {
+      await global.SMTN170Auth?.init?.({ skipEvent: true });
+    }
+    row = getProfileRow();
+    if (row) return row;
+
+    await new Promise((resolve) => {
+      if (getProfileRow()) {
+        resolve();
+        return;
+      }
+      const done = () => resolve();
+      global.addEventListener("smtn170:auth-ready", done, { once: true });
+      setTimeout(done, 5000);
+    });
+    return getProfileRow();
   }
 
   function getAccessStatusLabel(row) {
@@ -173,10 +196,7 @@
     if (!document.getElementById("profileForm")) {
       root.innerHTML = '<p class="page-intro">Loading your profile…</p>';
     }
-    if (!global.SMTN170Auth?.loadSession?.()) {
-      await global.SMTN170Auth?.init?.({ skipEvent: true });
-    }
-    const row = getProfileRow();
+    const row = await waitForProfileData();
     if (!row) {
       console.log("SESSION_MISSING_REDIRECT");
       global.location.href = "login.html";

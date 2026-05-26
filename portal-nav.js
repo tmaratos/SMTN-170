@@ -8,22 +8,15 @@
     return d.innerHTML;
   }
 
-  /** Always-visible sidebar destinations only. */
-  const NAV_SECTIONS = [
-    {
-      id: "main",
-      label: "Menu",
-      items: [
-        { key: "home", href: "dashboard.html", label: "Home" },
-        { key: "calendar", href: "calendar.html", label: "Calendar" },
-      ],
-    },
-    {
-      id: "account",
-      label: "Staff",
-      items: [{ key: "admin", href: "admin.html", label: "Admin", requireAdmin: true }],
-    },
+  /** Sidebar links only — operational pages live in dashboard Quick Actions. */
+  const SIDEBAR_LINKS = [
+    { key: "home", href: "dashboard.html", label: "Home" },
+    { key: "calendar", href: "calendar.html", label: "Calendar" },
+    { key: "admin", href: "admin.html", label: "Admin", requireAdmin: true },
   ];
+
+  /** @deprecated Use SIDEBAR_LINKS — kept for callers that read NAV_SECTIONS. */
+  const NAV_SECTIONS = [{ id: "main", label: "", items: SIDEBAR_LINKS }];
 
   /** Full-width dashboard quick actions (moved out of sidebar). */
   const QUICK_ACTIONS = [
@@ -56,7 +49,7 @@
   ];
 
   function allNavItems() {
-    return NAV_SECTIONS.flatMap((s) => s.items);
+    return SIDEBAR_LINKS.slice();
   }
 
   function currentKey() {
@@ -159,15 +152,11 @@
 
   function renderNav(active) {
     const isAdmin = canShowAdminNav();
-
-    return NAV_SECTIONS.map((section) => {
-      const links = section.items
-        .filter((n) => !n.requireAdmin || isAdmin)
-        .map((n) => renderNavLink(n, active))
-        .join("");
-      if (!links) return "";
-      return `<div class="portal-nav-group"><span class="portal-nav-group-label">${escapeHtml(section.label)}</span>${links}</div>`;
-    }).join("");
+    const links = SIDEBAR_LINKS.filter((n) => !n.requireAdmin || isAdmin)
+      .map((n) => renderNavLink(n, active))
+      .join("");
+    if (!links) return "";
+    return `<div class="portal-nav-list">${links}</div>`;
   }
 
   function bindLogout() {
@@ -249,6 +238,7 @@
   }
 
   global.SMTN170PortalNav = {
+    SIDEBAR_LINKS,
     NAV_SECTIONS,
     QUICK_ACTIONS,
     NAV_HIDDEN,
