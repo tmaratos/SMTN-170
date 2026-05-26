@@ -635,7 +635,7 @@
       state.messages.push({
         id: "err-" + Date.now(),
         role: "steward",
-        text: stewardErrorMessage(null, "Sign in required"),
+        text: "Please sign in to use Steward.",
         at: new Date().toISOString(),
       });
       renderMessages();

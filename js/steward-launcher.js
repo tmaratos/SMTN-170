@@ -26,7 +26,15 @@
       return steward.openSteward(promptText);
     } catch (err) {
       console.error("[openSteward]", err);
-      alert("Steward is unavailable right now: " + (err.message || "Please try again later."));
+      const root = document.getElementById("stewardRoot");
+      if (root) {
+        root.insertAdjacentHTML(
+          "beforeend",
+          `<p class="steward-inline-error" role="alert">Steward is unavailable right now: ${
+            err?.message ? String(err.message) : "Please try again later."
+          }</p>`
+        );
+      }
     }
   };
 })(window);
