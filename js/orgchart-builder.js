@@ -744,7 +744,7 @@
     w.document.write(`<!DOCTYPE html><html lang="en"><head>
       <meta charset="UTF-8" />
       <title>${escapeHtml(state.chart?.title || "Organization Chart")}</title>
-      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=4" />
+      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=7" />
       <link rel="stylesheet" href="${global.location.origin}/css/print-contrast.css?v=1" />
     </head><body class="ocb-print-body">
       <main class="print-page">${html}</main>

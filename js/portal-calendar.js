@@ -22,25 +22,32 @@
     custom: { label: "Other", color: "#f97316", textOnDark: false },
   };
 
+  // `viewMonth` is stored as plain {year, month} integers (month is 0-11)
+  // so that month navigation can never trigger the JS Date rollover bug
+  // (e.g. `setMonth(m + 1)` on a date whose day is 31 will silently skip
+  // a 30-day month). All Date objects we build later are constructed via
+  // `new Date(year, month, day)` so they sit in the browser's LOCAL
+  // timezone — never UTC midnight, which would otherwise drift events to
+  // the wrong day when the user is west of UTC.
   const STATE = {
-    viewMonth: monthStart(new Date()),
+    viewMonth: currentLocalViewMonth(),
     events: [],
     cache: new Map(),
     categoryOff: new Set(),
     loaded: false,
   };
 
-  const MONTH_NAMES = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ];
-
-  function monthStart(d) {
-    return new Date(d.getFullYear(), d.getMonth(), 1);
+  function currentLocalViewMonth() {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
   }
 
-  function monthEnd(d) {
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  function firstOfMonth(vm) {
+    return new Date(vm.year, vm.month, 1);
+  }
+
+  function lastOfMonth(vm) {
+    return new Date(vm.year, vm.month + 1, 0);
   }
 
   function isoDate(d) {
@@ -55,6 +62,8 @@
     const s = String(str).slice(0, 10);
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!m) return null;
+    // Local-time constructor — `new Date("YYYY-MM-DD")` would parse as UTC
+    // midnight and shift the date back one day in the user's timezone.
     const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
     return Number.isNaN(d.getTime()) ? null : d;
   }
@@ -69,8 +78,13 @@
     return div.innerHTML;
   }
 
-  function formatMonthYear(d) {
-    return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  function formatMonthYear(vm) {
+    const d = firstOfMonth(vm);
+    try {
+      return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    } catch {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
   }
 
   function formatLongDate(d) {
@@ -160,11 +174,11 @@
     return global.TN170FirebaseClient || global.SMTN170Firebase?.getClient?.() || null;
   }
 
-  async function loadFromFirestore(monthDate) {
+  async function loadFromFirestore(viewMonth) {
     const sb = getFirebaseClient();
     if (!sb) return [];
-    const first = isoDate(monthStart(monthDate));
-    const last = isoDate(monthEnd(monthDate));
+    const first = isoDate(firstOfMonth(viewMonth));
+    const last = isoDate(lastOfMonth(viewMonth));
     const events = [];
 
     try {
@@ -189,10 +203,12 @@
         .from("flight_reviews")
         .select("id, department, scheduled_review_date, assigned_reviewer, notes, status");
       if (!error && Array.isArray(data)) {
+        const mStart = firstOfMonth(viewMonth);
+        const mEnd = lastOfMonth(viewMonth);
         data.forEach((row) => {
           if (!row.scheduled_review_date) return;
           const dt = parseIsoDate(row.scheduled_review_date);
-          if (!dt || dt < monthStart(monthDate) || dt > monthEnd(monthDate)) return;
+          if (!dt || dt < mStart || dt > mEnd) return;
           const ev = normalizeEvent({
             id: `fr-${row.id}`,
             title: `${row.department || "Directorate"} — Biannual Flight Review`,
@@ -214,10 +230,10 @@
     return events;
   }
 
-  function loadLegacyLocal(monthDate) {
+  function loadLegacyLocal(viewMonth) {
     const events = [];
-    const mStart = monthStart(monthDate);
-    const mEnd = monthEnd(monthDate);
+    const mStart = firstOfMonth(viewMonth);
+    const mEnd = lastOfMonth(viewMonth);
     const seed = global.SMTN170FlightReview?.loadAllCalendarEvents?.();
     const fromFr = Array.isArray(seed) ? seed : [];
     fromFr.forEach((raw) => {
@@ -244,8 +260,8 @@
     });
   }
 
-  async function loadMonth(monthDate, opts) {
-    const key = `${monthDate.getFullYear()}-${monthDate.getMonth()}`;
+  async function loadMonth(viewMonth, opts) {
+    const key = `${viewMonth.year}-${viewMonth.month}`;
     if (!opts?.force && STATE.cache.has(key)) {
       STATE.events = STATE.cache.get(key);
       return STATE.events;
@@ -253,8 +269,8 @@
     const grid = document.getElementById("calGrid");
     if (grid) grid.innerHTML = '<p class="cal-empty">Loading squadron calendar…</p>';
     const [firestoreEvents, legacyEvents] = await Promise.all([
-      loadFromFirestore(monthDate),
-      Promise.resolve(loadLegacyLocal(monthDate)),
+      loadFromFirestore(viewMonth),
+      Promise.resolve(loadLegacyLocal(viewMonth)),
     ]);
     const merged = dedupe([...firestoreEvents, ...legacyEvents]);
     STATE.cache.set(key, merged);
@@ -262,9 +278,9 @@
     return merged;
   }
 
-  function buildDayCells(monthDate) {
-    const first = monthStart(monthDate);
-    const last = monthEnd(monthDate);
+  function buildDayCells(viewMonth) {
+    const first = firstOfMonth(viewMonth);
+    const last = lastOfMonth(viewMonth);
     const startWeekday = first.getDay();
     const totalDays = last.getDate();
     const cells = [];
@@ -276,7 +292,7 @@
     }
 
     for (let day = 1; day <= totalDays; day += 1) {
-      cells.push({ date: new Date(first.getFullYear(), first.getMonth(), day), outOfMonth: false });
+      cells.push({ date: new Date(viewMonth.year, viewMonth.month, day), outOfMonth: false });
     }
 
     while (cells.length % 7 !== 0) {
@@ -319,15 +335,24 @@
     if (!grid || !title) return;
     title.textContent = formatMonthYear(STATE.viewMonth);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Today is resolved fresh on every render from the browser's local
+    // clock — never cached — so the gold highlight always lands on the
+    // user's current local date, even if the tab has been open across
+    // midnight.
+    const now = new Date();
+    const todayY = now.getFullYear();
+    const todayM = now.getMonth();
+    const todayD = now.getDate();
     const cells = buildDayCells(STATE.viewMonth);
     const maxPills = 3;
 
     const html = cells
       .map((cell) => {
         const dayEvents = eventsForDate(cell.date);
-        const isToday = isSameDay(cell.date, today);
+        const isToday =
+          cell.date.getFullYear() === todayY &&
+          cell.date.getMonth() === todayM &&
+          cell.date.getDate() === todayD;
         const classes = ["cal-day"];
         if (cell.outOfMonth) classes.push("cal-day--out");
         if (isToday) classes.push("cal-day--today");
@@ -433,21 +458,35 @@
 
   function bindEvents() {
     document.getElementById("calPrevBtn")?.addEventListener("click", async () => {
-      STATE.viewMonth = new Date(STATE.viewMonth.getFullYear(), STATE.viewMonth.getMonth() - 1, 1);
+      // Integer-only math — Date arithmetic on "last day of month" can
+      // silently skip a 30-day month, e.g. May 31 + 1 month = July 1.
+      let { year, month } = STATE.viewMonth;
+      month -= 1;
+      if (month < 0) {
+        month = 11;
+        year -= 1;
+      }
+      STATE.viewMonth = { year, month };
       await loadMonth(STATE.viewMonth);
       renderFilters();
       renderGrid();
     });
 
     document.getElementById("calNextBtn")?.addEventListener("click", async () => {
-      STATE.viewMonth = new Date(STATE.viewMonth.getFullYear(), STATE.viewMonth.getMonth() + 1, 1);
+      let { year, month } = STATE.viewMonth;
+      month += 1;
+      if (month > 11) {
+        month = 0;
+        year += 1;
+      }
+      STATE.viewMonth = { year, month };
       await loadMonth(STATE.viewMonth);
       renderFilters();
       renderGrid();
     });
 
     document.getElementById("calTodayBtn")?.addEventListener("click", async () => {
-      STATE.viewMonth = monthStart(new Date());
+      STATE.viewMonth = currentLocalViewMonth();
       await loadMonth(STATE.viewMonth);
       renderFilters();
       renderGrid();

@@ -223,6 +223,30 @@ body.ocb-print-body {
   padding: 9pt 12pt;
 }
 
+/* Inside the 8-cell staff row each box has to fit a single column on a
+   Letter LANDSCAPE page. With 0.45in margins (left+right) the printable
+   area is ~10.1in; minus 7 × 8pt gaps (~0.78in) that leaves ~84pt per
+   cell. The `.org-box` defaults above target the larger Commander cell —
+   here we drop the min-width, tighten padding and shrink the font so all
+   eight cells line up under the beam without overflowing. */
+.org-staff-row .org-box {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 5pt 6pt;
+}
+
+.org-staff-row .org-box__name {
+  font-size: 9.5pt;
+  line-height: 1.2;
+  margin: 0 0 1pt;
+}
+
+.org-staff-row .org-box__role {
+  font-size: 8.5pt;
+  line-height: 1.2;
+}
+
 /* Two-line box content: name on top (regular ~10–11pt), role below in
    italic (~10pt). When vacant the name slot shows "Vacant" in italic. */
 .org-box__name {
@@ -264,15 +288,23 @@ body.ocb-print-body {
 
 /* 8-cell staff row arranged left-to-right under the Commander. The renderer
    emits exactly eight cells in fixed order; we use CSS grid so each cell
-   takes equal width and the cells line up under the horizontal beam above. */
+   takes equal width and the cells line up under the horizontal beam above.
+   `minmax(0, 1fr)` (instead of `1fr`) is critical — without the explicit
+   `0` minimum each track defaults to `min-content`, which prevents the
+   cells from shrinking below their text width and pushes the row off
+   the right edge of the sheet on the Preview tab. */
 .org-staff-row {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8pt;
   margin: 0;
   padding-top: 14pt;
   position: relative;
   align-items: start;
+  /* Keep the staff row glued to the Commander row above so the chart
+     never page-breaks between the Commander and the staff beam. */
+  page-break-before: avoid;
+  break-before: avoid;
 }
 
 /* Horizontal beam that spans all eight staff cells. Sits above the cells
@@ -320,18 +352,23 @@ body.ocb-print-body {
 
 /* Vertical branch from the DC for Cadets box to each cadet position. A
    single vertical spine runs down the centre-left of the column and each
-   cadet box hangs off it via a short horizontal "elbow". */
+   cadet box hangs off it via a short horizontal "elbow". The branch
+   matches the width of its parent staff cell so it never overflows
+   sideways past the staff column it belongs to. */
 .org-cadet-branch {
   position: relative;
-  margin: 0 auto;
-  padding: 10pt 0 0 18pt;
-  width: max-content;
+  margin: 0;
+  padding: 10pt 0 0 12pt;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
+  page-break-before: avoid;
+  break-before: avoid;
 }
 
 .org-cadet-branch__spine {
   position: absolute;
-  left: 9pt;
+  left: 6pt;
   top: 0;
   bottom: 14pt; /* stop the spine at the last branch elbow */
   width: 0;
@@ -344,36 +381,58 @@ body.ocb-print-body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10pt;
+  gap: 8pt;
 }
 
 .org-cadet-branch__item {
   position: relative;
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .org-cadet-branch__elbow {
   position: absolute;
-  left: -9pt;
+  left: -6pt;
   top: 50%;
-  width: 9pt;
+  width: 6pt;
   height: 0;
   border-top: 1.2pt solid var(--print-rule);
 }
 
 .org-cadet-branch .org-box {
-  min-width: 130pt;
-  max-width: 170pt;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 5pt 6pt;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.org-cadet-branch .org-box__name {
+  font-size: 9.5pt;
+  line-height: 1.2;
+  margin: 0 0 1pt;
+}
+
+.org-cadet-branch .org-box__role {
+  font-size: 8.5pt;
+  line-height: 1.2;
 }
 
 /* Custom / additional positions section — used only when admins record
-   extras (e.g. Chaplain) that aren't part of the reference layout. Renders
-   as a small labelled cluster beneath the chart. */
+   extras (e.g. Chaplain) that aren't part of the reference layout.
+   Renders as a labelled grid BELOW the staff row. Extra boxes wrap to a
+   new row beneath the previous ones (never sideways past the page edge),
+   and the whole section is allowed to flow to a second page if it
+   collectively needs more vertical room than the staff/cadet branch
+   already used up. */
 .org-additional {
   margin: 22pt 0 0;
   padding: 12pt 14pt 10pt;
   border-top: 0.8pt solid var(--print-rule);
+  page-break-inside: auto;
+  break-inside: auto;
 }
 
 .org-additional__heading {
@@ -387,10 +446,27 @@ body.ocb-print-body {
 }
 
 .org-additional__grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   justify-content: center;
   gap: 10pt;
+}
+
+.org-additional__grid .org-box {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 6pt 8pt;
+}
+
+.org-additional__grid .org-box__name {
+  font-size: 10pt;
+  line-height: 1.25;
+}
+
+.org-additional__grid .org-box__role {
+  font-size: 9pt;
+  line-height: 1.25;
 }
 
 /* ============================================================ */
