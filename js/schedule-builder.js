@@ -1332,6 +1332,60 @@
     document.head.appendChild(style);
   }
 
+  /**
+   * Cross-page deep link support: the Calendar's "Open in builder" link
+   * passes `?month=YYYY-MM` (and optionally `?id=<docId>`) so we can land
+   * the user directly on the matching schedule. Falls back silently.
+   */
+  function parseDeepLink() {
+    try {
+      const params = new URLSearchParams(global.location?.search || "");
+      const id = params.get("id") || "";
+      const monthRaw = params.get("month") || "";
+      const m = monthRaw.match(/^(\d{4})-(\d{2})$/);
+      const monthKey = m ? { year: Number(m[1]), month: Number(m[2]) } : null;
+      return { id, monthKey };
+    } catch {
+      return { id: "", monthKey: null };
+    }
+  }
+
+  async function applyDeepLink({ id, monthKey }) {
+    const ms = global.SMTN170FirebaseData?.monthlySchedules?.();
+    if (!ms) return false;
+    if (id) {
+      const { data } = await ms.get(id);
+      if (data) {
+        state.schedule = normalizeLoaded(data);
+        state.tab = "grid";
+        state.saveStatus = "saved";
+        return true;
+      }
+    }
+    if (monthKey) {
+      const { data } = await ms.list({
+        order: { field: "updatedAt", asc: false },
+        limit: 50,
+      });
+      const match = (data || []).find(
+        (d) => Number(d.month) === monthKey.month && Number(d.year) === monthKey.year
+      );
+      if (match) {
+        state.schedule = normalizeLoaded(match);
+        state.tab = "grid";
+        state.saveStatus = "saved";
+        return true;
+      }
+      // No saved doc for that month yet — open the builder pre-pointed at
+      // it so the user can start fresh on the right month/year.
+      state.schedule = R().defaultMonthlySchedule(monthKey.year, monthKey.month);
+      state.tab = "setup";
+      state.saveStatus = "idle";
+      return true;
+    }
+    return false;
+  }
+
   async function init() {
     if (!document.getElementById("scheduleBuilderRoot")) return;
     if (!R()) {
@@ -1344,10 +1398,23 @@
     } catch {
       /* continue */
     }
-    const draft = loadDraft();
-    state.schedule = draft ? normalizeLoaded(draft) : R().defaultMonthlySchedule();
+    const deep = parseDeepLink();
+    let appliedDeep = false;
+    if (deep.id || deep.monthKey) {
+      try {
+        appliedDeep = await applyDeepLink(deep);
+      } catch (err) {
+        console.warn("[schedule-builder] deep link failed", err);
+      }
+    }
+    if (!appliedDeep) {
+      const draft = loadDraft();
+      state.schedule = draft ? normalizeLoaded(draft) : R().defaultMonthlySchedule();
+      if (draft) state.notice = "Restored your unsaved draft from this device.";
+    } else if (deep.monthKey) {
+      state.notice = `Opened ${R().MONTH_NAMES[deep.monthKey.month - 1]} ${deep.monthKey.year} schedule.`;
+    }
     state.warnings = R().validateSchedule(state.schedule);
-    if (draft) state.notice = "Restored your unsaved draft from this device.";
     loadSavedList();
     render();
     if (unsubscribe) unsubscribe();

@@ -6,7 +6,11 @@
  *      (fields: title, meeting_date, meeting_time, location, notes, status, uniform)
  *   2. Firestore `flightReviews` collection — scheduled BFRs surface as
  *      "Flight Review" events on the squadron calendar.
- *   3. Legacy localStorage `smtn170_calendar_events` custom events (back-compat).
+ *   3. Firestore `monthlySchedules` collection — each saved monthly schedule's
+ *      `weeks[]` is expanded into per-week meeting events so the calendar
+ *      stays in sync with the Monthly Meeting Schedule Builder without any
+ *      data duplication into `meetings`.
+ *   4. Legacy localStorage `smtn170_calendar_events` custom events (back-compat).
  *
  * Calendar is read-only. Event creation/editing lives in Tasks and the
  * Monthly Meeting Schedule Builder.
@@ -230,6 +234,116 @@
     return events;
   }
 
+  const MONTH_NAMES = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  function resolveUniformLabel(week) {
+    if (!week) return "";
+    if (week.uniform === "Custom") return week.uniformCustom || "Custom";
+    return week.uniform || "";
+  }
+
+  /**
+   * Expand each saved `monthlySchedules` doc whose month/year matches
+   * `viewMonth` into one virtual calendar event per week. We never write
+   * back to `meetings` — these events live only in memory for this render.
+   *
+   * Doc shape (see `js/schedule-builder.js` + `js/report-renderers.js`):
+   *   { id, title, month (1-12), year, firstMeetingDate, weeks: [
+   *       { id, label, date "YYYY-MM-DD", uniform, uniformCustom,
+   *         opening: { startTime, endTime, ... },
+   *         emphasis, block1, block2,
+   *         closing: { startTime, endTime, ... } }
+   *     ] }
+   *
+   * `monthlySchedules` is queried unfiltered (the collection is small —
+   * one doc per month per year — and the SDK's compound index requirements
+   * for month+year are not worth the extra deploy). We filter client-side
+   * by the `viewMonth` integers.
+   */
+  async function loadFromMonthlySchedules(viewMonth) {
+    const helper = global.SMTN170FirebaseData?.monthlySchedules?.();
+    if (!helper) return [];
+    const events = [];
+    const targetMonth = viewMonth.month + 1; // doc.month is 1-12
+    const targetYear = viewMonth.year;
+    const monthLabel = MONTH_NAMES[viewMonth.month] || "";
+
+    let docs = [];
+    try {
+      const { data, error } = await helper.list({
+        order: { field: "updatedAt", asc: false },
+        limit: 100,
+      });
+      if (error) {
+        console.warn("[calendar] monthlySchedules fetch failed:", error);
+        return [];
+      }
+      docs = Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.warn("[calendar] monthlySchedules fetch crashed:", err);
+      return [];
+    }
+
+    docs.forEach((doc) => {
+      if (!doc) return;
+      const docMonth = Number(doc.month);
+      const docYear = Number(doc.year);
+      if (docMonth !== targetMonth || docYear !== targetYear) return;
+      const weeks = Array.isArray(doc.weeks) ? doc.weeks : [];
+      const baseTitle =
+        doc.scheduleTitle ||
+        doc.title ||
+        `${monthLabel} Squadron Meeting`;
+      // Per-pill title kept short; full schedule title is preserved for the
+      // "View full schedule" link target.
+      const pillTitle = `${monthLabel} Squadron Meeting`;
+      weeks.forEach((week) => {
+        if (!week?.date) return;
+        const dt = parseIsoDate(week.date);
+        if (!dt) return;
+        if (dt.getMonth() !== viewMonth.month || dt.getFullYear() !== viewMonth.year) {
+          return;
+        }
+        const startTime = week.opening?.startTime || "1900";
+        const endTime = week.closing?.endTime || "2100";
+        const uniformLabel = resolveUniformLabel(week);
+        const ev = normalizeEvent({
+          id: `ms-${doc.id}-${week.id || week.date}`,
+          title: pillTitle,
+          date: week.date,
+          startTime,
+          endTime,
+          location: doc.location || "Squadron",
+          uniform: uniformLabel,
+          notes: week.label ? `${week.label} of the monthly meeting schedule.` : "",
+          category: "meeting",
+          __source: "monthlySchedule",
+        });
+        if (!ev) return;
+        ev.sourceDocId = doc.id;
+        ev.sourceWeekId = week.id || null;
+        ev.sourceTitle = baseTitle;
+        ev.sourceMonthKey = `${docYear}-${String(docMonth).padStart(2, "0")}`;
+        events.push(ev);
+      });
+    });
+
+    return events;
+  }
+
   function loadLegacyLocal(viewMonth) {
     const events = [];
     const mStart = firstOfMonth(viewMonth);
@@ -245,12 +359,25 @@
     return events;
   }
 
+  // Higher number wins on a duplicate key (`date|title|startTime`). Real
+  // `meetings` rows always win over an expanded monthlySchedule, which in
+  // turn beats legacy localStorage. Flight reviews sit between meeting and
+  // monthlySchedule because they are first-class scheduled events.
+  const SOURCE_PRIORITY = {
+    meeting: 4,
+    "flight-review": 3,
+    monthlySchedule: 2,
+    legacy: 1,
+  };
+
   function dedupe(events) {
     const seen = new Map();
     events.forEach((ev) => {
       const key = `${ev.date}|${ev.title.toLowerCase()}|${ev.startTimeRaw || ""}`;
       const existing = seen.get(key);
-      if (!existing || existing.source === "legacy") seen.set(key, ev);
+      const incomingP = SOURCE_PRIORITY[ev.source] || 0;
+      const existingP = existing ? SOURCE_PRIORITY[existing.source] || 0 : -1;
+      if (incomingP > existingP) seen.set(key, ev);
     });
     return Array.from(seen.values()).sort((a, b) => {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1;
@@ -268,11 +395,16 @@
     }
     const grid = document.getElementById("calGrid");
     if (grid) grid.innerHTML = '<p class="cal-empty">Loading squadron calendar…</p>';
-    const [firestoreEvents, legacyEvents] = await Promise.all([
+    const [firestoreEvents, monthlyScheduleEvents, legacyEvents] = await Promise.all([
       loadFromFirestore(viewMonth),
+      loadFromMonthlySchedules(viewMonth),
       Promise.resolve(loadLegacyLocal(viewMonth)),
     ]);
-    const merged = dedupe([...firestoreEvents, ...legacyEvents]);
+    const merged = dedupe([
+      ...firestoreEvents,
+      ...monthlyScheduleEvents,
+      ...legacyEvents,
+    ]);
     STATE.cache.set(key, merged);
     STATE.events = merged;
     return merged;
@@ -420,9 +552,34 @@
       .map((r) => `<div><dt>${escapeHtml(r.label)}</dt><dd>${escapeHtml(r.value)}</dd></div>`)
       .join("");
     document.getElementById("calModalNotes").textContent = ev.notes || "";
+    renderEventActions(ev);
     modal.hidden = false;
     const closeBtn = modal.querySelector(".cal-modal-close");
     closeBtn?.focus();
+  }
+
+  // Action footer for the event modal — currently only used to surface a
+  // "View full schedule" link for events that came from `monthlySchedules`,
+  // routing the user to the print view of the originating schedule doc.
+  function renderEventActions(ev) {
+    const panel = document.querySelector("#calEventModal .cal-modal-panel");
+    if (!panel) return;
+    let host = panel.querySelector(".cal-modal-actions");
+    if (!host) {
+      host = document.createElement("div");
+      host.className = "cal-modal-actions";
+      panel.appendChild(host);
+    }
+    if (!ev || ev.source !== "monthlySchedule" || !ev.sourceDocId) {
+      host.innerHTML = "";
+      return;
+    }
+    const monthHref = ev.sourceMonthKey ? `schedule.html?month=${ev.sourceMonthKey}` : "schedule.html";
+    const printHref = `schedule-print.html?id=${encodeURIComponent(ev.sourceDocId)}`;
+    host.innerHTML = `
+      <a class="cal-modal-action" href="${escapeHtml(printHref)}" target="_blank" rel="noopener">View full schedule</a>
+      <a class="cal-modal-action cal-modal-action--secondary" href="${escapeHtml(monthHref)}">Open in builder</a>
+    `;
   }
 
   function openDayModal(dayIso) {
@@ -448,6 +605,7 @@
       })
       .join("");
     document.getElementById("calModalNotes").textContent = "";
+    renderEventActions(null);
     modal.hidden = false;
   }
 

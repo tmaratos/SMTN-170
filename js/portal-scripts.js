@@ -8,7 +8,7 @@
     schedule: [
       "./js/portal-data.js",
       "./js/report-renderers.js?v=4",
-      "./js/schedule-builder.js?v=4",
+      "./js/schedule-builder.js?v=5",
     ],
     documents: ["./js/resource-links.js?v=1"],
     orgchart: [
@@ -21,7 +21,7 @@
     profile: ["./js/password-reset.js?v=1", "./js/profile-page.js?v=14"],
     tasks: ["./js/tasks-page.js?v=9"],
     dashboard: ["./js/portal-data.js", "./js/portal-dashboard.js?v=8"],
-    calendar: ["./flight-review.js", "./js/portal-calendar.js?v=2"],
+    calendar: ["./flight-review.js", "./js/portal-calendar.js?v=3"],
     resources: [],
     exports: ["./flight-review.js"],
   };
