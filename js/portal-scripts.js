@@ -7,13 +7,13 @@
   const PAGE_SCRIPTS = {
     schedule: [
       "./js/portal-data.js",
-      "./js/report-renderers.js?v=4",
-      "./js/schedule-builder.js?v=5",
+      "./js/report-renderers.js?v=6",
+      "./js/schedule-builder.js?v=6",
     ],
     documents: ["./js/resource-links.js?v=1"],
     orgchart: [
-      "./js/report-renderers.js?v=4",
-      "./js/orgchart-builder.js?v=2",
+      "./js/report-renderers.js?v=6",
+      "./js/orgchart-builder.js?v=3",
     ],
     "flight-review": ["./flight-review.js"],
     "sui-readiness": ["./sui-readiness.js?v=9"],

@@ -8,18 +8,277 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="color-scheme" content="light" />
   <title>Monthly Schedule (Print) | TN-170</title>
+
   <!--
-    Load the SAME stylesheet chain (in the same order) as `schedule.html`'s
-    Preview tab so the print viewer renders byte-identical to what the user
-    sees inside the builder. `report-builders.css` is mostly scoped to
-    `#scheduleBuilderRoot`/`#orgChartApp` and therefore harmless on this
-    standalone print page, but loading it here keeps the cascade chain
-    aligned and exposes the same `:root` design tokens. `print-contrast.css`
-    must remain LAST so its high-contrast `!important` overrides win.
+    INLINE DEFENSIVE PRINT STYLE BLOCK
+    ----------------------------------
+    Ships in the HTML itself so it cannot be defeated by a stale browser
+    cache of `print-export.css` / `print-contrast.css`. The rules below
+    own the critical visual contract the user expects in BOTH the on-screen
+    paper view AND the print dialog / Save as PDF:
+
+      - @page defaults to LETTER LANDSCAPE so the print dialog's Layout
+        dropdown opens on Landscape, not Portrait.
+      - `print-color-adjust: exact` is forced on every element so audience
+        pill fills, highlight cell fills, table borders, and the red time
+        ranges survive Chromium's default "background graphics off" pass.
+      - Audience badges always render as inline pills with gap + padding
+        (otherwise they collapse to `BCTFlightsAll Cadets` text).
+      - Schedule table cells always carry the 1.2pt black border.
+      - Highlight backgrounds for `.hl-green`, `.hl-cyan`, `.hl-yellow`
+        cells/entries keep their pastel fills.
+      - Time ranges stay red and on their own line above the activity title.
+
+    The external `css/print-export.css` and `css/print-contrast.css` files
+    still load below for the wider design tokens, but if any of them are
+    cached, missing, or stripped by an extension the document still
+    renders correctly.
   -->
-  <link rel="stylesheet" href="./css/print-export.css?v=7" />
-  <link rel="stylesheet" href="./css/report-builders.css?v=4" />
-  <link rel="stylesheet" href="./css/print-contrast.css?v=2" />
+  <style>
+    @page { size: letter landscape; margin: 0.45in; }
+
+    *,
+    *::before,
+    *::after {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+
+    html, body { margin: 0; padding: 0; background: #e9eaee; color: #0b0b0b; }
+    body[data-portal-page="schedule-print"] {
+      font-family: "Georgia", "Times New Roman", serif;
+    }
+
+    .print-toolbar {
+      position: sticky; top: 0; z-index: 20;
+      background: #0f172a; color: #fff;
+      padding: 10px 20px;
+      display: flex; gap: 12px; align-items: center; justify-content: center;
+      border-bottom: 1px solid #1f2937;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .print-toolbar__title { font-size: 0.95rem; font-weight: 600; margin-right: auto; }
+    .print-toolbar button {
+      background: #2563eb; color: #fff; border: 0;
+      padding: 8px 16px; border-radius: 4px; font-size: 0.9rem; cursor: pointer;
+    }
+    .print-toolbar button.secondary { background: transparent; border: 1px solid #4b5563; }
+
+    .print-page {
+      background: #ffffff; color: #0b0b0b;
+      max-width: 1180px; margin: 24px auto; padding: 28px 36px 32px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12); border-radius: 4px;
+    }
+    .print-page__loading {
+      text-align: center; padding: 60px 20px;
+      color: #4b5563; font-style: italic;
+    }
+
+    /* === Audience badges — defensive hardening so they NEVER jam together === */
+    .sched-doc__audience-row {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8pt !important;
+      justify-content: center !important;
+      margin: 0 0 10pt !important;
+    }
+    .sched-badge {
+      display: inline-block !important;
+      padding: 4pt 12pt !important;
+      border-radius: 999pt !important;
+      border: 0.8pt solid #111 !important;
+      font-weight: 700 !important;
+      font-size: 9.5pt !important;
+      letter-spacing: 0.02em !important;
+      color: #1a1a1a !important;
+      background: #ffffff;
+      line-height: 1.1 !important;
+      margin: 0 !important;
+    }
+    .sched-badge--yellow { background: #ffec88 !important; }
+    .sched-badge--green  { background: #b4e4b4 !important; }
+    .sched-badge--cyan   { background: #b6e6f0 !important; }
+    .sched-badge--plain  { background: #f0f0f0 !important; }
+
+    /* === Schedule grid — always bordered, always coloured === */
+    .sched-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      margin-top: 8pt;
+      font-size: 10pt;
+      table-layout: fixed;
+    }
+    .sched-table th,
+    .sched-table td {
+      border: 1.2pt solid #111 !important;
+      padding: 6pt 7pt !important;
+      vertical-align: top;
+      text-align: left;
+    }
+    .sched-table thead th {
+      background: #e8e8e8 !important;
+      text-align: center;
+      font-weight: 700;
+      font-size: 11pt;
+    }
+    .sched-table .row-label {
+      font-weight: 700;
+      background: #f1f3f5 !important;
+      width: 95pt;
+      text-align: left;
+      vertical-align: middle;
+      font-size: 10.5pt;
+      padding-left: 9pt;
+    }
+    .sched-table tbody tr:first-child td:not(.row-label) {
+      text-align: center;
+      font-weight: 700;
+      font-size: 11pt;
+      vertical-align: middle;
+      background: #fafafa !important;
+    }
+
+    /* === Red time ranges, always on their own line === */
+    .sched-cell .time-range,
+    .sched-entry .time-range,
+    span.time-range {
+      color: #b91c1c !important;
+      font-weight: 700 !important;
+      font-size: 9.5pt !important;
+      display: block !important;
+      margin: 0 0 2pt !important;
+      letter-spacing: 0.01em;
+    }
+
+    .sched-cell .activity-title,
+    .sched-entry .activity-title {
+      font-weight: 700 !important;
+      margin: 0 0 3pt;
+      font-size: 10.5pt;
+      color: #0b0b0b !important;
+      line-height: 1.25;
+    }
+    .sched-cell .activity-owners,
+    .sched-entry .activity-owners {
+      list-style: disc;
+      margin: 0 0 0 14pt;
+      padding: 0;
+      font-size: 9.5pt;
+      color: #1a1a1a !important;
+    }
+    .sched-cell .activity-owners li,
+    .sched-entry .activity-owners li { margin: 1pt 0; line-height: 1.3; }
+    .sched-cell .activity-notes,
+    .sched-entry .activity-notes {
+      margin: 4pt 0 0;
+      font-size: 9pt;
+      color: #4b5563 !important;
+      font-style: italic;
+    }
+
+    /* === Highlight cell/entry backgrounds — same fills as Preview tab === */
+    .sched-cell.hl-green,
+    .sched-entry.hl-green  { background: #ddf4dd !important; }
+    .sched-cell.hl-cyan,
+    .sched-entry.hl-cyan   { background: #d6eff6 !important; }
+    .sched-cell.hl-yellow,
+    .sched-entry.hl-yellow { background: #fff4c4 !important; }
+    .sched-cell.hl-none,
+    .sched-entry.hl-none   { background: transparent; }
+
+    .sched-cell--multi { padding: 0 !important; background: transparent !important; }
+    .sched-cell--multi .sched-entry { padding: 6pt 7pt; }
+    .sched-cell--multi .sched-entry + .sched-entry { border-top: 0.6pt dashed #888 !important; }
+
+    /* === Legend swatches keep their fill === */
+    .sched-doc__legend {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 8pt; margin: 0 0 6pt; font-size: 9pt; color: #4b5563;
+    }
+    .sched-doc__legend-key {
+      font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; font-size: 8.5pt; align-self: center; margin-right: 4pt;
+    }
+    .sched-legend-item { display: inline-flex; align-items: center; gap: 4pt; font-size: 9pt; }
+    .sched-legend-swatch {
+      display: inline-block !important;
+      width: 12pt; height: 12pt;
+      border-radius: 3pt; border: 0.6pt solid #111 !important;
+    }
+    .sched-legend-swatch.sched-badge--yellow { background: #ffec88 !important; }
+    .sched-legend-swatch.sched-badge--green  { background: #b4e4b4 !important; }
+    .sched-legend-swatch.sched-badge--cyan   { background: #b6e6f0 !important; }
+    .sched-legend-swatch.sched-badge--plain  { background: #f0f0f0 !important; }
+
+    /* === Title block === */
+    .sched-doc { color: #0b0b0b; background: #fff; font-family: "Georgia", "Times New Roman", serif; }
+    .sched-doc__title-row { text-align: center; margin: 0 0 14px; }
+    .sched-doc__title {
+      font-size: 22pt; font-weight: 700; margin: 0 0 6pt;
+      letter-spacing: 0.005em; color: #000000 !important; line-height: 1.15;
+    }
+    .sched-doc__subtitle {
+      font-size: 11pt; font-weight: 600; color: #2a2a2a !important;
+      margin: 0 0 10pt; letter-spacing: 0.02em;
+    }
+    .sched-doc__subtitle-meta {
+      font-weight: 400; font-style: italic; color: #4b5563 !important; margin-left: 6px;
+    }
+
+    /* === Footer (extras + notes) === */
+    .sched-doc__footer { margin-top: 12pt; display: flex; flex-direction: column; gap: 6pt; }
+    .sched-doc__extra,
+    .sched-doc__notes {
+      padding: 7pt 10pt;
+      background: #f6f7f8 !important;
+      border: 0.8pt solid #111 !important;
+      font-size: 9.5pt; line-height: 1.35; font-style: italic; color: #0b0b0b !important;
+    }
+    .sched-doc__extra strong,
+    .sched-doc__notes strong { font-style: normal; font-weight: 700; margin-right: 4pt; letter-spacing: 0.02em; }
+
+    /* === Print-only: strip the toolbar, force colours, lock landscape === */
+    @media print {
+      @page { size: letter landscape; margin: 0.45in; }
+
+      *,
+      *::before,
+      *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      html, body { background: #fff !important; color: #000 !important; }
+      .print-toolbar, button { display: none !important; }
+      .print-page {
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+      }
+      tr, .sched-table tr, .sched-table td, .sched-doc__title-row {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    }
+  </style>
+
+  <!--
+    External stylesheets still load for the wider design tokens shared with
+    the schedule.html Preview tab. `report-builders.css` is mostly scoped to
+    `#scheduleBuilderRoot` so it has no effect here but is kept aligned with
+    the Preview tab cascade. `print-contrast.css` MUST stay last so its
+    !important text overrides win the colour cascade against any other
+    inheritance. The inline <style> block above already covers everything
+    critical in case any of these files fail to load.
+  -->
+  <link rel="stylesheet" href="./css/print-export.css?v=8" />
+  <link rel="stylesheet" href="./css/report-builders.css?v=5" />
+  <link rel="stylesheet" href="./css/print-contrast.css?v=3" />
 </head>
 <body data-portal-page="schedule-print">
   <div class="print-toolbar" role="toolbar" aria-label="Print actions">
@@ -39,8 +298,8 @@
   <script src="./js/firebase-client.js?v=3"></script>
   <script src="./js/firebase-data.js?v=2"></script>
   <script src="./js/auth-guard.js?v=14"></script>
-  <script src="./js/report-renderers.js?v=5"></script>
-  <script src="./js/schedule-print.js?v=4"></script>
+  <script src="./js/report-renderers.js?v=6"></script>
+  <script src="./js/schedule-print.js?v=5"></script>
   <script>
     document.getElementById("printBtn")?.addEventListener("click", function () {
       window.print();

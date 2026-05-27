@@ -1,6 +1,17 @@
-/**
- * TN-170 — Print/Export shared styles for standalone document views.
+/*
+ * TN-170 — Print/Export shared styles (v8)
  *
+ * @page MUST be the first rule the parser sees so the print dialog opens
+ * on LANDSCAPE. Keep this rule at the very top of the file — do not move
+ * comments above it as some Chromium versions ignore @page rules that are
+ * preceded by certain at-rules / parse errors.
+ */
+@page {
+  size: letter landscape;
+  margin: 0.45in;
+}
+
+/**
  * Loaded by:
  *   - schedule.html / orgchart.html  (so the Preview tab inside the builder
  *     renders the SAME visual document the user will print)
@@ -11,17 +22,24 @@
  * printer output are pixel-equivalent. The @media print block only strips
  * portal chrome (sidebar, toolbar, buttons) and forces colour preservation.
  *
+ * Belt-and-braces: every print HTML page also inlines a defensive <style>
+ * block carrying the @page landscape rule + the critical visual rules so
+ * the document still renders correctly even if THIS external stylesheet
+ * is cached, missing, or stripped by an extension.
+ *
  * Browser native window.print() + @media print only — no paid PDF libraries.
  */
 
-/* Top-level @page rule — must sit outside `@media print` so Chromium-based
-   browsers default the print dialog orientation to LANDSCAPE the moment
-   the user presses Ctrl+P. The duplicated rule inside `@media print`
-   below also sets margins; this top-level rule covers older versions of
-   Chrome / Edge that ignore @page inside @media. */
-@page {
-  size: letter landscape;
-  margin: 0.45in;
+/* Force colour preservation at the TOP LEVEL so the on-screen preview cards
+   (Preview tab + standalone print viewers) keep their fills the moment they
+   render, before the print dialog is even opened. The @media print block
+   below re-asserts the same rule for the actual print pass. */
+*,
+*::before,
+*::after {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color-adjust: exact;
 }
 
 :root {
@@ -960,3 +978,70 @@ body.ocb-print-body {
   padding: 18px;
   border-radius: 8px;
 }
+
+/* ============================================================ */
+/* === Body-scoped specificity bump (v8) ====================== */
+/* ============================================================ */
+/* On the standalone *-print.html pages the body carries
+   `data-portal-page="schedule-print"` (or `orgchart-print`). The block
+   below scopes the critical visual rules to these bodies so they win
+   the cascade against any other stylesheet — including cached older
+   copies that may still be in the user's browser. Selectors deliberately
+   prefix with `body[data-portal-page$="-print"]` to lift specificity above
+   the bare-class rules higher in this file. */
+body[data-portal-page$="-print"] .sched-doc__audience-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8pt;
+  justify-content: center;
+  margin: 0 0 10pt;
+}
+
+body[data-portal-page$="-print"] .sched-badge {
+  display: inline-block;
+  padding: 4pt 12pt;
+  border-radius: 999pt;
+  border: 0.8pt solid #111;
+  font-weight: 700;
+  font-size: 9.5pt;
+  letter-spacing: 0.02em;
+  color: #1a1a1a;
+  background: #ffffff;
+  line-height: 1.1;
+}
+
+body[data-portal-page$="-print"] .sched-badge--yellow { background: var(--print-yellow); }
+body[data-portal-page$="-print"] .sched-badge--green  { background: var(--print-green); }
+body[data-portal-page$="-print"] .sched-badge--cyan   { background: var(--print-cyan); }
+body[data-portal-page$="-print"] .sched-badge--plain  { background: var(--print-plain); }
+
+body[data-portal-page$="-print"] .sched-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+body[data-portal-page$="-print"] .sched-table th,
+body[data-portal-page$="-print"] .sched-table td {
+  border: 1.2pt solid #111;
+  padding: 6pt 7pt;
+}
+
+body[data-portal-page$="-print"] .sched-cell.hl-green,
+body[data-portal-page$="-print"] .sched-entry.hl-green  { background: var(--print-green-soft); }
+body[data-portal-page$="-print"] .sched-cell.hl-cyan,
+body[data-portal-page$="-print"] .sched-entry.hl-cyan   { background: var(--print-cyan-soft); }
+body[data-portal-page$="-print"] .sched-cell.hl-yellow,
+body[data-portal-page$="-print"] .sched-entry.hl-yellow { background: var(--print-yellow-soft); }
+
+body[data-portal-page$="-print"] .sched-cell .time-range,
+body[data-portal-page$="-print"] .sched-entry .time-range {
+  color: var(--print-red);
+  font-weight: 700;
+  display: block;
+}
+
+body[data-portal-page$="-print"] .org-box {
+  border: 1.2pt solid #000;
+  background: #ffffff;
+}
+

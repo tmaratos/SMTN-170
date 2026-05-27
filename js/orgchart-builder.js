@@ -741,12 +741,26 @@
     }
     const html = R().renderOrgChartPrintView(state.chart);
     w.document.open();
+    // Reuse the EXACT stylesheet chain the standalone orgchart-print.html
+    // viewer uses (print-export -> report-builders -> print-contrast) plus
+    // an inline @page landscape rule so the print dialog defaults to
+    // landscape even if external CSS is cached or blocked.
     w.document.write(`<!DOCTYPE html><html lang="en"><head>
       <meta charset="UTF-8" />
       <title>${escapeHtml(state.chart?.title || "Organization Chart")}</title>
-      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=7" />
-      <link rel="stylesheet" href="${global.location.origin}/css/print-contrast.css?v=1" />
-    </head><body class="ocb-print-body">
+      <style>
+        @page { size: letter landscape; margin: 0.45in; }
+        *, *::before, *::after {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        html, body { margin: 0; padding: 0; background: #fff; color: #0b0b0b; }
+      </style>
+      <link rel="stylesheet" href="${global.location.origin}/css/print-export.css?v=8" />
+      <link rel="stylesheet" href="${global.location.origin}/css/report-builders.css?v=5" />
+      <link rel="stylesheet" href="${global.location.origin}/css/print-contrast.css?v=3" />
+    </head><body class="ocb-print-body" data-portal-page="orgchart-print">
       <main class="print-page">${html}</main>
       <script>setTimeout(function(){ window.print(); }, 350);<\/script>
     </body></html>`);

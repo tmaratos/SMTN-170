@@ -8,14 +8,241 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="color-scheme" content="light" />
   <title>Organization Chart (Print) | TN-170</title>
+
   <!--
-    Load the SAME stylesheet chain (in the same order) as `orgchart.html`'s
-    Preview tab so the print viewer renders byte-identical to what the user
-    sees inside the builder. See schedule-print.html for the full rationale.
+    INLINE DEFENSIVE PRINT STYLE BLOCK
+    ----------------------------------
+    See schedule-print.html for the full rationale. The rules here own the
+    critical visual contract for the org chart print/PDF output even if
+    every external CSS file fails to load:
+
+      - @page locks LETTER LANDSCAPE so the print dialog opens on landscape.
+      - `print-color-adjust: exact` forced on every element.
+      - Every `.org-box` keeps its 1.2pt black border with white background.
+      - The Commander → staff row beam, vertical drops, cadet-branch spine
+        and elbows all remain solid 1.2pt black lines.
+      - Three-line title stays centred and bold.
   -->
-  <link rel="stylesheet" href="./css/print-export.css?v=7" />
-  <link rel="stylesheet" href="./css/report-builders.css?v=4" />
-  <link rel="stylesheet" href="./css/print-contrast.css?v=2" />
+  <style>
+    @page { size: letter landscape; margin: 0.45in; }
+
+    *,
+    *::before,
+    *::after {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+
+    html, body { margin: 0; padding: 0; background: #e9eaee; color: #0b0b0b; }
+    body[data-portal-page="orgchart-print"] {
+      font-family: "Georgia", "Times New Roman", serif;
+    }
+
+    .print-toolbar {
+      position: sticky; top: 0; z-index: 20;
+      background: #0f172a; color: #fff;
+      padding: 10px 20px;
+      display: flex; gap: 12px; align-items: center; justify-content: center;
+      border-bottom: 1px solid #1f2937;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    .print-toolbar__title { font-size: 0.95rem; font-weight: 600; margin-right: auto; }
+    .print-toolbar button {
+      background: #2563eb; color: #fff; border: 0;
+      padding: 8px 16px; border-radius: 4px; font-size: 0.9rem; cursor: pointer;
+    }
+    .print-toolbar button.secondary { background: transparent; border: 1px solid #4b5563; }
+
+    .print-page {
+      background: #ffffff; color: #0b0b0b;
+      max-width: 1180px; margin: 24px auto; padding: 28px 36px 32px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12); border-radius: 4px;
+    }
+    .print-page__loading {
+      text-align: center; padding: 60px 20px;
+      color: #4b5563; font-style: italic;
+    }
+
+    /* === Org chart document === */
+    .org-chart-doc {
+      color: #0b0b0b; background: #fff;
+      font-family: "Georgia", "Times New Roman", serif;
+    }
+    .org-chart-doc__title { text-align: center; margin: 0 0 22px; padding: 0; }
+    .org-chart-doc__title h1 {
+      font-size: 18pt; margin: 0 0 2pt; font-weight: 700 !important;
+      letter-spacing: 0.01em; color: #000000 !important; line-height: 1.2;
+    }
+    .org-chart-doc__title h2 {
+      font-size: 14pt; margin: 0 0 2pt; font-weight: 700 !important;
+      color: #000000 !important; line-height: 1.2;
+    }
+    .org-chart-doc__title h3 {
+      font-size: 13pt; margin: 0; font-weight: 700 !important;
+      color: #000000 !important; line-height: 1.2;
+    }
+    .org-chart-doc__updated {
+      text-align: center; font-size: 9pt;
+      color: #4b5563 !important; margin: 6pt 0 0;
+      font-style: italic; font-weight: 400;
+    }
+
+    .org-row {
+      display: flex; justify-content: center; gap: 18px;
+      margin: 0; flex-wrap: wrap; position: relative;
+    }
+    .org-row--commander { margin: 6pt 0 0; }
+
+    .org-box {
+      border: 1.2pt solid #000 !important;
+      background: #ffffff !important;
+      padding: 8pt 10pt;
+      min-width: 120pt;
+      max-width: 170pt;
+      text-align: center;
+      font-family: "Georgia", "Times New Roman", serif;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .org-row--commander .org-box {
+      min-width: 180pt; max-width: 220pt; padding: 9pt 12pt;
+    }
+    .org-staff-row .org-box {
+      min-width: 0; max-width: 100%; width: 100%; padding: 5pt 6pt;
+    }
+    .org-staff-row .org-box__name { font-size: 9.5pt; line-height: 1.2; margin: 0 0 1pt; }
+    .org-staff-row .org-box__role { font-size: 8.5pt; line-height: 1.2; }
+
+    .org-box__name {
+      font-size: 11pt; font-weight: 600 !important; margin: 0 0 2pt;
+      line-height: 1.25; color: #0b0b0b !important; letter-spacing: 0.01em;
+    }
+    .org-box__name--vacant {
+      font-style: italic; font-weight: 500 !important; color: #4b5563 !important;
+    }
+    .org-box__role {
+      font-size: 10pt; font-style: italic; font-weight: 400 !important;
+      margin: 0; line-height: 1.25; color: #0b0b0b !important;
+    }
+
+    .org-connector-down {
+      width: 0; height: 18pt;
+      border-left: 1.2pt solid #000 !important;
+      margin: 0 auto;
+    }
+    .org-connector-down--commander { height: 22pt; }
+
+    .org-staff-row {
+      display: grid !important;
+      grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+      gap: 8pt;
+      margin: 0;
+      padding-top: 14pt;
+      position: relative;
+      align-items: start;
+      page-break-before: avoid;
+      break-before: avoid;
+    }
+    .org-staff-row__beam {
+      position: absolute; top: 0;
+      left: calc(100% / 16); right: calc(100% / 16);
+      height: 1.2pt; background: #000 !important;
+    }
+    .org-staff-cell {
+      display: flex; flex-direction: column; align-items: center;
+      position: relative; padding-top: 14pt;
+    }
+    .org-staff-cell::before {
+      content: ""; position: absolute; top: -14pt; left: 50%;
+      height: 28pt; width: 0;
+      border-left: 1.2pt solid #000 !important;
+    }
+
+    .org-staff-cell--dc-cadets { align-items: stretch; }
+    .org-staff-cell--dc-cadets .org-box { align-self: center; }
+
+    .org-cadet-branch {
+      position: relative; margin: 0;
+      padding: 10pt 0 0 12pt;
+      width: 100%; max-width: 100%; box-sizing: border-box;
+      page-break-before: avoid; break-before: avoid;
+    }
+    .org-cadet-branch__spine {
+      position: absolute; left: 6pt; top: 0; bottom: 14pt;
+      width: 0; border-left: 1.2pt solid #000 !important;
+    }
+    .org-cadet-branch__items {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column; gap: 8pt;
+    }
+    .org-cadet-branch__item {
+      position: relative; display: flex; align-items: center; min-width: 0;
+    }
+    .org-cadet-branch__elbow {
+      position: absolute; left: -6pt; top: 50%;
+      width: 6pt; height: 0;
+      border-top: 1.2pt solid #000 !important;
+    }
+    .org-cadet-branch .org-box {
+      min-width: 0; max-width: 100%; width: 100%; padding: 5pt 6pt;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .org-cadet-branch .org-box__name { font-size: 9.5pt; line-height: 1.2; margin: 0 0 1pt; }
+    .org-cadet-branch .org-box__role { font-size: 8.5pt; line-height: 1.2; }
+
+    .org-additional {
+      margin: 22pt 0 0;
+      padding: 12pt 14pt 10pt;
+      border-top: 0.8pt solid #000 !important;
+    }
+    .org-additional__heading {
+      text-align: center; font-size: 10pt; font-weight: 700 !important;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      margin: 0 0 8pt; color: #4b5563 !important;
+    }
+    .org-additional__grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+      justify-content: center; gap: 10pt;
+    }
+    .org-additional__grid .org-box {
+      min-width: 0; max-width: 100%; width: 100%; padding: 6pt 8pt;
+    }
+    .org-additional__grid .org-box__name { font-size: 10pt; line-height: 1.25; }
+    .org-additional__grid .org-box__role { font-size: 9pt; line-height: 1.25; }
+
+    /* === Print-only: strip the toolbar, force colours, lock landscape === */
+    @media print {
+      @page { size: letter landscape; margin: 0.45in; }
+
+      *,
+      *::before,
+      *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      html, body { background: #fff !important; color: #000 !important; }
+      .print-toolbar, button { display: none !important; }
+      .print-page {
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+      }
+      .org-box, .org-row, .org-chart-doc__title {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    }
+  </style>
+
+  <link rel="stylesheet" href="./css/print-export.css?v=8" />
+  <link rel="stylesheet" href="./css/report-builders.css?v=5" />
+  <link rel="stylesheet" href="./css/print-contrast.css?v=3" />
 </head>
 <body data-portal-page="orgchart-print">
   <div class="print-toolbar" role="toolbar" aria-label="Print actions">
@@ -35,8 +262,8 @@
   <script src="./js/firebase-client.js?v=3"></script>
   <script src="./js/firebase-data.js?v=2"></script>
   <script src="./js/auth-guard.js?v=14"></script>
-  <script src="./js/report-renderers.js?v=5"></script>
-  <script src="./js/orgchart-print.js?v=3"></script>
+  <script src="./js/report-renderers.js?v=6"></script>
+  <script src="./js/orgchart-print.js?v=4"></script>
   <script>
     (async function bootPrintPage() {
       try {
